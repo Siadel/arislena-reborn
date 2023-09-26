@@ -1,0 +1,103 @@
+2023-09-22 00:08:46 : Command '버튼' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.emoji.id: Invalid emoji
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\cogs\test.py", line 18, in test
+    await interaction.response.send_message("버튼을 눌러봐!", view=button_interaction.test_button())
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 220, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.emoji.id: Invalid emoji
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '버튼' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.emoji.id: Invalid emoji
+
+2023-09-22 17:19:21 : Command '등록신청' raised an exception: AttributeError: module 'py.database' has no attribute 'User'
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\cogs\user_management.py", line 27, in register
+    user:tableobj.User = db.fetch("user", f"discord_id = {interaction.user.id}")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\py\database.py", line 40, in fetch
+    return getattr(sys.modules[__name__], table.capitalize())(*data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'py.database' has no attribute 'User'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록신청' raised an exception: AttributeError: module 'py.database' has no attribute 'User'
+
+2023-09-22 18:01:31 : Command '등록' raised an exception: TypeError: Expected discord.Colour, int, or None but received Color instead.
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\cogs\user_management.py", line 37, in register
+    embed = discord.Embed(title=embed_title, description=embed_description, color=embed_color)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\embeds.py", line 179, in __init__
+    self.colour = colour if colour is not None else color
+    ^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\embeds.py", line 323, in colour
+    raise TypeError(f'Expected discord.Colour, int, or None but received {value.__class__.__name__} instead.')
+TypeError: Expected discord.Colour, int, or None but received Color instead.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: TypeError: Expected discord.Colour, int, or None but received Color instead.
+
+2023-09-25 17:54:56 : Command '등록' raised an exception: OperationalError: no such column: None
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\cogs\user_management.py", line 33, in register
+    db.insert(user)
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\arislena-reborn\py\database.py", line 142, in insert
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: None
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: OperationalError: no such column: None
+

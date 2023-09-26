@@ -1,0 +1,7 @@
+{
+    "test_mode": true,
+    "admin_mode": false,
+    "arislena_end_turn": 60,
+    "cron_days_of_week": "tue, thu, sat, sun",
+    "cron_hour": "21"
+}
