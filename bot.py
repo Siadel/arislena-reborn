@@ -1,13 +1,15 @@
 import traceback, os, discord
 from typing import Union
 from discord import app_commands
-from py import database, utility, warning, schedule_manager, jsonobj, tableobj, translation
+from py import database, utility, warning, schedule_manager, jsonobj, tableobj
 from py.bot_base import BotBase
 
 db = database.MainDB()
 schem = schedule_manager.ScheduleManager(db, jsonobj.Schedule(), jsonobj.Settings())
 
 """
+데이터베이스 구성
+
 TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화함
 만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가해야 함
 """

@@ -84,7 +84,8 @@ class User(TableObject):
     register_date: str = None
     status: int = enums.User.BEFORE_START
 
-
+@dataclass
+class 
 # @dataclass
 # class Block(TableObject):
 #     ID: int
