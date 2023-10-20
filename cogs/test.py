@@ -2,8 +2,8 @@ import discord
 from discord.ext.commands import GroupCog
 from discord import app_commands
 
-from py.bot_base import BotBase
-from py import view
+from py_discord.bot_base import BotBase
+from py_discord import view
 
 class CommandTest(GroupCog, name="테스트"):
     def __init__(self, bot: BotBase):

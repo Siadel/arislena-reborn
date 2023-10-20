@@ -3,7 +3,8 @@ Sql과 연동되는 데이터 클래스들
 """
 from abc import ABCMeta
 from dataclasses import dataclass
-from py import enums
+from py_base import enums
+from py_base.datatype import ExtInt
 
 class TableObject(metaclass=ABCMeta):
     """
@@ -62,16 +63,33 @@ class TableObject(metaclass=ABCMeta):
             if key == "ID":
                 sql += f"{key} INTEGER PRIMARY KEY AUTOINCREMENT, "
             else:
-                if "str" in str(value):
+                if "str" in str(value).lower():
                     sql += f"{key} TEXT, "
-                elif "int" in str(value):
+                elif "int" in str(value).lower():
                     sql += f"{key} INTEGER, "
-                elif "float" in str(value):
+                elif "float" in str(value).lower():
                     sql += f"{key} REAL, "
                 else:
                     raise Exception("데이터 타입을 알 수 없습니다.")
         sql = sql[:-2] + ")"
         return sql
+
+
+def convert_to_tableobj(table_name:str, data:list) -> TableObject:
+    """
+    sql 테이블 데이터에서 불러온 데이터를 이곳에 구현된 클래스로 변환하는 함수\n
+    자료형이 ExtInt인 경우, ExtInt에 데이터의 int값을 더해서 반환함 (기본적으로 ExtInt는 0으로 초기화됨)
+    """
+    tableobj = globals()[table_name.capitalize()]()
+    for key, value in zip(tableobj.__dict__.keys(), data):
+        if not isinstance(value, int):
+            tableobj.__setattr__(key, value)
+        else:
+            if "ExtInt" in str(tableobj.__annotations__[key]):
+                tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
+            else:
+                tableobj.__setattr__(key, value)
+    return tableobj
 
 """
 액티브 데이터
@@ -83,6 +101,28 @@ class User(TableObject):
     discord_name: str = None
     register_date: str = None
     status: int = enums.User.BEFORE_START
+
+@dataclass
+class Faction(TableObject):
+    ID: int = None
+    user_ID: int = None
+    name: str = None
+    scale: ExtInt = ExtInt(0, min_value = 0)
+    finance: ExtInt = ExtInt(0, min_value = 0)
+    manpower: ExtInt = ExtInt(0, min_value = 0)
+    motive_power: ExtInt = ExtInt(0, min_value = 0)
+    stability: ExtInt = ExtInt(0, min_value = 0, max_value = 100)
+    knowledge: int = None
+
+@dataclass
+class Knowledge(TableObject):
+    ID: int = None
+    faction_ID: int = None
+    war: ExtInt = ExtInt(0, min_value = 0)
+    argiculture: ExtInt = ExtInt(0, min_value = 0)
+    industry: ExtInt = ExtInt(0, min_value = 0)
+    governance: ExtInt = ExtInt(0, min_value = 0)
+    diplomacy: ExtInt = ExtInt(0, min_value = 0)
 
 
 # @dataclass

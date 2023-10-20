@@ -1,7 +1,7 @@
 """
 게임 요소를 칭하는 한국어와 시스템 버전의 딕셔너리를 모은 모듈
 """
-from py import enums, utility
+from py_base import enums, utility
 
 # 파이썬과 sql 데이터 형식 딕셔너리
 datatype_dict = {

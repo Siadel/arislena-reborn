@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from py import jsonobj, warning
+from py_system import jsonobj
+from py_discord import warning
 
 # 길드 id와 봇 토큰
 keys = jsonobj.Keys()

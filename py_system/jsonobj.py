@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import datetime
 import os
 
-from py import jsonwork, utility
+from py_base import jsonwork, utility
 
 class JsonObject(metaclass=ABCMeta):
     """
@@ -104,6 +104,14 @@ class Settings(JsonObject):
         self.arislena_end_turn: int
         self.cron_days_of_week: str
         self.cron_hour: str
+
+class DiceMemory(JsonObject):
+
+    def __init__(self):
+        """
+        주사위를 저장하는 파일
+        """
+        super().__init__("dice_memory.json")
 
 @dataclass
 class Sign_up_waitlist:

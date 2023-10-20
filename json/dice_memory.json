@@ -1,0 +1,55 @@
+{
+    "ㅇ": {
+        "dice_min": 1,
+        "dice_max": 9,
+        "grade_distribution": [
+            3,
+            3,
+            2,
+            1
+        ],
+        "judge_list": [
+            "처참함",
+            "무난함",
+            "성공",
+            "멋지게 성공!"
+        ],
+        "dice_mod": 0,
+        "grade_mod": 0,
+        "name": "ㅇ",
+        "grade_min": 0,
+        "grade_table": {
+            "0": [
+                1,
+                3
+            ],
+            "1": [
+                4,
+                6
+            ],
+            "2": [
+                7,
+                8
+            ],
+            "3": [
+                9,
+                9
+            ]
+        },
+        "judge_table": {
+            "0": "처참함",
+            "1": "무난함",
+            "2": "성공",
+            "3": "멋지게 성공!"
+        },
+        "last_roll": 9,
+        "last_grade": 3,
+        "last_judge": "멋지게 성공!",
+        "last_gap": null,
+        "comparable": true,
+        "category": "이벤트(9면체)",
+        "h_tier": null,
+        "l_tier": null,
+        "s_tier": null
+    }
+}

@@ -1,8 +1,8 @@
 """
 한국어 문자열을 처리하는 함수 모듈
 """
-from py import HangeulLogic
-from py.utility import wrap
+from py_base import HangeulLogic
+from py_base.utility import wrap
 
 def has_coda(word:str):
     # 마지막 글자가 받침이 있는지 확인

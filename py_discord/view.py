@@ -1,9 +1,8 @@
 import discord
-from discord import ui, Interaction
+from discord import ui
 
-from py import jsonobj, utility
-from py.koreanstring import nominative
-from py.bot_base import embed_for_user
+from py_base.koreanstring import nominative
+from py_discord.bot_base import embed_for_user
 
 
 

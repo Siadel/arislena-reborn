@@ -2,7 +2,8 @@
 import sqlite3
 import sys
 
-from py import utility, tableobj, jsonobj
+from py_base import utility
+from py_system import tableobj, jsonobj
 
 class DatabaseManager:
 
@@ -37,7 +38,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return getattr(sys.modules["py.tableobj"], table.capitalize())(*data)
+        return tableobj.convert_to_tableobj(table, *data)
     
     def fetchmany(self, table:str, *statements) -> list[tableobj.TableObject] | None:
         """
@@ -57,7 +58,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return [getattr(sys.modules["py.tableobj"], table.capitalize())(*d) for d in data]
+        return [tableobj.convert_to_tableobj(table, *d) for d in data]
 
     def fetch_all(self, table:str) -> list[tableobj.TableObject]:
         """
@@ -74,7 +75,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return [getattr(sys.modules["py.tableobj"], table.capitalize())(*d) for d in data]
+        return [tableobj.convert_to_tableobj(table, *d) for d in data]
     
     def fetch_column(self, table:str, column:str, *statements) -> list:
         """

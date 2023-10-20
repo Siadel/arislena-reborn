@@ -1,15 +1,17 @@
 import traceback, os, discord
 from typing import Union
 from discord import app_commands
-from py import database, utility, warning, schedule_manager, jsonobj, tableobj, translation
-from py.bot_base import BotBase
+from py_base import utility 
+from py_system import database, schedule_manager, jsonobj, tableobj
+from py_discord import warning
+from py_discord.bot_base import BotBase
 
 db = database.MainDB()
 schem = schedule_manager.ScheduleManager(db, jsonobj.Schedule(), jsonobj.Settings())
 
 """
-TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화함
-만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가해야 함
+TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
+만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가
 """
 for subclass in tableobj.TableObject.__subclasses__():
     # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
@@ -37,23 +39,23 @@ for subclass in tableobj.TableObject.__subclasses__():
     if table_recreate:
         has_row = db.has_row(table_name)
         if has_row:
-            # 테이블 데이터 백업
-            # 테이블에 데이터가 없는 경우 백업할 필요 없음
-            db.cursor.execute(f"CREATE TABLE {table_name}_backup AS SELECT * FROM {table_name}")
+            # 테이블 데이터 임시 저장
+            # 테이블에 데이터가 없는 경우 임시 저장할 필요 없음
+            db.cursor.execute(f"CREATE TABLE {table_name}_temp AS SELECT * FROM {table_name}")
         # 테이블 삭제
         db.cursor.execute(f"DROP TABLE {table_name}")
         # 테이블 재생성
         db.cursor.execute(subclass.get_create_table_string())
         if has_row:
-            # 백업 테이블의 column마다 작업하여 테이블 데이터 복원
-            # 백업 테이블의 데이터를 {key:value} 형식으로 변환함
-            db.cursor.execute(f"SELECT * FROM {table_name}_backup")
+            # 임시 저장 테이블의 column마다 작업하여 테이블 데이터 복원
+            # 임시 저장 테이블의 데이터를 {key:value} 형식으로 변환함
+            db.cursor.execute(f"SELECT * FROM {table_name}_temp")
             backup_data = [dict(zip([column[0] for column in db.cursor.description], data)) for data in db.cursor.fetchall()]
-            # 백업 테이블의 데이터를 새로운 테이블에 삽입함
+            # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
             for data in backup_data:
                 db.insert(subclass(**data))
-            # 백업 테이블 삭제
-            db.cursor.execute(f"DROP TABLE {table_name}_backup")
+            # 임시 저장 테이블 삭제
+            db.cursor.execute(f"DROP TABLE {table_name}_temp")
 del db
 print("Database initialized")
 

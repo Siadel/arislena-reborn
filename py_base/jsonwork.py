@@ -1,7 +1,7 @@
 import os
 import json
 
-from py import utility
+from py_base import utility
 
 # json 데이터 저장하기
 def dump_json(data: dict, filename: str) -> None:

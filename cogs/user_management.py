@@ -3,9 +3,10 @@ from discord.ext.commands import GroupCog
 from discord import app_commands
 from datetime import datetime
 
-from py import tableobj, utility
-from py.database import MainDB
-from py.bot_base import BotBase
+from py_base import utility
+from py_system import tableobj
+from py_system.database import MainDB
+from py_discord.bot_base import BotBase
 
 class UserManagement(GroupCog, name="유저"):
     def __init__(self, bot: BotBase):

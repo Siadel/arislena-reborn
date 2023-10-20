@@ -1,7 +1,7 @@
 """
 봇이 출력할 경고 모음집
 """
-from py import utility, koreanstring
+from py_base import utility, koreanstring
 
 class Default(Exception):
     def __init__(self, message: str):

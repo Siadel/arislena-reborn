@@ -1,4 +1,4 @@
-from py import arislena_dice
+from py_system import arislena_dice
 
 class FixerConditionDice(arislena_dice.Nonahedron):
     """
