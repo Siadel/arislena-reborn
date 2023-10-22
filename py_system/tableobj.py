@@ -1,16 +1,16 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from py_base import enums
+
 from py_base.datatype import ExtInt
-from copy import deepcopy
 
 class TableObject(metaclass=ABCMeta):
     """
     테이블 오브젝트 (db 파일의 table로 저장되는 녀석들)
     """
+
     def __iter__(self):
         rtn = list(self.__dict__.values())
         rtn.pop(0) # ID 제거
@@ -74,6 +74,21 @@ class TableObject(metaclass=ABCMeta):
                     raise Exception("데이터 타입을 알 수 없습니다.")
         sql = sql[:-2] + ")"
         return sql
+    
+    @property
+    @abstractmethod
+    def kr_list(self) -> list[str]:
+        pass
+    
+    @property
+    def kr_dict(self) -> dict[str, str]:
+        # 한국어 : 대응되는 attribute 값
+        return dict(zip(self.kr_list, self.__dict__.values()))
+    
+    @property
+    def kr_dict_without_id(self) -> dict[str, str]:
+        # 한국어 : 대응되는 attribute 값
+        return dict(zip(self.kr_list[1:], list(self.__dict__.values())[1:]))
 
 def convert_to_tableobj(table_name:str, data:list) -> TableObject:
     """
@@ -101,43 +116,55 @@ class User(TableObject):
     discord_name: str = None
     register_date: str = None
 
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "디스코드 아이디",
+            "디스코드 이름",
+            "가입일"
+        ]
+
+@dataclass
+class User_setting(TableObject):
+    ID: int = None
+    discord_id: int = None
+    embed_color: int = 3447003
+
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "유저 아이디",
+            "임베드 색상"
+        ]
+
 @dataclass
 class Faction(TableObject):
     ID: int = None
     user_ID: int = None
     name: str = None
-    scale: ExtInt = ExtInt(0, min_value = 0)
     finance: ExtInt = ExtInt(0, min_value = 0)
     manpower: ExtInt = ExtInt(0, min_value = 0)
     motive_power: ExtInt = ExtInt(0, min_value = 0)
     stability: ExtInt = ExtInt(0, min_value = -20, max_value = 100)
 
-    @classmethod
-    def get_translate(cls, *attribute_name):
-        data = {
-            "ID": "아이디",
-            "user_ID": "유저 아이디",
-            "name": "집단명",
-            "scale": "규모",
-            "finance": "자산",
-            "manpower": "인력",
-            "motive_power": "동력",
-            "stability": "안정도"
-        }
-        if len(attribute_name) == 0:
-            return data
-        else:
-            clipped_data = {}
-            for name in attribute_name:
-                clipped_data[name] = deepcopy(data[name])
-            return clipped_data
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "유저 아이디",
+            "집단명",
+            "자산",
+            "인력",
+            "동력",
+            "안정도"
+        ]
 
 @dataclass
 class Faction_data(TableObject):
     ID: int = None
     faction_ID: int = None
-    main_color: int = 3447003
-    sub_color: int = None
     spicies: str = None
     location: str = None
     philosophy: str = None
@@ -145,6 +172,20 @@ class Faction_data(TableObject):
     taboo: str = None
     prolog: str = None
     present: str = None
+
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "세력 아이디",
+            "종족",
+            "활동 지역",
+            "철학",
+            "선호하는 것",
+            "금지하는 것",
+            "역사",
+            "현재"
+        ]
 
 @dataclass
 class Knowledge(TableObject):
@@ -156,6 +197,17 @@ class Knowledge(TableObject):
     governance: ExtInt = ExtInt(0, min_value = 0)
     diplomacy: ExtInt = ExtInt(0, min_value = 0)
 
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "세력 아이디",
+            "전쟁 지식",
+            "농업 지식",
+            "산업 지식",
+            "통치 지식",
+            "외교 지식"
+        ]
 
 
 # @dataclass

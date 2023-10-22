@@ -38,7 +38,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return tableobj.convert_to_tableobj(table, *data)
+        return tableobj.convert_to_tableobj(table, data)
     
     def fetchmany(self, table:str, *statements) -> list[tableobj.TableObject] | None:
         """

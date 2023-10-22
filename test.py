@@ -1,27 +1,39 @@
 
 from dataclasses import dataclass
 
-class wrapper:
-    
-    def __init__(self, name, value):
-        self.name = name
+class test:
+
+    def __init__(self, value):
         self.value = value
+
+    @property
+    def property_value(self):
+        return {"a": 1, "b": 2}
     
-    def __str__(self):
-        return str(self.value)
+print(test(5).__dict__)
+print(type(test(5).property_value))
 
-    def __int__(self):
-        return int(self.value)
+# class wrapper:
+    
+#     def __init__(self, name, value):
+#         self.name = name
+#         self.value = value
+    
+#     def __str__(self):
+#         return str(self.value)
 
-@dataclass
-class Foo:
-    a: wrapper
-    b: wrapper
+#     def __int__(self):
+#         return int(self.value)
 
-    def __post_init__(self):
-        self.a = wrapper("aasdf", self.a)
-        self.b = wrapper("b3erfgs", self.b)
+# @dataclass
+# class Foo:
+#     a: wrapper
+#     b: wrapper
 
-foo = Foo(1, "2")
-print(foo.a.name, foo.a)
-print(foo.b.name, foo.b)
+#     def __post_init__(self):
+#         self.a = wrapper("aasdf", self.a)
+#         self.b = wrapper("b3erfgs", self.b)
+
+# foo = Foo(1, "2")
+# print(foo.a.name, foo.a)
+# print(foo.b.name, foo.b)

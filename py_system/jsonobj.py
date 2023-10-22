@@ -105,6 +105,15 @@ class Settings(JsonObject):
         self.cron_days_of_week: str
         self.cron_hour: str
 
+# translation
+class Translation(JsonObject):
+
+    def __init__(self):
+        super().__init__("translation.json", False)
+
+
+# dummy
+
 class DiceMemory(JsonObject):
 
     def __init__(self):
@@ -113,64 +122,64 @@ class DiceMemory(JsonObject):
         """
         super().__init__("dice_memory.json")
 
-@dataclass
-class Sign_up_waitlist:
-    owner:str
-    owner_ID:int
-    nation_name:str
+# @dataclass
+# class Sign_up_waitlist:
+#     owner:str
+#     owner_ID:int
+#     nation_name:str
 
-    @classmethod
-    def get_waitlists(cls):
-        # waitlist.json에서 데이터를 가져옴
-        data = jsonwork.load_json("sign_up_waitlist.json")
-        return [cls(**d) for d in data]
+#     @classmethod
+#     def get_waitlists(cls):
+#         # waitlist.json에서 데이터를 가져옴
+#         data = jsonwork.load_json("sign_up_waitlist.json")
+#         return [cls(**d) for d in data]
     
-    @classmethod
-    def delete_waitlist(cls, owner_ID:int):
-        # waitlist.json에서 데이터를 삭제
-        data = jsonwork.load_json("sign_up_waitlist.json")
-        for d in data:
-            if d['owner_ID'] == owner_ID:
-                data.remove(d)
-                break
-        jsonwork.dump_json(data, "sign_up_waitlist.json")
+#     @classmethod
+#     def delete_waitlist(cls, owner_ID:int):
+#         # waitlist.json에서 데이터를 삭제
+#         data = jsonwork.load_json("sign_up_waitlist.json")
+#         for d in data:
+#             if d['owner_ID'] == owner_ID:
+#                 data.remove(d)
+#                 break
+#         jsonwork.dump_json(data, "sign_up_waitlist.json")
     
-    def add(self):
-        # waitlist.json에 데이터를 저장
-        data = jsonwork.load_json("sign_up_waitlist.json")
-        data.append(self.__dict__)
-        jsonwork.dump_json(data, "sign_up_waitlist.json")
+#     def add(self):
+#         # waitlist.json에 데이터를 저장
+#         data = jsonwork.load_json("sign_up_waitlist.json")
+#         data.append(self.__dict__)
+#         jsonwork.dump_json(data, "sign_up_waitlist.json")
 
-@dataclass
-class Fate:
-    ID : int = 0
-    category: str = ""
-    description: str = ""
-    victory_condition: str = ""
-    lose_condition: str = ""
-    note: str = ""
+# @dataclass
+# class Fate:
+#     ID : int = 0
+#     category: str = ""
+#     description: str = ""
+#     victory_condition: str = ""
+#     lose_condition: str = ""
+#     note: str = ""
 
-    @classmethod
-    def get_fate(cls, category:str):
-        # fate.json에서 데이터를 가져옴
-        data = jsonwork.load_json("fate.json")
-        for d in data:
-            if d['category'] == category:
-                return cls(**d)
-        raise Exception(f"해당하는 운명이 없습니다. ({category})")
+#     @classmethod
+#     def get_fate(cls, category:str):
+#         # fate.json에서 데이터를 가져옴
+#         data = jsonwork.load_json("fate.json")
+#         for d in data:
+#             if d['category'] == category:
+#                 return cls(**d)
+#         raise Exception(f"해당하는 운명이 없습니다. ({category})")
     
-    @classmethod
-    def get_all_categories(cls):
-        # fate.json에서 데이터를 가져옴
-        data = jsonwork.load_json("fate.json")
-        return [d['category'] for d in data]
+#     @classmethod
+#     def get_all_categories(cls):
+#         # fate.json에서 데이터를 가져옴
+#         data = jsonwork.load_json("fate.json")
+#         return [d['category'] for d in data]
     
-    def dump(self):
-        # fate.json에 데이터를 저장
-        jsonwork.dump_json(self.__dict__, "fate.json")
+#     def dump(self):
+#         # fate.json에 데이터를 저장
+#         jsonwork.dump_json(self.__dict__, "fate.json")
 
-    def add(self):
-        # fate.json에 데이터를 저장
-        data = jsonwork.load_json("fate.json")
-        data.append(self.__dict__)
-        jsonwork.dump_json(data, "fate.json")
+#     def add(self):
+#         # fate.json에 데이터를 저장
+#         data = jsonwork.load_json("fate.json")
+#         data.append(self.__dict__)
+#         jsonwork.dump_json(data, "fate.json")

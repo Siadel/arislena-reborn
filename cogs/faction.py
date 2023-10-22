@@ -34,7 +34,10 @@ class FactionCommand(GroupCog):
         if len(name) > limit: raise warning.NameTooLong("세력명", limit)
 
         initial_faction_value = settings.content["initial_faction_value"]
-        main_db.insert(tableobj.Faction(0, interaction.user.id, name, **initial_faction_value))
+        main_db.insert(tableobj.Faction(user_ID=interaction.user.id, name=name, **initial_faction_value))
+        faction:tableobj.Faction = main_db.fetch("faction", f"owner_id = {interaction.user.id}")
+        main_db.insert(tableobj.Knowledge(faction_ID=faction.ID))
+        main_db.insert(tableobj.Faction_data(faction_ID=faction.ID))
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다! `/세력 수정` 명령어로 세력의 추가 정보를 넣거나 수정할 수 있습니다.", ephemeral=True)
         await self.bot.announce(f"{interaction.user.name}께서 {name} 세력을 창설했어요!")

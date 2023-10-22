@@ -10,6 +10,14 @@ class Default(Exception):
         """
         super().__init__(message)
 
+class NotRegistered(Default):
+    def __init__(self):
+        super().__init__("등록되지 않았어요! `/유저 등록` 명령어로 등록해주세요.")
+
+class AlreadyRegistered(Default):
+    def __init__(self):
+        super().__init__("이미 등록되어 있어요!")
+
 class GamingNow(Default):
     def __init__(self):
         super().__init__("게임이 진행중이에요! 게임이 중단된 이후 다시 시도해주세요.")

@@ -29,7 +29,7 @@ for subclass in tableobj.TableObject.__subclasses__():
     # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, db에서 해당 데이터 형식을 삭제함
     # db에 없는 데이터 형식이 있을 경우, db에 해당 데이터 형식을 추가함
         # 이 경우 추가로 column 순서를 맞추기 위해 테이블을 재생성함
-    for column_name in (tableobj_column_set - sql_table_column_set):
+    for column_name in (sql_table_column_set - tableobj_column_set):
         db.cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
     
     table_recreate = False

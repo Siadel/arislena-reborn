@@ -123,3 +123,120 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '목록' raised an exception: AttributeError: type object 'DiceMemory' has no attribute 'content'
 
+2023-10-22 22:24:12 : Command '등록' raised an exception: OperationalError: no such column: None
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 33, in register
+    main_db.insert(tableobj.User_setting(user_ID=user.ID))
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\py_system\database.py", line 144, in insert
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: None
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: OperationalError: no such column: None
+
+2023-10-22 22:26:06 : Command '등록' raised an exception: OperationalError: no such column: None
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 33, in register
+    main_db.insert(tableobj.User_setting(user_ID=user.ID))
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\py_system\database.py", line 144, in insert
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: None
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: OperationalError: no such column: None
+
+2023-10-22 22:33:29 : Command '등록' raised an exception: TypeError: User_setting.__init__() got an unexpected keyword argument 'user_ID'
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 32, in register
+    user_settings = tableobj.User_setting(user_ID=interaction.user.id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: User_setting.__init__() got an unexpected keyword argument 'user_ID'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: TypeError: User_setting.__init__() got an unexpected keyword argument 'user_ID'
+
+2023-10-22 22:47:40 : Command '설정' raised an exception: TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 59, in setting
+    user:tableobj.User = main_db.fetch("user", f"discord_id = {interaction.user.id}")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\py_system\database.py", line 41, in fetch
+    return tableobj.convert_to_tableobj(table, *data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '설정' raised an exception: TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+
+2023-10-22 22:49:38 : Command '설정' raised an exception: OperationalError: no such column: user_ID
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 63, in setting
+    user_setting = main_db.fetch("user_setting", f"user_ID = {user.ID}")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\OneDrive - Ars Praxia\Documents\GitHub\arislena-reborn\py_system\database.py", line 35, in fetch
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: user_ID
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\정진혁\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '설정' raised an exception: OperationalError: no such column: user_ID
+
