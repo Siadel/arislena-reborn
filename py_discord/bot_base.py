@@ -26,23 +26,10 @@ class BotBase(commands.Bot):
         self.token = keys.token
         self.objectified_guilds = [discord.Object(id=ID) for ID in keys.guild_ids]
 
-    async def on_app_command_completion(self, interaction:discord.Interaction, command:app_commands.Command | app_commands.ContextMenu):
-        # first = [utility.get_date(utility.DATE_EXPRESSION_FULL), interaction.user, interaction.user.nick]
-        # first = [str(i) for i in first]
-        
-        # second = [f"/{command.name}"]
-        # print(interaction.data)
-        # if "options" in interaction.data:
-        #     for i in interaction.data["options"]:
-        #         second.append(f"{i['name']} : {i['value']}")
-        
-        # line_1 = "\t".join(first)
-        # line_2 = "\t".join(second)
-        
-        # with open(utility.current_path + "log.txt", "a", encoding="utf-8") as f:
-        #     f.write(line_1 + "\n")
-        #     f.write(line_2 + "\n\n")
-        pass
+    async def announce(self, message:str):
+        # "아리"라는 채널에 메세지를 보냅니다.
+        channel = self.get_channel(jsonobj.Settings().content["announce_channel_id"])
+        await channel.send(message)
 
 # 기능 함수들
 

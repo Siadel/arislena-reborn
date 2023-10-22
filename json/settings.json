@@ -3,5 +3,12 @@
     "admin_mode": false,
     "arislena_end_turn": 60,
     "cron_days_of_week": "tue, thu, sat, sun",
-    "cron_hour": "21"
+    "cron_hour": "21",
+    "initial_faction_value" : {
+        "finance" : 1000,
+        "manpower" : 20,
+        "stability" : 50
+    },
+    "faction_name_length_limit" : 16,
+    "announce_channel_id" : 1164839234411167764
 }

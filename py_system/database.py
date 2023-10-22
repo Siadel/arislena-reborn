@@ -134,7 +134,8 @@ class DatabaseManager:
     
     def insert(self, tableobj:tableobj.TableObject):
         """
-        sql 공용 삽입 함수
+        sql 공용 삽입 함수\n
+        데이터 삽입 시 ID는 자동으로 증가하므로 어떤 값으로 해도 됨
         ---
         : table을 받고, kwargs에 있는 데이터를 삽입하기
         """
@@ -163,3 +164,5 @@ class MainDB(DatabaseManager):
         - 상속
         """
         super().__init__("main", test_mode=jsonobj.Settings().test_mode)
+
+main_db = MainDB()

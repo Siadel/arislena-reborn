@@ -6,7 +6,7 @@ from py_system import database, schedule_manager, jsonobj, tableobj
 from py_discord import warning
 from py_discord.bot_base import BotBase
 
-db = database.MainDB()
+db = database.main_db
 schem = schedule_manager.ScheduleManager(db, jsonobj.Schedule(), jsonobj.Settings())
 
 """
@@ -56,7 +56,7 @@ for subclass in tableobj.TableObject.__subclasses__():
                 db.insert(subclass(**data))
             # 임시 저장 테이블 삭제
             db.cursor.execute(f"DROP TABLE {table_name}_temp")
-del db
+
 print("Database initialized")
 
 # 봇 객체 선언
@@ -94,19 +94,17 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         is_warning = True
         # 주황색
         embed_color = 0xe67e22
-        word = "경고"
         error_name = type(error.original).__name__
 
-        embed_name = f"`/{error.command.name}` 명령어에서 {error_name} {word}가 발생했습니다."
+        embed_name = f"{error_name} 경고가 발생했습니다."
         embed_value = error.original.__str__()
 
     else:
         # 빨간색
         embed_color = 0xe74c3c
-        word = "오류"
         error_name = type(error).__name__
 
-        embed_name = f"{error_name} {word}가 발생했습니다."
+        embed_name = f"{error_name} 오류가 발생했습니다."
         embed_value = f"`{error.__str__()}`"
 
         print(traceback.format_exc()) # 오류 출력

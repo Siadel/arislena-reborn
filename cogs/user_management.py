@@ -5,7 +5,7 @@ from datetime import datetime
 
 from py_base import utility
 from py_system import tableobj
-from py_system.database import MainDB
+from py_system.database import main_db
 from py_discord.bot_base import BotBase
 
 class UserManagement(GroupCog, name="유저"):
@@ -19,9 +19,7 @@ class UserManagement(GroupCog, name="유저"):
     )
     async def register(self, interaction: discord.Interaction):
 
-        db = MainDB()
-
-        user:tableobj.User = db.fetch("user", f"discord_id = {interaction.user.id}")
+        user:tableobj.User = main_db.fetch("user", f"discord_id = {interaction.user.id}")
         if user is not None:
             embed_title = "등록 정보"
             embed_description = "이미 등록했습니다."
@@ -31,7 +29,7 @@ class UserManagement(GroupCog, name="유저"):
             embed_description = "다음 정보가 저장되었습니다."
             embed_color = discord.Colour.green()
             user = tableobj.User(0, interaction.user.id, interaction.user.name, datetime.now().strftime(utility.DATE_EXPRESSION))
-            db.insert(user)
+            main_db.insert(user)
         # 등록 신청 완료 엠베드 출력
         # id, 이름, 등록일 출력
         embed = discord.Embed(title=embed_title, description=embed_description, color=embed_color)

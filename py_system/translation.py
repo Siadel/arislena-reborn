@@ -10,6 +10,7 @@ datatype_dict = {
             float: "REAL"
         }
 
+
 # 군사 카테고리 한국어-영어 딕셔너리
 mil_category = {
     "군사": "soldier",

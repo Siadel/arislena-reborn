@@ -5,6 +5,7 @@ from abc import ABCMeta
 from dataclasses import dataclass
 from py_base import enums
 from py_base.datatype import ExtInt
+from copy import deepcopy
 
 class TableObject(metaclass=ABCMeta):
     """
@@ -74,7 +75,6 @@ class TableObject(metaclass=ABCMeta):
         sql = sql[:-2] + ")"
         return sql
 
-
 def convert_to_tableobj(table_name:str, data:list) -> TableObject:
     """
     sql 테이블 데이터에서 불러온 데이터를 이곳에 구현된 클래스로 변환하는 함수\n
@@ -100,7 +100,6 @@ class User(TableObject):
     discord_id: int = None
     discord_name: str = None
     register_date: str = None
-    status: int = enums.User.BEFORE_START
 
 @dataclass
 class Faction(TableObject):
@@ -111,8 +110,41 @@ class Faction(TableObject):
     finance: ExtInt = ExtInt(0, min_value = 0)
     manpower: ExtInt = ExtInt(0, min_value = 0)
     motive_power: ExtInt = ExtInt(0, min_value = 0)
-    stability: ExtInt = ExtInt(0, min_value = 0, max_value = 100)
-    knowledge: int = None
+    stability: ExtInt = ExtInt(0, min_value = -20, max_value = 100)
+
+    @classmethod
+    def get_translate(cls, *attribute_name):
+        data = {
+            "ID": "아이디",
+            "user_ID": "유저 아이디",
+            "name": "집단명",
+            "scale": "규모",
+            "finance": "자산",
+            "manpower": "인력",
+            "motive_power": "동력",
+            "stability": "안정도"
+        }
+        if len(attribute_name) == 0:
+            return data
+        else:
+            clipped_data = {}
+            for name in attribute_name:
+                clipped_data[name] = deepcopy(data[name])
+            return clipped_data
+
+@dataclass
+class Faction_data(TableObject):
+    ID: int = None
+    faction_ID: int = None
+    main_color: int = 3447003
+    sub_color: int = None
+    spicies: str = None
+    location: str = None
+    philosophy: str = None
+    favor: str = None
+    taboo: str = None
+    prolog: str = None
+    present: str = None
 
 @dataclass
 class Knowledge(TableObject):
@@ -123,6 +155,7 @@ class Knowledge(TableObject):
     industry: ExtInt = ExtInt(0, min_value = 0)
     governance: ExtInt = ExtInt(0, min_value = 0)
     diplomacy: ExtInt = ExtInt(0, min_value = 0)
+
 
 
 # @dataclass
