@@ -1,7 +1,7 @@
 """
 게임 요소를 칭하는 한국어와 시스템 버전의 딕셔너리를 모은 모듈
 """
-from py_base import enums, utility
+from py_base import ari_enum, utility
 
 # 파이썬과 sql 데이터 형식 딕셔너리
 datatype_dict = {
@@ -29,15 +29,15 @@ res_category = {
 
 # 블럭 상태 숫자 - 한국어 딕셔너리
 block_status = {
-    enums.Block.SAFE: "안전",
-    enums.Block.CRISIS: "위기"
+    ari_enum.Block.SAFE: "안전",
+    ari_enum.Block.CRISIS: "위기"
 }
 # 부대 상태 숫자 - 한국어 딕셔너리
 troop_status = {
-    enums.Troop.IDLE: "대기",
-    enums.Troop.ALERT: "경계",
-    enums.Troop.MOVING: "이동",
-    enums.Troop.FORTIFYING: "요새화"
+    ari_enum.Troop.IDLE: "대기",
+    ari_enum.Troop.ALERT: "경계",
+    ari_enum.Troop.MOVING: "이동",
+    ari_enum.Troop.FORTIFYING: "요새화"
 }
 
 # 외교 극성 숫자 - 한국어 딕셔너리

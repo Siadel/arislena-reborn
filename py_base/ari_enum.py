@@ -50,3 +50,15 @@ class Technology(enum.IntEnum):
     ONGOING_RESEARCH = 0
     COMPLETED = 1
     SABOTAGED = 2
+
+
+# 인구 분류
+class HumanClass(enum.IntEnum):
+    # 0: 일반인력, 1: 고급인력
+    COMMON = 0
+    ADVANCED = 1
+
+class HumanSex(enum.IntEnum):
+    # 0: 남성, 1: 여성
+    MALE = 0
+    FEMALE = 1

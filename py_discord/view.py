@@ -30,7 +30,7 @@ class user_setting_button(ui.Button):
         self.value = value
     
     async def callback(self, interaction:discord.Interaction):
-        await interaction.response.send_message(f"{self.key} : {self.value}", ephemeral = True)
+        await interaction.response.send_message(f"{self.key} : **{self.value}**", ephemeral = True)
 
 
 # 테스트

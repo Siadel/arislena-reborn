@@ -8,7 +8,7 @@ from py_discord import check, warning
 from py_system import tableobj, jsonobj
 from py_system.database import main_db
 
-class FactionCommand(GroupCog):
+class FactionCommand(GroupCog, name="세력"):
 
     def __init__(self, bot: BotBase):
         self.bot = bot
@@ -36,8 +36,7 @@ class FactionCommand(GroupCog):
         initial_faction_value = settings.content["initial_faction_value"]
         main_db.insert(tableobj.Faction(user_ID=interaction.user.id, name=name, **initial_faction_value))
         faction:tableobj.Faction = main_db.fetch("faction", f"owner_id = {interaction.user.id}")
-        main_db.insert(tableobj.Knowledge(faction_ID=faction.ID))
-        main_db.insert(tableobj.Faction_data(faction_ID=faction.ID))
+        
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다! `/세력 수정` 명령어로 세력의 추가 정보를 넣거나 수정할 수 있습니다.", ephemeral=True)
         await self.bot.announce(f"{interaction.user.name}께서 {name} 세력을 창설했어요!")

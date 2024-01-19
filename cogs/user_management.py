@@ -20,13 +20,13 @@ class UserManagement(GroupCog, name="유저"):
     )
     async def register(self, interaction: discord.Interaction):
 
-        user:tableobj.User = main_db.fetch("user", f"discord_id = {interaction.user.id}")
+        user:tableobj.User = main_db.fetch("user", f"discord_ID = {interaction.user.id}")
 
         if user:
             raise warning.AlreadyRegistered()
         
         user = tableobj.User(
-            discord_id=interaction.user.id, 
+            discord_ID=interaction.user.id, 
             discord_name=interaction.user.name, 
             register_date=datetime.now().strftime(utility.DATE_EXPRESSION))
         user_settings = tableobj.User_setting(0, interaction.user.id)
@@ -40,7 +40,7 @@ class UserManagement(GroupCog, name="유저"):
 
         # settings.json에 있는 announce_channel_id로 메세지를 보냄
         settings = jsonobj.Settings()
-        channel = self.bot.get_channel(settings.announce_channel_id)
+        channel = self.bot.get_channel(settings.announce_location[interaction.guild.id])
 
         nickname = interaction.user.nick if interaction.user.nick else "닉네임 없음"
         await channel.send(f"{interaction.user.global_name}(@{interaction.user.name}, {nickname})님께서 아리슬레나에 등록하셨습니다!")
@@ -52,15 +52,15 @@ class UserManagement(GroupCog, name="유저"):
 
     @app_commands.command(
         name = "설정",
-        description = "유저 설정을 확인하고 변경 가능한 ui를 출력합니다."
+        description = "유저 설정을 확인하고 변경 가능한 버튼 ui를 출력합니다. 버튼 ui는 180초 후 비활성화됩니다."
     )
     async def setting(self, interaction: discord.Interaction):
         # 유저가 등록되었는지 확인 후, 등록되지 않았으면 등록을 요청
-        user:tableobj.User = main_db.fetch("user", f"discord_id = {interaction.user.id}")
+        user:tableobj.User = main_db.fetch("user", f"discord_ID = {interaction.user.id}")
         if user is None: raise warning.NotRegistered()
         # user_setting을 main_db에서 가져오고 view 만들기
 
-        user_setting = main_db.fetch("user_setting", f"discord_id = {interaction.user.id}")
+        user_setting = main_db.fetch("user_setting", f"discord_ID = {interaction.user.id}")
 
         v = view.user_setting_view(user_setting)
         await interaction.response.send_message(view=v, ephemeral=True)

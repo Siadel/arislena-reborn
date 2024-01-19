@@ -182,11 +182,12 @@ class Dice:
         """
         self.last_roll = random.randint(self.dice_min, self.dice_max) + self.dice_mod + immediate_dice_mod
         self.last_roll = self.adjust(self.last_roll, self.dice_min, self.dice_max)
-        self.last_grade = self.get_grade()
-        self.last_judge = self.get_judge()
+        self.last_grade = self.grade
+        self.last_judge = self.judge
         return f"**{self.last_roll}**(+ {self.dice_mod})*(+ {immediate_dice_mod})*"
     
-    def get_grade(self) -> int:
+    @property
+    def grade(self) -> int:
         """
         self.grade_table에 따라 주사위 숫자에 해당하는 등급을 반환\n
         grade_table은 {등급: [최소 숫자, 최대 숫자]} 형식의 딕셔너리여야 함\n
@@ -202,7 +203,8 @@ class Dice:
         
         return int(grade_result)
     
-    def get_judge(self) -> str | None:
+    @property
+    def judge(self) -> str | None:
         """
         주사위 숫자에 따른 판정을 반환\n
         """

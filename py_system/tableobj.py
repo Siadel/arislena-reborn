@@ -4,91 +4,9 @@ Sql과 연동되는 데이터 클래스들
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
+from py_base import ari_enum
 from py_base.datatype import ExtInt
-
-class TableObject(metaclass=ABCMeta):
-    """
-    테이블 오브젝트 (db 파일의 table로 저장되는 녀석들)
-    """
-
-    def __iter__(self):
-        rtn = list(self.__dict__.values())
-        rtn.pop(0) # ID 제거
-        return iter(rtn)
-
-    @classmethod
-    def get_table_name(cls):
-        """
-        테이블명은 항상 소문자로만 구성되어 있음
-        """
-        return cls.__name__.lower()
-
-    @classmethod
-    def get_column_set(cls):
-        """
-        테이블의 컬럼명을 집합으로 반환
-        """
-        return set(cls.__annotations__.keys())
-
-    def get_keys_string(self) -> str:
-        """
-        sql문에서 컬럼명을 채우기 위한 문자열 반환\n
-        ID는 제외함
-        """
-        keys = list(self.__dict__.keys())
-        keys.remove("ID")
-        return ", ".join(keys)
-
-    def get_values_string(self) -> str:
-        """
-        sql문에서 컬럼값을 채우기 위한 문자열 반환\n
-        ID는 제외함
-        """
-        values = list(self.__dict__.values())
-        values.pop(0)
-        return ", ".join([f"'{value}'" if isinstance(value, str) else str(value) for value in values])
-    
-    def get_wildcard_string(self) -> str:
-        """
-        sql문에서 ?를 채우기 위한 문자열 반환
-        """
-        return ", ".join(["?" for i in range(len(self.__dict__) - 1)])
-    
-    @classmethod
-    def get_create_table_string(cls) -> str:
-        """
-        sql문에서 테이블 생성을 위한 문자열 반환
-        """
-        sql = f"CREATE TABLE IF NOT EXISTS {cls.__name__.lower()} ("
-        for key, value in cls.__annotations__.items():
-            if key == "ID":
-                sql += f"{key} INTEGER PRIMARY KEY AUTOINCREMENT, "
-            else:
-                if "str" in str(value).lower():
-                    sql += f"{key} TEXT, "
-                elif "int" in str(value).lower():
-                    sql += f"{key} INTEGER, "
-                elif "float" in str(value).lower():
-                    sql += f"{key} REAL, "
-                else:
-                    raise Exception("데이터 타입을 알 수 없습니다.")
-        sql = sql[:-2] + ")"
-        return sql
-    
-    @property
-    @abstractmethod
-    def kr_list(self) -> list[str]:
-        pass
-    
-    @property
-    def kr_dict(self) -> dict[str, str]:
-        # 한국어 : 대응되는 attribute 값
-        return dict(zip(self.kr_list, self.__dict__.values()))
-    
-    @property
-    def kr_dict_without_id(self) -> dict[str, str]:
-        # 한국어 : 대응되는 attribute 값
-        return dict(zip(self.kr_list[1:], list(self.__dict__.values())[1:]))
+from py_system.abstract import TableObject
 
 def convert_to_tableobj(table_name:str, data:list) -> TableObject:
     """
@@ -112,7 +30,7 @@ def convert_to_tableobj(table_name:str, data:list) -> TableObject:
 @dataclass
 class User(TableObject):
     ID: int = None
-    discord_id: int = None
+    discord_ID: int = None
     discord_name: str = None
     register_date: str = None
 
@@ -124,11 +42,12 @@ class User(TableObject):
             "디스코드 이름",
             "가입일"
         ]
+    
 
 @dataclass
 class User_setting(TableObject):
     ID: int = None
-    discord_id: int = None
+    discord_ID: int = None
     embed_color: int = 3447003
 
     @property
@@ -144,70 +63,154 @@ class Faction(TableObject):
     ID: int = None
     user_ID: int = None
     name: str = None
-    finance: ExtInt = ExtInt(0, min_value = 0)
-    manpower: ExtInt = ExtInt(0, min_value = 0)
-    motive_power: ExtInt = ExtInt(0, min_value = 0)
-    stability: ExtInt = ExtInt(0, min_value = -20, max_value = 100)
 
     @property
     def kr_list(self) -> list[str]:
         return [
             "아이디",
             "유저 아이디",
-            "집단명",
-            "자산",
-            "인력",
-            "동력",
-            "안정도"
+            "세력명"
         ]
 
 @dataclass
-class Faction_data(TableObject):
+class Population(TableObject):
     ID: int = None
     faction_ID: int = None
-    spicies: str = None
-    location: str = None
-    philosophy: str = None
-    favor: str = None
-    taboo: str = None
-    prolog: str = None
-    present: str = None
+    classification:int = ari_enum.HumanClass.COMMON.value
+    labor:int = 1
+    food_consumption:int = 1
+    water_consumption:int = 1
+    is_laboring:int = ari_enum.YesNo.NO.value
 
     @property
     def kr_list(self) -> list[str]:
         return [
             "아이디",
             "세력 아이디",
-            "종족",
-            "활동 지역",
-            "철학",
-            "선호하는 것",
-            "금지하는 것",
-            "역사",
-            "현재"
+            "분류",
+            "노동력",
+            "식량 소비",
+            "물 소비",
+            "노동 중"
         ]
 
 @dataclass
-class Knowledge(TableObject):
+class Livestock(TableObject):
     ID: int = None
     faction_ID: int = None
-    war: ExtInt = ExtInt(0, min_value = 0)
-    argiculture: ExtInt = ExtInt(0, min_value = 0)
-    industry: ExtInt = ExtInt(0, min_value = 0)
-    governance: ExtInt = ExtInt(0, min_value = 0)
-    diplomacy: ExtInt = ExtInt(0, min_value = 0)
+    labor:int = 1
+    food_consumption:int = 1
+    water_consumption:int = 1
+    is_laboring:int = ari_enum.YesNo.NO.value
 
     @property
     def kr_list(self) -> list[str]:
         return [
             "아이디",
             "세력 아이디",
-            "전쟁 지식",
-            "농업 지식",
-            "산업 지식",
-            "통치 지식",
-            "외교 지식"
+            "노동력",
+            "식량 소비",
+            "물 소비",
+            "노동 중"
         ]
+
+@dataclass
+class Resource(TableObject):
+    ID: int = None
+    faction_ID: int = None
+    water: ExtInt = ExtInt(0, min_value = 0)
+    food: ExtInt = ExtInt(0, min_value = 0)
+    feed: ExtInt = ExtInt(0, min_value = 0)
+    wood: ExtInt = ExtInt(0, min_value = 0)
+    soil: ExtInt = ExtInt(0, min_value = 0)
+    building_material: ExtInt = ExtInt(0, min_value = 0)
+
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "세력 아이디",
+            "물",
+            "식량",
+            "사료",
+            "목재",
+            "흙",
+            "건축자재"
+        ]
+
+@dataclass
+class ResourceStorage(TableObject):
+    ID: int = None
+    faction_ID: int = None
+    # Resource 테이블에 있는 자원들
+    # 초기값은 20
+    water: ExtInt = ExtInt(20, min_value = 0)
+    food: ExtInt = ExtInt(20, min_value = 0)
+    feed: ExtInt = ExtInt(20, min_value = 0)
+    wood: ExtInt = ExtInt(20, min_value = 0)
+    soil: ExtInt = ExtInt(20, min_value = 0)
+    building_material: ExtInt = ExtInt(20, min_value = 0)
+
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "세력 아이디",
+            "물",
+            "식량",
+            "사료",
+            "목재",
+            "흙",
+            "건축자재"
+        ]
+
+# @dataclass
+# class Faction_data(TableObject):
+#     ID: int = None
+#     faction_ID: int = None
+#     spicies: str = None
+#     location: str = None
+#     philosophy: str = None
+#     favor: str = None
+#     taboo: str = None
+#     prolog: str = None
+#     present: str = None
+
+#     @property
+#     def kr_list(self) -> list[str]:
+#         return [
+#             "아이디",
+#             "세력 아이디",
+#             "종족",
+#             "활동 지역",
+#             "철학",
+#             "선호하는 것",
+#             "금지하는 것",
+#             "역사",
+#             "현재"
+#         ]
+
+# @dataclass
+# class Knowledge(TableObject):
+#     ID: int = None
+#     faction_ID: int = None
+#     war: ExtInt = ExtInt(0, min_value = 0)
+#     argiculture: ExtInt = ExtInt(0, min_value = 0)
+#     industry: ExtInt = ExtInt(0, min_value = 0)
+#     governance: ExtInt = ExtInt(0, min_value = 0)
+#     diplomacy: ExtInt = ExtInt(0, min_value = 0)
+
+#     @property
+#     def kr_list(self) -> list[str]:
+#         return [
+#             "아이디",
+#             "세력 아이디",
+#             "전쟁 지식",
+#             "농업 지식",
+#             "산업 지식",
+#             "통치 지식",
+#             "외교 지식"
+#         ]
 
 
 # @dataclass
