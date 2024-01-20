@@ -11,8 +11,11 @@ class Default(Exception):
         super().__init__(message)
 
 class NotRegistered(Default):
-    def __init__(self):
-        super().__init__("등록되지 않았어요! `/유저 등록` 명령어로 등록해주세요.")
+    def __init__(self, user_name:str=None):
+        txt = "등록되지 않았어요! `/유저 등록` 명령어로 등록해주세요."
+        if user_name:
+            txt = f"{koreanstring.topicmarker(user_name, wrapper='**')} 등록되지 않았어요!"
+        super().__init__(txt)
 
 class AlreadyRegistered(Default):
     def __init__(self):

@@ -287,3 +287,75 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: AttributeError: 'User' object has no attribute 'discord_id'
 
+2024-01-20 10:53:38 : Command '모두열람' raised an exception: TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 87, in info_all
+    users:list[tableobj.User] = main_db.fetch_all("user")
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 78, in fetch_all
+    return [tableobj.convert_to_tableobj(table, *d) for d in data]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 78, in <listcomp>
+    return [tableobj.convert_to_tableobj(table, *d) for d in data]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모두열람' raised an exception: TypeError: convert_to_tableobj() takes 2 positional arguments but 5 were given
+
+2024-01-20 12:43:52 : Command '바로시행' raised an exception: TypeError: Birth1.__init__() missing 1 required positional argument: 'dice_mod'
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\dice_package.py", line 284, in roll_a_dice_without_register
+    sub_dice = sub_dice()
+               ^^^^^^^^^^
+TypeError: Birth1.__init__() missing 1 required positional argument: 'dice_mod'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '바로시행' raised an exception: TypeError: Birth1.__init__() missing 1 required positional argument: 'dice_mod'
+
+2024-01-20 12:44:19 : Command '등록' raised an exception: KeyError: 1153637128383770644
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 43, in register
+    channel = self.bot.get_channel(settings.announce_location[interaction.guild.id])
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 1153637128383770644
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: KeyError: 1153637128383770644
+

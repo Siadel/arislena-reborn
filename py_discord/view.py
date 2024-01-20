@@ -2,7 +2,6 @@ import discord
 from discord import ui
 
 from py_base.koreanstring import nominative
-from py_discord.bot_base import embed_for_user
 from py_system import tableobj
 
 # /유저 설정 - 설정 정보 출력

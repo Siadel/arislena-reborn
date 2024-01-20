@@ -35,7 +35,7 @@ class DatabaseManager:
         self.cursor.execute(sql)
 
         data = self.cursor.fetchone()
-        if data is None:
+        if not data:
             return None
 
         return tableobj.convert_to_tableobj(table, data)
@@ -58,7 +58,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return [tableobj.convert_to_tableobj(table, *d) for d in data]
+        return [tableobj.convert_to_tableobj(table, d) for d in data]
 
     def fetch_all(self, table:str) -> list[tableobj.TableObject]:
         """
@@ -75,7 +75,7 @@ class DatabaseManager:
         if data is None:
             return None
 
-        return [tableobj.convert_to_tableobj(table, *d) for d in data]
+        return [tableobj.convert_to_tableobj(table, d) for d in data]
     
     def fetch_column(self, table:str, column:str, *statements) -> list:
         """

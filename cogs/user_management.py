@@ -6,7 +6,7 @@ from datetime import datetime
 from py_base import utility
 from py_system import tableobj, jsonobj
 from py_system.database import main_db
-from py_discord import warning, embed, view
+from py_discord import warning, embed, view, check
 from py_discord.bot_base import BotBase
 
 class UserManagement(GroupCog, name="유저"):
@@ -40,10 +40,9 @@ class UserManagement(GroupCog, name="유저"):
 
         # settings.json에 있는 announce_channel_id로 메세지를 보냄
         settings = jsonobj.Settings()
-        channel = self.bot.get_channel(settings.announce_location[interaction.guild.id])
+        channel = self.bot.get_channel(settings.announce_location[str(interaction.guild.id)])
 
-        nickname = interaction.user.nick if interaction.user.nick else "닉네임 없음"
-        await channel.send(f"{interaction.user.global_name}(@{interaction.user.name}, {nickname})님께서 아리슬레나에 등록하셨습니다!")
+        await channel.send(f"**{interaction.user.display_name}** (*@{interaction.user.name}*)님께서 아리슬레나에 등록하셨습니다!")
 
         # 등록 신청 완료 엠베드 출력
         # id, 이름, 등록일 출력
@@ -57,13 +56,61 @@ class UserManagement(GroupCog, name="유저"):
     async def setting(self, interaction: discord.Interaction):
         # 유저가 등록되었는지 확인 후, 등록되지 않았으면 등록을 요청
         user:tableobj.User = main_db.fetch("user", f"discord_ID = {interaction.user.id}")
-        if user is None: raise warning.NotRegistered()
+        if not user: raise warning.NotRegistered()
         # user_setting을 main_db에서 가져오고 view 만들기
 
         user_setting = main_db.fetch("user_setting", f"discord_ID = {interaction.user.id}")
 
         v = view.user_setting_view(user_setting)
         await interaction.response.send_message(view=v, ephemeral=True)
+
+    @app_commands.command(
+        name = "열람",
+        description = "유저 정보를 열람합니다. 인자가 없을 경우 자신의 정보를 열람합니다."
+    )
+    async def info(self, interaction: discord.Interaction, target_member:discord.Member=None):
+        if not target_member: target_member = interaction.user
+        user:tableobj.User = main_db.fetch("user", f"discord_ID = {target_member.id}")
+        if not user: raise warning.NotRegistered(target_member.name)
+        
+        user_setting:tableobj.User_setting = main_db.fetch("user_setting", f"discord_ID = {target_member.id}")
+        
+        await interaction.response.send_message(
+            embed=embed.table_info(discord.Embed(title=f"{target_member.display_name}님의 정보", color=user_setting.embed_color), user))
+        
+    @app_commands.command(
+        name = "모두열람",
+        description = "서버에 등록된 모든 유저의 정보를 열람합니다."
+    )
+    async def info_all(self, interaction: discord.Interaction):
+        users:list[tableobj.User] = main_db.fetch_all("user")
+        commander_setting: tableobj.User_setting = main_db.fetch("user_setting", f"discord_ID = {interaction.user.id}")
+
+        for idx, user in enumerate(users):
+            ebd = embed.table_info(discord.Embed(title=f"**{interaction.user.display_name}**님의 정보", color=commander_setting.embed_color), user)
+
+            if idx == 0:
+                await interaction.response.send_message(embed=ebd, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=ebd, ephemeral=True)
+    
+    @app_commands.command(
+        name = "등록해제",
+        description = "[관리자 전용] 유저를 아리슬레나에서 등록 해제합니다."
+    )
+    async def unregister(self, interaction: discord.Interaction, target_member:discord.Member):
+        if not check.is_admin(interaction.user):
+            raise warning.NotAdmin()
+        target_user:tableobj.User = main_db.fetch("user", f"discord_ID = {target_member.id}")
+        target_user_setting:tableobj.User_setting = main_db.fetch("user_setting", f"discord_ID = {target_member.id}")
+        if not target_user: raise warning.NotRegistered(target_member.name)
+        # 데이터에서 유저, 유저 설정 삭제
+        main_db.delete_with_id("user", target_user.ID)
+        main_db.delete_with_id("user_setting", target_user_setting.ID)
+        # 유저에게 "주인"이라는 이름의 역할 삭제
+        target_member.remove_roles(discord.utils.get(interaction.guild.roles, name="주인"))
+        
+        await interaction.response.send_message(f"**{target_member.display_name}**님을 아리슬레나에서 등록 해제했습니다.", ephemeral=True)
         
 
 async def setup(bot: BotBase):
