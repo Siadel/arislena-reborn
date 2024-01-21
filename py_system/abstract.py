@@ -125,20 +125,28 @@ class TableObject(metaclass=ABCMeta):
         sql문에서 테이블 생성을 위한 문자열 반환
         """
         sql = f"CREATE TABLE IF NOT EXISTS {cls.get_table_name()} ("
-        for key, value in cls.__annotations__.items():
+        for key in cls.__annotations__.keys():
             if key == "ID":
                 sql += f"{key} INTEGER PRIMARY KEY AUTOINCREMENT, "
             else:
-                if "str" in str(value).lower():
-                    sql += f"{key} TEXT, "
-                elif "int" in str(value).lower():
-                    sql += f"{key} INTEGER, "
-                elif "float" in str(value).lower():
-                    sql += f"{key} REAL, "
-                else:
-                    raise Exception("데이터 타입을 알 수 없습니다.")
+                sql += f"{key} {cls.get_column_type(key)}, "
         sql = sql[:-2] + ")"
         return sql
+    
+    @classmethod
+    def get_column_type(cls, column_name:str) -> str:
+        """
+        sql문에서 쓰는 컬럼의 데이터 형식을 반환
+        """
+        value = cls.__annotations__[column_name]
+        if "str" in str(value).lower():
+            return "TEXT"
+        elif "int" in str(value).lower():
+            return "INTEGER"
+        elif "float" in str(value).lower():
+            return "REAL"
+        else:
+            raise Exception("SQL에서 사용할 수 없는 데이터 형식입니다. (str, int, float 중 하나를 사용해주세요.)")
     
     @property
     @abstractmethod

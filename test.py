@@ -1,7 +1,7 @@
-from py_system import resource
 
-water = resource.Water(5)
 
-water.value -= 8
+# 문자열 바이트 수를 세는 코드
 
-print(water.value, water.shortage, water.over)
+txt = "안녕하세요"
+
+print(txt, len(txt.encode('utf-8')))

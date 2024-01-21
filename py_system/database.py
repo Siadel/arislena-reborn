@@ -164,5 +164,3 @@ class MainDB(DatabaseManager):
         - 상속
         """
         super().__init__("main", test_mode=jsonobj.Settings().test_mode)
-
-main_db = MainDB()

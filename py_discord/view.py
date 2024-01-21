@@ -1,6 +1,7 @@
 import discord
-from discord import ui
+from discord import ui, Colour
 
+from py_discord.embed import table_info
 from py_base.koreanstring import nominative
 from py_system import tableobj
 
@@ -31,6 +32,67 @@ class user_setting_button(ui.Button):
     async def callback(self, interaction:discord.Interaction):
         await interaction.response.send_message(f"{self.key} : **{self.value}**", ephemeral = True)
 
+# 범용 데이터 없음 표시 버튼
+class NoDataButton(ui.Button):
+
+    def __init__(self, *, style = discord.ButtonStyle.danger):
+        super().__init__(label = "데이터 없음", style = style, disabled = True)
+    
+    async def callback(self, interaction:discord.Interaction):
+        await interaction.response.send_message("데이터 없음", ephemeral = True)
+
+# 범용 열람 버튼 ui
+# 인자로 table 이름을 받아서 해당 테이블의 name column과 ID column을 출력
+# 출력 양식은 "이름 (ID : %d)" 형태
+        
+class GeneralLookupButton(ui.Button):
+    
+    def __init__(self, tableobj:tableobj.TableObject, display_column:str = None):
+        """
+        tableobj : 테이블 객체
+        display_column : 버튼에 표시할 데이터의 컬럼 이름 (None일 경우 ID로 대체)
+            출력 양식은 "%s (ID : %d)" 형태, 이름이 None일 경우 "%d" 형태
+        """
+        label_txt = f"{tableobj.__getattribute__(display_column)} (ID : {tableobj.ID})" if display_column else f"{tableobj.ID}"
+        super().__init__(label = label_txt, style = discord.ButtonStyle.primary)
+        self.tableobj = tableobj
+        self.label_txt = label_txt
+    
+    async def callback(self, interaction:discord.Interaction):
+        await interaction.response.send_message(embed = table_info(
+            discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), self.tableobj
+        ), ephemeral = True)
+
+class FactionDeleteButton(GeneralLookupButton):
+
+    def __init__(self, tableobj:tableobj.TableObject):
+        super().__init__(tableobj, "name")
+        self.style = discord.ButtonStyle.danger
+    
+    async def callback(self, interaction:discord.Interaction):
+        pass
+        # 실제 삭제 구현
+
+class GeneralLookupView(ui.View):
+
+    def __init__(self, fetch_list:list, *, display_column:str = None, button_class = GeneralLookupButton, timeout = 180):
+        """
+        fetch_list : 테이블 객체 리스트, 즉 list[TableObject] (fetch_all로 가져온 것)
+        display_column : 버튼에 표시할 데이터의 컬럼 이름 (None일 경우 ID로 대체)
+            출력 양식은 "%s (ID : %d)" 형태, 이름이 None일 경우 "%d" 형태
+        button_class : 버튼 클래스 객체, GeneralLookupButton을 상속받아야 함
+        """
+        super().__init__(timeout = timeout)
+        
+        if button_class and not issubclass(button_class, GeneralLookupButton):
+            raise TypeError("button_class는 GeneralLookupButton을 상속받아야 합니다.")
+
+        if not fetch_list:
+            self.add_item(NoDataButton())
+            return
+
+        for tableobj in fetch_list:
+            self.add_item(button_class(tableobj, display_column))
 
 # 테스트
 

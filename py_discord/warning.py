@@ -235,3 +235,7 @@ class Deficient(Default):
 class NameTooLong(Default):
     def __init__(self, subject:str, limit:int):
         super().__init__(f"{koreanstring.nominative(subject)} 이름이 너무 깁니다! 최대 길이: {limit}")
+
+class NameContainsSpecialCharacter(Default):
+    def __init__(self):
+        super().__init__(f"이름에 특수문자가 포함되어 있습니다!")

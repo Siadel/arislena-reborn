@@ -4,7 +4,7 @@
     "arislena_end_turn": 60,
     "cron_days_of_week": "tue, thu, sat, sun",
     "cron_hour": "21",
-    "faction_name_length_limit": 16,
+    "faction_name_byte_limit": 50,
     "announce_channel_id": 1164839234411167764,
     "announce_location": {
         "1153637128383770644": 1164839234411167764
