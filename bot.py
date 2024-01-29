@@ -2,12 +2,11 @@ import traceback, os, discord
 from typing import Union
 from discord import app_commands
 from py_base import utility 
-from py_system import schedule_manager, jsonobj, tableobj
-from py_system.ari_global import main_db
-from py_discord import warning
+from py_system import jsonobj, tableobj
+from py_system.global_ import main_db, keys
+from py_discord import warnings
 from py_discord.bot_base import BotBase
 
-schem = schedule_manager.ScheduleManager(main_db, jsonobj.Schedule(), jsonobj.Settings())
 
 """
 TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
@@ -71,13 +70,14 @@ class AriBot(BotBase):
         for file in os.listdir(utility.current_path + "cogs"):
             if file.endswith(".py"):
                 await self.load_extension(f"cogs.{file[:-3]}")
-        keys = jsonobj.Keys()
         await aribot.tree.sync(guild=discord.Object(id=keys.main_guild_id))
 
     async def on_ready(self):
         await self.wait_until_ready()
         await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
-    
+
+        # 정보 출력
+        print(f"discord.py version: {discord.__version__}")
         print(f'We have logged in as {self.user}')
 
     async def close(self):
@@ -91,7 +91,7 @@ aribot = AriBot()
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
 
     is_warning = False
-    if isinstance(error, discord.app_commands.CommandInvokeError) and isinstance(error.original, warning.Default):
+    if isinstance(error, discord.app_commands.CommandInvokeError) and isinstance(error.original, warnings.Default):
         is_warning = True
         # 주황색
         embed_color = 0xe67e22

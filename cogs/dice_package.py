@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from py_discord.bot_base import BotBase
-from py_discord import warning
+from py_discord import warnings
 from py_system import jsonobj, arislena_dice, arislena_dice_extension
 
 # arislena_dice 모듈에 선언된 모든 주사위 객체를 불러옴
@@ -211,7 +211,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         first_dice_name: str,
         second_dice_name: str
     ):
-        if first_dice_name == second_dice_name: raise warning.Default("같은 이름의 주사위를 비교할 수 없습니다.")
+        if first_dice_name == second_dice_name: raise warnings.Default("같은 이름의 주사위를 비교할 수 없습니다.")
         dicemem = jsonobj.DiceMemory()
         dice_1_data = dicemem.content[first_dice_name]
         dice_2_data = dicemem.content[second_dice_name]
@@ -219,7 +219,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         dice_1 = find_dice(dice_1_data["category"]).from_dice_data(dice_1_data)
         dice_2 = find_dice(dice_2_data["category"]).from_dice_data(dice_2_data)
 
-        if not dice_1.comparable or not dice_2.comparable: raise warning.Default("비교할 수 없는 주사위입니다.")
+        if not dice_1.comparable or not dice_2.comparable: raise warnings.Default("비교할 수 없는 주사위입니다.")
 
         compare_result = dice_1.compare_gap_str(dice_2)
 

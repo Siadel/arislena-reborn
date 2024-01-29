@@ -1,5 +1,6 @@
-# key file
+# key file (or any file with sensitive data)
 json/keys.json
+json/bot_settings.json
 
 # user data file
 *.db

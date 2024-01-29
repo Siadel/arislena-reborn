@@ -383,3 +383,366 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: OperationalError: no such column: owner_id
 
+2024-01-29 10:52:02 : Command '모달' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\test.py", line 32, in test3
+    await interaction.response.send_message("모달을 열어봐!", view=modals.ModalTest())
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 801, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 221, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모달' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+
+2024-01-29 10:53:51 : Command '모달' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\test.py", line 32, in test3
+    await interaction.response.send_message("모달을 열어봐!", view=modals.ModalTest())
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 801, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 221, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모달' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+In data.components.1.components.0: Value of field "type" must be one of (2, 3, 5, 6, 7, 8).
+
+2024-01-29 11:33:23 : Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 26, in create
+    if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 63, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 15, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name.capitalize()]()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 56, in __post_init__
+    super().__post_init__()
+    ^^^^^^^
+TypeError: super(type, obj): obj must be an instance or subtype of type
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+
+2024-01-29 11:37:41 : Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 23, in create
+    if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 63, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 15, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name.capitalize()]()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 56, in __post_init__
+    super().__post_init__()
+    ^^^^^^^
+TypeError: super(type, obj): obj must be an instance or subtype of type
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+
+2024-01-29 11:41:10 : Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 23, in create
+    if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 63, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 15, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name.capitalize()]()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 56, in __post_init__
+    super().__post_init__()
+    ^^^^^^^
+TypeError: super(type, obj): obj must be an instance or subtype of type
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+
+2024-01-29 11:42:47 : Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 23, in create
+    if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 63, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 15, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name.capitalize()]()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 57, in __post_init__
+    super().__post_init__()
+    ^^^^^^^
+TypeError: super(type, obj): obj must be an instance or subtype of type
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: TypeError: super(type, obj): obj must be an instance or subtype of type
+
+2024-01-29 11:44:28 : Command '창설' raised an exception: BoxKeyError: "'Box' object has no attribute 'admin_role_id'"
+Traceback (most recent call last):
+  File "box\\box.py", line 592, in box.box.Box.__getitem__
+KeyError: 'admin_role_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "box\\box.py", line 631, in box.box.Box.__getattr__
+  File "box\\box.py", line 619, in box.box.Box.__getitem__
+box.exceptions.BoxKeyError: "'admin_role_id'"
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "box\\box.py", line 633, in box.box.Box.__getattr__
+AttributeError: 'Box' object has no attribute 'admin_role_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 23, in create
+    if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\checks.py", line 17, in is_admin
+    if role.name == game_settings.admin_role_id[str(user.guild.id)]:
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "box\\box.py", line 647, in box.box.Box.__getattr__
+box.exceptions.BoxKeyError: "'Box' object has no attribute 'admin_role_id'"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '창설' raised an exception: BoxKeyError: "'Box' object has no attribute 'admin_role_id'"
+
+2024-01-29 12:08:36 : Command '해산' raised an exception: TypeError: FactionDeleteButton.__init__() takes 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 60, in delete
+    view=views.LookupView(
+         ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\views.py", line 104, in __init__
+    self.add_item(button_class(tableobj, display_column))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: FactionDeleteButton.__init__() takes 2 positional arguments but 3 were given
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '해산' raised an exception: TypeError: FactionDeleteButton.__init__() takes 2 positional arguments but 3 were given
+
+2024-01-29 12:09:47 : Command '해산' raised an exception: TypeError: LookupButton.__init__() takes 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\faction.py", line 60, in delete
+    view=views.LookupView(
+         ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\views.py", line 104, in __init__
+    self.add_item(button_class(tableobj))
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\views.py", line 71, in __init__
+    super().__init__(tableobj, "name")
+TypeError: LookupButton.__init__() takes 2 positional arguments but 3 were given
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '해산' raised an exception: TypeError: LookupButton.__init__() takes 2 positional arguments but 3 were given
+
+2024-01-29 17:11:28 : Command '열람' raised an exception: KeyError: 'User'
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 74, in info
+    my_info = main_db.fetch("user", f"discord_ID = {interaction.user.id}")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 65, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 17, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name]()
+                           ~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'User'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: KeyError: 'User'
+
+2024-01-29 17:17:18 : Command '열람' raised an exception: UnboundLocalError: cannot access local variable 'my_info' where it is not associated with a value
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 88, in info
+    embed=embeds.table_info(discord.Embed(title=f"{interaction.user.display_name}님의 정보", color=Colour.green()), my_info))
+                                                                                                                ^^^^^^^
+UnboundLocalError: cannot access local variable 'my_info' where it is not associated with a value
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: UnboundLocalError: cannot access local variable 'my_info' where it is not associated with a value
+
+2024-01-29 17:18:47 : Command '열람' raised an exception: KeyError: 'User'
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 74, in info
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 65, in fetch
+    return convert_to_tableobj(table, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\database.py", line 17, in convert_to_tableobj
+    tableobj:TableObject = globals()[table_name]()
+                           ~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'User'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: KeyError: 'User'
+

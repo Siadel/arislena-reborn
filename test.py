@@ -1,7 +1,16 @@
+from py_system.global_ import main_db
 
+# faction = main_db.fetch("faction", "ID = 1")
+# faction.name = "생존자들"
+# faction.level = 1
+# main_db.update_as(faction)
 
-# 문자열 바이트 수를 세는 코드
+# print(
+#     main_db.fetch("faction", "id = (SELECT MIN(id) FROM faction)")
+# )
 
-txt = "안녕하세요"
+# main_db.set_hierarchy(
+#     main_db.fetch("faction", "ID = 2"),
+#     main_db.fetch("faction", "ID = 1")
+# )
 
-print(txt, len(txt.encode('utf-8')))

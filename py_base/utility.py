@@ -30,31 +30,10 @@ def get_date(date_expression="%Y-%m-%d"):
 def swap_dict(dictionary:dict):
     return {value:key for key, value in dictionary.items()}
 
-def is_excess(value:int|float, limit:int|float):
-        """
-        : value가 limit을 초과하면, True를 반환
-        """
-        if value > limit: return True
-    
-def is_deficient(value:int|float, limit:int|float):
-    """
-    : value가 limit을 미달하면, True를 반환
-    """
-    if value < limit: return True
-
 def wrap(word:str, wrapper:str=""):
     """
     word 양옆에 wrapper를 붙여서 반환
     """
     if wrapper == "": return word
     return wrapper + word + wrapper
-
-def is_below0(value:int) -> bool:
-    """
-    value가 0보다 작은지 판단하는 함수
-    """
-    if value < 0:
-        return True
-    else:
-        return False
 

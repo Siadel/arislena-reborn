@@ -1,12 +1,7 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 
-from py_system import jsonobj
-from py_system.ari_global import settings
-
-# 길드 id와 봇 토큰
-keys = jsonobj.Keys()
+from py_system.global_ import bot_settings, keys
 
 # 봇 권한 설정
 intents = discord.Intents.default()
@@ -29,6 +24,6 @@ class BotBase(commands.Bot):
     async def announce(self, message:str, guild_id:int):
         # 지정된 봇 전용 공지 채널에 메세지를 보내기
         
-        channel = self.get_channel(settings.announce_location[str(guild_id)])
+        channel = self.get_channel(bot_settings.announce_location[str(guild_id)])
         await channel.send(message)
 

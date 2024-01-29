@@ -1,4 +1,4 @@
-from discord import Embed, Colour
+from discord import Embed, Colour, utils
 
 from py_system import tableobj, abstract
 
@@ -51,7 +51,7 @@ def register(user:tableobj.User):
 def table_info(embed:Embed, table_obj:abstract.TableObject):
     
     txt = ""
-    for key, value in table_obj.kr_dict_without_id.items():
+    for key, value in table_obj.kr_dict.items():
         txt += f"- {key} : **{value}**\n"
     embed.add_field(name="기본 정보", value=txt)
     

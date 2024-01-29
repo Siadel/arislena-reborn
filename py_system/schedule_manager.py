@@ -7,7 +7,7 @@ from py_system import database, jsonobj
 ARISLENA_JOB_ID = "game_schedule"
 
 class ScheduleManager:
-    def __init__(self, main_db:database.DatabaseManager, schedule:jsonobj.Schedule, settings:jsonobj.Settings):
+    def __init__(self, main_db:database.DatabaseManager, schedule:jsonobj.Schedule, settings):
         """
         main_db: 게임의 메인 데이터베이스\n
         schedule: 스케줄 json 데이터\n

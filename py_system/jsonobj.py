@@ -2,70 +2,11 @@
 json 파일과 연동되는 클래스들\n
 json 파일을 불러오고, 저장하고, 수정하는 기능을 제공함
 """
-
-from abc import ABCMeta
-from dataclasses import dataclass
 import datetime
 import os
 
 from py_base import jsonwork, utility
-
-class JsonObject(metaclass=ABCMeta):
-    """
-    json 파일과 연동되는 클래스들의 부모 클래스
-    """
-
-    def __init__(self, file_name:str, monodepth:bool = False):
-        """
-        file_name : json 파일 이름 (확장자 포함)
-        monodepth : json 파일이 단일 깊이로 되어있는지 여부
-        self.content : json 파일의 내용
-        ---
-        monodepth가 True일 경우, json 파일에 있는 데이터를 attr로 저장함
-        """
-        self.file_name = file_name
-        self.monodepth = monodepth
-        self.content = jsonwork.load_json(file_name)
-
-        if monodepth:
-            for key, value in self.content.items():
-                setattr(self, key, value)
-    
-    def __del__(self):
-        self.dump()
-
-    def dump(self):
-        """
-        json 파일에 현재 데이터를 저장함\n
-        monodepth가 True일 경우, 별도의 attr로 저장된 데이터를 self.content에 저장한 뒤 json 파일에 저장함
-        """
-        if self.monodepth:
-            for key in self.content.keys():
-                self.content[key] = getattr(self, key)
-        jsonwork.dump_json(self.content, self.file_name)
-
-    def update(self, key, value):
-        """
-        json 파일에 있는 데이터를 수정함
-        """
-        self.content[key] = value
-        self.dump()
-
-    def delete_one(self, key):
-        """
-        json 파일에서 key에 해당하는 값을 삭제함
-        """
-        self.content.pop(key)
-        self.dump()
-
-class Keys(JsonObject):
-
-    def __init__(self):
-        super().__init__("keys.json", True)
-        self.main_guild_id:int
-        self.guild_ids:list
-        self.application_id:int
-        self.token:str
+from py_system.abstract import JsonObject
 
 # schedule
 class Schedule(JsonObject):
@@ -94,26 +35,6 @@ class Schedule(JsonObject):
             "state" : 0
             }
 
-# settings
-class Settings(JsonObject):
-
-    def __init__(self):
-        super().__init__("settings.json", True)
-        self.test_mode:bool
-        self.admin_mode:bool
-        self.arislena_end_turn: int
-        self.cron_days_of_week: str
-        self.cron_hour: str
-
-# translation
-class Translation(JsonObject):
-
-    def __init__(self):
-        super().__init__("translation.json", False)
-
-
-# dummy
-
 class DiceMemory(JsonObject):
 
     def __init__(self):
@@ -121,6 +42,9 @@ class DiceMemory(JsonObject):
         주사위를 저장하는 파일
         """
         super().__init__("dice_memory.json")
+
+
+
 
 # @dataclass
 # class Sign_up_waitlist:

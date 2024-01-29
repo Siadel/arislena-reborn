@@ -62,3 +62,14 @@ class HumanSex(enum.IntEnum):
     # 0: 남성, 1: 여성
     MALE = 0
     FEMALE = 1
+
+class TerritorySafety(enum.IntEnum):
+    # 회색, 흑색, 적색, 황색, 녹색
+    # 회색 : 미확인
+    # 흑, 적, 황, 녹 순으로 안전
+    UNKNOWN = 0
+    BLACK = 1
+    RED = 2
+    YELLOW = 3
+    GREEN = 4
+    

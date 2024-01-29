@@ -1,7 +1,6 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
 from py_base import ari_enum
@@ -12,22 +11,37 @@ def convert_to_tableobj(table_name:str, data:list) -> TableObject:
     """
     sql 테이블 데이터에서 불러온 데이터를 이곳에 구현된 클래스로 변환하는 함수\n
     자료형이 ExtInt인 경우, ExtInt에 데이터의 int값을 더해서 반환함 (기본적으로 ExtInt는 0으로 초기화됨)
+    주의: 이 함수는 **반드시** py_system.tableobj 모듈에 있어야 함
     """
-    tableobj = globals()[table_name.capitalize()]()
-    for key, value in zip(tableobj.__dict__.keys(), data):
-        if not isinstance(value, int):
-            tableobj.__setattr__(key, value)
+    # table_name의 첫 글자를 대문자로 바꿔서 클래스 이름으로 사용
+    table_name = table_name[0].upper() + table_name[1:]
+    tableobj:TableObject = globals()[table_name]()
+    for key, value in zip(tableobj.items.keys(), data):
+
+        if "ExtInt" in str(tableobj.__annotations__[key]):
+            tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
         else:
-            if "ExtInt" in str(tableobj.__annotations__[key]):
-                tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
-            else:
-                tableobj.__setattr__(key, value)
+            tableobj.__setattr__(key, value)
+        # if not isinstance(value, int):
+        #     tableobj.__setattr__(key, value)
+        # else:
+        #     if "ExtInt" in str(tableobj.__annotations__[key]):
+        #         tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
+        #     else:
+        #         tableobj.__setattr__(key, value)
     return tableobj
+
+"""
+!! ---------------------- 주의 ---------------------- !!
+
+abstract methods: kr_list
+필수로 작성해야 할 메소드: __post_init__ 
+"""
 
 """
 액티브 데이터
 """
-@dataclass
+@dataclass(slots=True)
 class User(TableObject):
     ID: int = None
     discord_ID: int = None
@@ -43,40 +57,53 @@ class User(TableObject):
             "가입일"
         ]
     
+    def __post_init__(self):
+        self.display_main = "discord_name"
+        
 
-@dataclass
-class User_setting(TableObject):
-    ID: int = None
-    discord_ID: int = None
-    embed_color: int = 3447003
-
-    @property
-    def kr_list(self) -> list[str]:
-        return [
-            "아이디",
-            "유저 아이디",
-            "임베드 색상"
-        ]
-
-@dataclass
+@dataclass(slots=True)
 class Faction(TableObject):
     ID: int = None
     user_ID: int = None
     name: str = None
+    level: int = 0
 
     @property
     def kr_list(self) -> list[str]:
         return [
             "아이디",
             "유저 아이디",
-            "세력명"
+            "세력명",
+            "레벨"
         ]
+    
+    def __post_init__(self):
+        self.display_main = "name"
+        
 
-@dataclass
+@dataclass(slots=True)
+class FactionHierarchyNode(TableObject):
+    ID: int = None
+    higher: int = None
+    lower: int = None
+
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "상위 세력",
+            "하위 세력"
+        ]
+    
+    def __post_init__(self):
+        self.display_main = "higher"
+        
+
+@dataclass(slots=True)
 class Population(TableObject):
     ID: int = None
     faction_ID: int = None
-    classification:int = ari_enum.HumanClass.COMMON.value
+    name: str = None
     labor:int = 1
     food_consumption:int = 1
     water_consumption:int = 1
@@ -87,14 +114,18 @@ class Population(TableObject):
         return [
             "아이디",
             "세력 아이디",
-            "분류",
+            "이름",
             "노동력",
             "식량 소비",
             "물 소비",
             "노동 중"
         ]
+    
+    def __post_init__(self):
+        self.display_main = "name"
+        
 
-@dataclass
+@dataclass(slots=True)
 class Livestock(TableObject):
     ID: int = None
     faction_ID: int = None
@@ -113,8 +144,12 @@ class Livestock(TableObject):
             "물 소비",
             "노동 중"
         ]
+    
+    def __post_init__(self):
+        self.display_main = "ID"
+        
 
-@dataclass
+@dataclass(slots=True)
 class Resource(TableObject):
     ID: int = None
     faction_ID: int = None
@@ -137,8 +172,12 @@ class Resource(TableObject):
             "흙",
             "건축자재"
         ]
+    
+    def __post_init__(self):
+        self.display_main = "ID"
+        
 
-@dataclass
+@dataclass(slots=True)
 class ResourceStorage(TableObject):
     ID: int = None
     faction_ID: int = None
@@ -163,166 +202,54 @@ class ResourceStorage(TableObject):
             "흙",
             "건축자재"
         ]
+    
+    def __post_init__(self):
+        self.display_main = "ID"
+        
 
-# @dataclass
-# class Faction_data(TableObject):
-#     ID: int = None
-#     faction_ID: int = None
-#     spicies: str = None
-#     location: str = None
-#     philosophy: str = None
-#     favor: str = None
-#     taboo: str = None
-#     prolog: str = None
-#     present: str = None
+@dataclass(slots=True)
+class Territory(TableObject):
+    """
+    safety: 안전도. 회색, 흑색, 적색, 황색, 녹색으로 분류. ari_enum.TerritorySafety 참고
+        회색 : 미확인 |
+        흑, 적, 황, 녹 순으로 안전
+    """
+    ID: int = None
+    faction_ID: int = None
+    name: str = None
+    space_limit: int = 1
+    safety: int = 0
 
-#     @property
-#     def kr_list(self) -> list[str]:
-#         return [
-#             "아이디",
-#             "세력 아이디",
-#             "종족",
-#             "활동 지역",
-#             "철학",
-#             "선호하는 것",
-#             "금지하는 것",
-#             "역사",
-#             "현재"
-#         ]
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "세력 아이디",
+            "이름",
+            "공간 제한",
+            "안정도"
+        ]
+    
+    def __post_init__(self):
+        self.display_main = "name"
+        
 
-# @dataclass
-# class Knowledge(TableObject):
-#     ID: int = None
-#     faction_ID: int = None
-#     war: ExtInt = ExtInt(0, min_value = 0)
-#     argiculture: ExtInt = ExtInt(0, min_value = 0)
-#     industry: ExtInt = ExtInt(0, min_value = 0)
-#     governance: ExtInt = ExtInt(0, min_value = 0)
-#     diplomacy: ExtInt = ExtInt(0, min_value = 0)
+@dataclass(slots=True)
+class Building(TableObject):
+    ID: int = None
+    territory_ID: int = None
+    discriminator: str = None
+    name: str = None
 
-#     @property
-#     def kr_list(self) -> list[str]:
-#         return [
-#             "아이디",
-#             "세력 아이디",
-#             "전쟁 지식",
-#             "농업 지식",
-#             "산업 지식",
-#             "통치 지식",
-#             "외교 지식"
-#         ]
-
-
-# @dataclass
-# class Block(TableObject):
-#     ID: int
-#     nation_ID : int
-#     name: str
-#     freshwater: int = 0
-#     food: int = 0
-#     material: int = 0
-#     luxury: int = 0
-#     status: int = enums.Block.SAFE
-
-# @dataclass
-# class Terrain(TableObject):
-#     block_ID: int
-#     defense: int
-#     accessability: int
-
-# @dataclass
-# class Productivity(TableObject):
-#     block_ID: int
-#     freshwater: int
-#     food: int
-#     material: int
-#     luxury: int
-
-# @dataclass
-# class Industry(TableObject):
-#     block_ID: int
-#     freshwater: int = 0
-#     food: int = 0
-#     material: int = 0
-#     luxury: int = 0
-
-# @dataclass
-# class Troop(TableObject):
-#     ID: int
-#     nation_ID: int # 소속 나라
-#     block_ID: int # 위치한 블럭
-#     name: str
-#     scale: int = 0
-#     royalty: int = 0
-#     # 군사 아이템
-#     elite: int = 0
-#     special: int = 0
-#     general: int = 0
-#     spear: int = 0
-#     chariot: int = 0
-#     stored_material: int = 0
-#     siege_equipment: int = 0
-#     # 기타 정보
-#     status: int = enums.Troop.IDLE
-#     attack_chance: int = 1 # 충전식, 0이 되면 공격 불가
-#     move_to: int = None
-
-# @dataclass
-# class Nation(TableObject):
-#     ID: int
-#     user_ID: int
-#     name: str
-#     surplus_population: int = 20
-#     fund: int = 50
-#     settler: int = 0
-#     cement: int = 0
-#     supply: int = 0
-#     sample: int = 0
-#     immune: int = 0
-#     royalty: int = 50
-#     race: str = "인간"
-#     fate: str = "자유인"
-#     npc: int = 0
-#     dev: int = 0
-
-# @dataclass
-# class Building(TableObject):
-#     ID: int
-#     block_ID: int
-#     building_ID: int
-#     status: int = enums.Building.ONGOING_CONSTRUCTION
-
-# @dataclass
-# class Technology(TableObject):
-#     ID: int
-#     nation_ID: int
-#     technology_ID: int
-#     status: int = enums.Technology.ONGOING_RESEARCH
-
-# @dataclass
-# class Diplomacy(TableObject):
-#     category: str
-#     from_nation_ID: int # 나라 ID
-#     to_nation_ID: int # 나라 ID
-#     expire: int
-
-# @dataclass
-# class Pending(TableObject):
-#     ID: int
-#     category: str  # 명령어 종류 (한국어)
-#     mode: str  # active, passive
-#     start: int  # 이 데이터가 만들어진 턴
-#     execute: int  # 이 데이터가 실행되거나(active) 끝나는(passive) 턴
-#     execute_code: str  # 실행 코드
-
-# @dataclass
-# class Extra(TableObject):
-#     ID: int
-#     owner_ID: int
-#     nation_name: str
-#     leader: str = None
-#     religion: str = None
-#     ethos: str = None
-#     concern: str = None
-#     foundation_story: str = None
-#     extra: str = None
+    @property
+    def kr_list(self) -> list[str]:
+        return [
+            "아이디",
+            "영토 아이디",
+            "구분",
+            "이름"
+        ]
+    
+    def __post_init__(self):
+        self.display_main = "name"
+        
