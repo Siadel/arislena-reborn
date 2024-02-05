@@ -5,7 +5,7 @@ py_system, cog 등의 모듈에서 공통적으로 사용하는 전역 변수들
 import re
 
 from py_base.jsonwork import load_box
-from py_system.database import MainDB
+from py_base.dbmanager import MainDB
 from py_system.schedule_manager import ScheduleManager
 from py_system import jsonobj
 

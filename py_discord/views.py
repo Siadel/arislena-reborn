@@ -5,9 +5,8 @@ from discord import ui, Colour
 from py_discord.embeds import table_info
 from py_discord.bot_base import BotBase
 from py_base.koreanstring import nominative
-from py_system import tableobj
 from py_system.global_ import main_db
-from py_system.tableobj import TableObject
+from py_system.tableobj import TableObject, User, Faction
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -15,7 +14,7 @@ from py_system.tableobj import TableObject
 
 # class user_setting_view(View):
 
-#     def __init__(self, user_setting:tableobj.User_setting, *, timeout = 180):
+#     def __init__(self, user_setting:User_setting, *, timeout = 180):
 #         super().__init__(timeout = timeout)
 #         self.user_setting = user_setting
 
@@ -63,9 +62,9 @@ class GeneralLookupButton(Button):
         sub : {"key" : value} 형태의 딕셔너리, 테이블 객체의 서브 테이블을 가져올 때 사용
             ex) {"user_ID" : 1234567890}
         """
-        display_main = table_object.__getattribute__(table_object.display_main)
+        display_value = getattr(table_object, table_object.display_column, "-")
 
-        label_txt = f"{display_main}"
+        label_txt = f"{display_value}"
         if label_complementary: label_txt += f" ({label_complementary})"
         # <메인으로 출력할 데이터> (<서브로 보여줄 데이터 컬럼 한국어명> : <서브로 출력할 데이터>) 형태
         super().__init__(label = label_txt, style = discord.ButtonStyle.primary)
@@ -84,8 +83,8 @@ class GeneralLookupButton(Button):
         
 class UserLookupButton(GeneralLookupButton):
 
-    def __init__(self, user:tableobj.User, bot:BotBase, interaction:discord.Interaction):
-        member = discord.utils.get(interaction.guild.members, id = user.discord_ID)
+    def __init__(self, user:User, bot:BotBase, interaction:discord.Interaction):
+        member = discord.utils.get(interaction.guild.members, id = user.discord_id)
         super().__init__(
             user, 
             bot = bot, 
@@ -94,9 +93,9 @@ class UserLookupButton(GeneralLookupButton):
 
 class FactionLookupButton(GeneralLookupButton):
 
-    def __init__(self, faction:tableobj.Faction, bot:BotBase, interaction:discord.Interaction):
-        self.faction:tableobj.Faction = faction
-        user = discord.utils.get(interaction.guild.members, id = faction.user_ID)
+    def __init__(self, faction:Faction, bot:BotBase, interaction:discord.Interaction):
+        self.faction:Faction = faction
+        user = discord.utils.get(interaction.guild.members, id = faction.user_id)
         super().__init__(
             faction, 
             bot = bot, 
@@ -106,19 +105,17 @@ class FactionLookupButton(GeneralLookupButton):
 # 세력 해산 버튼
 class FactionDeleteButton(GeneralLookupButton):
 
-    def __init__(self, faction:tableobj.Faction, bot:BotBase):
+    def __init__(self, faction:Faction, bot:BotBase):
         super().__init__(faction, bot = bot)
         self.style = discord.ButtonStyle.danger
-        self.faction:tableobj.Faction = faction
+        self.faction:Faction = faction
     
     async def callback(self, interaction:discord.Interaction):
         # hierarchy 제거
-        hierarchies = main_db.fetch_all_hierarchy_id(self.faction)
-        for hierarchy_id in hierarchies:
-            main_db.delete_with_id("FactionHierarchyNode", hierarchy_id)
+        main_db.connection.execute(f"DELETE FROM FactionHierarchy WHERE higher = {self.faction.id} OR lower = {self.faction.id}")
 
         # 세력 해산
-        main_db.delete_with_id("Faction", self.faction.ID)
+        self.faction.delete()
 
         self.disabled = True
 

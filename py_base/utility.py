@@ -1,5 +1,5 @@
 """
-전역 변수, 파일 경로, 유틸리티 함수 모음 모듈
+파일 경로, 유틸리티 함수 모음 모듈
 """
 import datetime
 import os
@@ -37,3 +37,32 @@ def wrap(word:str, wrapper:str=""):
     if wrapper == "": return word
     return wrapper + word + wrapper
 
+def sql_value(value: str | int | float | None) -> str:
+    """
+    Convert a Python value to its SQL representation.
+
+    Args:
+        value (Union[str, int, float, None]): The Python value to be converted.
+
+    Returns:
+        str: The SQL representation of the value.
+
+    Raises:
+        None
+
+    Examples:
+        >>> sql_value("John")
+        "'John'"
+        >>> sql_value(42)
+        '42'
+        >>> sql_value(3.14)
+        '3.14'
+        >>> sql_value(None)
+        'NULL'
+    """
+    if isinstance(value, str):
+        return f"'{value}'"
+    elif value is None:
+        return "NULL"
+    else:
+        return str(value)

@@ -4,14 +4,14 @@ from discord import app_commands
 
 from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
-from py_system import tableobj
+from py_system.tableobj import Faction
 from py_system.global_ import main_db, name_regex, game_settings
 
 class FactionCommand(GroupCog, name="세력"):
 
     def __init__(self, bot: BotBase):
-        self.bot = bot
         super().__init__()
+        self.bot = bot
     
     @app_commands.command(
         name = "창설",
@@ -20,7 +20,7 @@ class FactionCommand(GroupCog, name="세력"):
     async def create(self, interaction: discord.Interaction):
 
         # 이미 세력을 가지고 있는지 확인 (관리자는 예외)
-        if main_db.fetch("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+        if main_db.is_exist("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
             raise warnings.AlreadyExist("창설한 세력")
         
         await interaction.response.send_modal(modals.FactionCreateModal(bot=self.bot))
@@ -32,7 +32,9 @@ class FactionCommand(GroupCog, name="세력"):
     async def lookup(self, interaction: discord.Interaction):
         
         # 모든 세력 정보 가져오기
-        faction_list = main_db.fetch_all("faction")
+        faction_data_list = main_db.fetch_all("faction")
+        faction_list = [Faction(**data) for data in faction_data_list]
+        for faction in faction_list: faction.database = main_db
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
@@ -52,17 +54,24 @@ class FactionCommand(GroupCog, name="세력"):
     async def edit(self, interaction: discord.Interaction, attribute:str, value:str = None, message_link:str = None, faction_id:int = None):
         pass
 
+    
+
     @app_commands.command(
         name = "해산",
         description = "[관리자 전용] 세력을 해산하여 데이터에서 삭제합니다."
     )
     @app_commands.check(checks.is_admin)
     async def delete(self, interaction: discord.Interaction):
+
+        # 모든 세력 정보 가져오기
+        faction_data_list = main_db.fetch_all("faction")
+        faction_list = [Faction(**data) for data in faction_data_list]
+        for faction in faction_list: faction.database = main_db
         
         await interaction.response.send_message(
             "세력 해산", 
             view=views.LookupView(
-                main_db.fetch_all("faction"),
+                faction_list,
                 button_class=views.FactionDeleteButton,
                 bot=self.bot,
                 interaction=interaction

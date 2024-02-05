@@ -42,7 +42,7 @@ def register(user:tableobj.User):
     유저 등록
     """
     embed = Embed(title="환영합니다!", description="다음 정보가 저장되었습니다.", color=Colour.green())
-    embed.add_field(name="디스코드 아이디", value=user.discord_ID)
+    embed.add_field(name="디스코드 아이디", value=user.discord_id)
     embed.add_field(name="유저네임", value=user.discord_name)
     embed.add_field(name="등록일", value=user.register_date)
     return embed

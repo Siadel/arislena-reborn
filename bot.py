@@ -1,63 +1,15 @@
 import traceback, os, discord
 from typing import Union
 from discord import app_commands
-from py_base import utility 
-from py_system import jsonobj, tableobj
-from py_system.global_ import main_db, keys
+
 from py_discord import warnings
 from py_discord.bot_base import BotBase
 
+from py_base import utility 
+from py_system.tableobj import form_database_from_tableobjects
+from py_system.global_ import main_db, keys
 
-"""
-TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
-만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가
-"""
-for subclass in tableobj.TableObject.__subclasses__():
-    # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
-    main_db.cursor.execute(subclass.get_create_table_string())
-
-    table_name = subclass.get_table_name()
-    # TableObject를 상속하는 객체의 데이터 형식과 main_db의 데이터 형식을 불러와 차이를 판별하기
-    # main_db의 데이터 형식을 불러옴
-    sql_table_column_set = main_db.table_column_set(table_name)
-
-    # TableObject를 상속하는 객체의 데이터 형식을 불러옴
-    tableobj_column_set = subclass.get_column_set()
-
-    # 데이터베이스 테이블의 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
-    # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, main_db에서 해당 데이터 형식을 삭제함
-    for column_name in (sql_table_column_set - tableobj_column_set):
-        main_db.cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
-    # main_db에 없는 데이터 형식이 있을 경우, main_db에 해당 데이터 형식을 추가함
-    for column_name in (tableobj_column_set - sql_table_column_set):
-        main_db.cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)}")
-    
-    # 데이터베이스 테이블의 데이터 형식을 다시 불러옴
-    sql_table_column_set = main_db.table_column_set(table_name)
-    
-    # 새로 불러온 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
-    if set(sql_table_column_set) != set(tableobj_column_set):
-        has_row = main_db.has_row(table_name)
-        if has_row:
-            # 테이블 데이터 임시 저장
-            # 테이블에 데이터가 없는 경우 임시 저장할 필요 없음
-            main_db.cursor.execute(f"CREATE TABLE {table_name}_temp AS SELECT * FROM {table_name}")
-        # 테이블 삭제
-        main_db.cursor.execute(f"DROP TABLE {table_name}")
-        # 테이블 재생성
-        main_db.cursor.execute(subclass.get_create_table_string())
-        if has_row:
-            # 임시 저장 테이블의 column마다 작업하여 테이블 데이터 복원
-            # 임시 저장 테이블의 데이터를 {key:value} 형식으로 변환함
-            main_db.cursor.execute(f"SELECT * FROM {table_name}_temp")
-            backup_data = [dict(zip([column[0] for column in main_db.cursor.description], data)) for data in main_db.cursor.fetchall()]
-            # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
-            for data in backup_data:
-                main_db.insert(subclass(**data))
-            # 임시 저장 테이블 삭제
-            main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
-
-print("Database initialized")
+form_database_from_tableobjects(main_db)
 
 # 봇 객체 선언
 class AriBot(BotBase):

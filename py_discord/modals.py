@@ -3,7 +3,7 @@ from discord.ui import Modal, TextInput
 
 from py_discord import warnings
 from py_discord.bot_base import BotBase
-from py_system.tableobj import Faction
+from py_system.tableobj import Faction, FactionHierarchyNode
 from py_system.global_ import main_db, name_regex, game_settings
 
 # 테스트 모달
@@ -52,15 +52,15 @@ class FactionCreateModal(ArislenaGeneralModal):
         if not name_regex.search(faction_name): raise warnings.NameContainsSpecialCharacter()
 
         # 세력 데이터베이스에 추가
-        main_db.insert(Faction(user_ID=interaction.user.id, name=faction_name))
-
-        new_faction = main_db.fetch("faction", f"user_ID = {interaction.user.id}")
+        new_faction = Faction(user_id=interaction.user.id, name=faction_name)
+        new_faction.database = main_db
+        new_faction.push()
 
         # id가 가장 낮은 세력의 하위 세력으로 설정
-        main_db.set_hierarchy(
-            new_faction,
-            main_db.fetch("faction", "id = (SELECT MIN(id) FROM faction)")
-        )
+        optimal_faction = Faction()
+        optimal_faction.pull("id = (SELECT MIN(id) FROM faction)")
+        new_fhn = FactionHierarchyNode()
+        new_fhn.push(new_faction, optimal_faction)
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다!", ephemeral=True)
         
