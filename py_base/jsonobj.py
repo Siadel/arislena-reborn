@@ -2,49 +2,56 @@
 json 파일과 연동되는 클래스들\n
 json 파일을 불러오고, 저장하고, 수정하는 기능을 제공함
 """
+from typing import ClassVar
+from dataclasses import dataclass
 import datetime
-import os
 
-from py_base import jsonwork, utility
-from py_system.abstract import JsonObject
+from py_base.abstract import JsonObject, FluidJsonObject
+from py_base.utility import DATE_EXPRESSION
 
 # schedule
+@dataclass
 class Schedule(JsonObject):
     '''
     - start_date : 시작 날짜
     - now_turn : 게임 진행 턴 수
     - state : 현재 상태(0: 시작 대기, 1: 게임 중, 2: 중단, 3: 종료)
     '''
-    def __init__(self):
-        super().__init__("schedule.json", True)
-        self.start_date: str
-        self.end_date: str
-        self.now_turn: int
-        self.state: int
+    start_date: str = f'{(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)}'
+    end_date: str = ""
+    now_turn: int = 0
+    state: int = 0
 
-        if not os.path.isfile(utility.JSON_DIR + 'schedule.json'):
-            json_data = self.get_init_data()
-            jsonwork.dump_json(json_data, 'schedule.json')
+    file_name: ClassVar[str] = "schedule.json"
 
-    @staticmethod
-    def get_init_data():
-        return {
-            "start_date" : f'{(datetime.date.today() + datetime.timedelta(days=1)).strftime(utility.DATE_EXPRESSION)}',
-            "end_date" : "",
-            "now_turn" : 0,
-            "state" : 0
-            }
+@dataclass
+class DiceMemory(FluidJsonObject):
+    """
+    . 대신 getattr()로 클래스 변수를 가져오는 것을 권장
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-class DiceMemory(JsonObject):
+@dataclass
+class SettingByGuild(JsonObject):
+    announce_location: dict[str, int]
+    user_role_id: dict[str, int]
+    admin_role_id: dict[str, int]
 
-    def __init__(self):
-        """
-        주사위를 저장하는 파일
-        """
-        super().__init__("dice_memory.json")
+@dataclass
+class GameSetting(JsonObject):
+    test_mode: bool
+    admin_mode: bool
+    arislena_end_turn: int
+    cron_days_of_week: str
+    cron_hour: int
+    name_length_limit: int
 
-
-
+@dataclass
+class BotSetting(JsonObject):
+    main_guild_id: int
+    guild_ids: list[int]
+    application_id: int
 
 # @dataclass
 # class Sign_up_waitlist:

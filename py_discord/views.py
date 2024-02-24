@@ -6,7 +6,7 @@ from py_discord.embeds import table_info
 from py_discord.bot_base import BotBase
 from py_base.koreanstring import nominative
 from py_system.global_ import main_db
-from py_system.tableobj import TableObject, User, Faction
+from py_system.tableobj import TableObject, User, Faction, Territory
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -90,17 +90,29 @@ class UserLookupButton(GeneralLookupButton):
             bot = bot, 
             label_complementary = f"{member.display_name}"
         )
+        self.interaction = interaction
 
 class FactionLookupButton(GeneralLookupButton):
 
     def __init__(self, faction:Faction, bot:BotBase, interaction:discord.Interaction):
-        self.faction:Faction = faction
         user = discord.utils.get(interaction.guild.members, id = faction.user_id)
         super().__init__(
             faction, 
             bot = bot, 
             label_complementary = f"소유자 : {user.display_name}"
         )
+        self.interaction = interaction
+
+class TerritoryLookupButton(GeneralLookupButton):
+
+    def __init__(self, territory:Territory, bot:BotBase, interaction:discord.Interaction):
+        faction = Faction.from_database(main_db, id = territory.faction_id)
+        super().__init__(
+            territory, 
+            bot = bot, 
+            label_complementary = f"소유 세력 : {faction.name}"
+        )
+        self.interaction = interaction
 
 # 세력 해산 버튼
 class FactionDeleteButton(GeneralLookupButton):
@@ -112,7 +124,9 @@ class FactionDeleteButton(GeneralLookupButton):
     
     async def callback(self, interaction:discord.Interaction):
         # hierarchy 제거
-        main_db.connection.execute(f"DELETE FROM FactionHierarchy WHERE higher = {self.faction.id} OR lower = {self.faction.id}")
+        main_db.connection.execute(
+            f"DELETE FROM FactionHierarchy WHERE higher = {self.faction.id} OR lower = {self.faction.id}"
+        )
 
         # 세력 해산
         self.faction.delete()

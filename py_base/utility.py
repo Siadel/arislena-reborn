@@ -4,6 +4,8 @@
 import datetime
 import os
 
+UTF8 = "utf-8"
+
 APOSTROPHE = "'"
 DOUBLE_QUOTE = '"'
 ENTER = "\n"
@@ -22,6 +24,15 @@ current_dir = os.path.dirname(__file__).replace("\\", "/") + "/"
 JSON_DIR = current_path + "json/"
 DATA_DIR = current_path + "data/"
 BACKUP_DIR = current_path + "backup/"
+
+PYTHON_SQL_DTYPE_MAP = {
+    "str": "TEXT",
+    "int": "INTEGER",
+    "float": "REAL",
+    "none": "NULL",
+    "extint": "INTEGER",
+    "enum": "INTEGER"
+}
 
 def get_date(date_expression="%Y-%m-%d"):
     timezone = datetime.timezone(datetime.timedelta(hours=9))
@@ -60,9 +71,13 @@ def sql_value(value: str | int | float | None) -> str:
         >>> sql_value(None)
         'NULL'
     """
-    if isinstance(value, str):
-        return f"'{value}'"
-    elif value is None:
-        return "NULL"
-    else:
-        return str(value)
+    for key, value in PYTHON_SQL_DTYPE_MAP.items():
+        if key in str(type(value)):
+            return value
+    raise Exception(f"Type {type(value)} is not supported in SQL. Please use 'str', 'int', or 'float'.")
+    # if isinstance(value, str):
+    #     return f"'{value}'"
+    # elif value is None:
+    #     return "NULL"
+    # else:
+    #     return str(value)

@@ -746,3 +746,120 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: KeyError: 'User'
 
+2024-02-22 22:58:58 : Command '등록' raised an exception: Exception: Database is not set.
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 30, in register
+    user.push()
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\abstract.py", line 240, in push
+    if not self._database: raise Exception("Database is not set.")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Database is not set.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: Exception: Database is not set.
+
+2024-02-22 23:03:02 : Command '등록' raised an exception: BoxKeyError: "'Box' object has no attribute 'user_role_id'"
+Traceback (most recent call last):
+  File "box\\box.py", line 592, in box.box.Box.__getitem__
+KeyError: 'user_role_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "box\\box.py", line 631, in box.box.Box.__getattr__
+  File "box\\box.py", line 619, in box.box.Box.__getitem__
+box.exceptions.BoxKeyError: "'user_role_id'"
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "box\\box.py", line 633, in box.box.Box.__getattr__
+AttributeError: 'Box' object has no attribute 'user_role_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 35, in register
+    role = discord.utils.get(interaction.guild.roles, id=game_settings.user_role_id[str(interaction.guild.id)])
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "box\\box.py", line 647, in box.box.Box.__getattr__
+box.exceptions.BoxKeyError: "'Box' object has no attribute 'user_role_id'"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '등록' raised an exception: BoxKeyError: "'Box' object has no attribute 'user_role_id'"
+
+2024-02-23 19:12:44 : Command '열람' raised an exception: Exception: Database is not set.
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 76, in info
+    user.pull(discord_id = interaction.user.id)
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_base\abstract.py", line 244, in pull
+    raise Exception("Database is not set.")
+Exception: Database is not set.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: Exception: Database is not set.
+
+2024-02-23 20:03:20 : Command '열람' raised an exception: TypeError: 'NoneType' object is not iterable
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 78, in info
+    embed=embeds.table_info(
+          ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\embeds.py", line 55, in table_info
+    for key, value in table_obj.kr_dict.items():
+                      ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_base\abstract.py", line 146, in kr_dict
+    return dict(zip(self.kr_list, self.items.values()))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 842, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: TypeError: 'NoneType' object is not iterable
+

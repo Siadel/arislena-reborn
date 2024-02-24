@@ -5,7 +5,7 @@ from discord import app_commands
 from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
 from py_system.tableobj import Faction
-from py_system.global_ import main_db, name_regex, game_settings
+from py_system.global_ import main_db, name_regex, game_setting
 
 class FactionCommand(GroupCog, name="세력"):
 

@@ -162,3 +162,31 @@
 {'type': 1, 'options': [{'type': 1, 'options': [{'value': True, 'type': 5, 'name': 'view_other_member'}], 'name': '열람'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
 2024-01-29 17:25:21	414796616088682496	ftana.elna	None	세력	열람
 {'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-22 22:58:39	414796616088682496	ftana.elna	None	세력	열람
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-23 20:01:37	414796616088682496	ftana.elna	None	유저	등록해제
+{'type': 1, 'resolved': {'users': {'414796616088682496': {'username': 'ftana.elna', 'public_flags': 0, 'id': '414796616088682496', 'global_name': 'Elna', 'discriminator': '0', 'avatar_decoration_data': None, 'avatar': '09dcd5f2b86bdf9b42b626817c7cbc93'}}, 'members': {'414796616088682496': {'unusual_dm_activity_until': None, 'roles': ['1165632727060586576', '1165632767372050563'], 'premium_since': None, 'permissions': '562949953421311', 'pending': False, 'nick': None, 'joined_at': '2023-09-19T10:22:04.978000+00:00', 'flags': 0, 'communication_disabled_until': None, 'avatar': None, 'user': {'username': 'ftana.elna', 'public_flags': 0, 'id': '414796616088682496', 'global_name': 'Elna', 'discriminator': '0', 'avatar_decoration_data': None, 'avatar': '09dcd5f2b86bdf9b42b626817c7cbc93'}}}}, 'options': [{'type': 1, 'options': [{'value': '414796616088682496', 'type': 6, 'name': 'target_member'}], 'name': '등록해제'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
+2024-02-23 20:01:43	414796616088682496	ftana.elna	None	유저	등록
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '등록'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
+2024-02-23 20:29:02	414796616088682496	ftana.elna	None	유저	열람
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
+2024-02-23 20:29:10	414796616088682496	ftana.elna	None	유저	열람
+{'type': 1, 'options': [{'type': 1, 'options': [{'value': True, 'type': 5, 'name': 'view_other_member'}], 'name': '열람'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
+2024-02-23 23:44:07	414796616088682496	ftana.elna	None	유저	열람
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '유저', 'id': '1154693025709162547', 'guild_id': '1153637128383770644'}
+2024-02-23 23:44:19	414796616088682496	ftana.elna	None	영토	열람
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '영토', 'id': '1201338787368808519', 'guild_id': '1153637128383770644'}
+2024-02-23 23:45:01	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:41:49	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:45:26	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:54:08	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:56:21	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:58:36	414796616088682496	ftana.elna	None	세력	열람
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '열람'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}
+2024-02-24 00:58:41	414796616088682496	ftana.elna	None	세력	창설
+{'type': 1, 'options': [{'type': 1, 'options': [], 'name': '창설'}], 'name': '세력', 'id': '1197842090634264626', 'guild_id': '1153637128383770644'}

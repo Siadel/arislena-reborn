@@ -4,7 +4,7 @@ from discord import app_commands, Colour
 from datetime import datetime
 
 from py_base import utility
-from py_system.global_ import main_db, game_settings
+from py_system.global_ import main_db, setting_by_guild
 from py_system.tableobj import User
 from py_discord import checks, embeds, views, warnings
 from py_discord.bot_base import BotBase
@@ -27,11 +27,12 @@ class UserManagement(GroupCog, name="유저"):
             discord_id=interaction.user.id, 
             discord_name=interaction.user.name, 
             register_date=datetime.now().strftime(utility.DATE_EXPRESSION))
+        user.database = main_db
         user.push()
 
         # 유저에게 "주인"이라는 이름의 역할 부여
         # id로 말고 이름으로 찾아야 함
-        role = discord.utils.get(interaction.guild.roles, id=game_settings.user_role_id[str(interaction.guild.id)])
+        role = discord.utils.get(interaction.guild.roles, id=setting_by_guild.user_role_id[str(interaction.guild.id)])
         await interaction.user.add_roles(role)
 
         # settings.json에 있는 announce_channel_id로 메세지를 보냄
@@ -71,8 +72,7 @@ class UserManagement(GroupCog, name="유저"):
         else:
 
             if not checks.user_exists(interaction): raise warnings.NotRegistered(interaction.user.name)
-            user = User()
-            user.pull(discord_id = interaction.user.id)
+            user = User.from_database(main_db, discord_id=interaction.user.id)
         
             await interaction.response.send_message(
                 embed=embeds.table_info(
@@ -88,13 +88,12 @@ class UserManagement(GroupCog, name="유저"):
     @app_commands.check(checks.user_exists)
     async def sync(self, interaction: discord.Interaction):
         # 유저 정보 가져오기
-        user = User()
-        user.pull(discord_id = interaction.user.id)
+        user = User.from_database(main_db, discord_id=interaction.user.id)
         
         # 닉네임 동기화
         if user.discord_name != interaction.user.name:
             user.discord_name = interaction.user.name
-            main_db.update_with_id("user", user.id, discord_name=interaction.user.name)
+            user.push()
         
         # 동기화 완료 엠베드 출력
         await interaction.response.send_message(
@@ -116,14 +115,13 @@ class UserManagement(GroupCog, name="유저"):
     async def unregister(self, interaction: discord.Interaction, target_member:discord.Member):
         # if not check.is_admin(interaction.user):
         #     raise warning.NotAdmin()
-        target_user = User()
-        target_user.pull(discord_id=target_member.id)
+        target_user = User.from_database(main_db, discord_id=target_member.id)
         if not target_user: raise warnings.NotRegistered(target_member.name)
         # 데이터에서 유저 삭제
         main_db.delete_with_id("user", target_user.id)
         # 유저에게 "주인"이라는 이름의 역할 삭제
         await target_member.remove_roles(
-            discord.utils.get(interaction.guild.roles, id=game_settings.user_role_id[str(interaction.guild.id)])
+            discord.utils.get(interaction.guild.roles, id=setting_by_guild.user_role_id[str(interaction.guild.id)])
         )
         
         await interaction.response.send_message(f"**{target_member.display_name}**님을 아리슬레나에서 등록 해제했습니다.", ephemeral=True)

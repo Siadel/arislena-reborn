@@ -1,6 +1,7 @@
 from discord import Embed, Colour, utils
+from py_base import abstract
 
-from py_system import tableobj, abstract
+from py_system import tableobj
 
 def embed_for_user(*messages) -> Embed:
     """

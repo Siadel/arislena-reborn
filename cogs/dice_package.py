@@ -1,10 +1,12 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from py_base.jsonwork import dump_json
 
 from py_discord.bot_base import BotBase
 from py_discord import warnings
-from py_system import jsonobj, arislena_dice, arislena_dice_extension
+from py_system import arislena_dice, arislena_dice_extension
+from py_system.global_ import dice_memory
 
 # arislena_dice 모듈에 선언된 모든 주사위 객체를 불러옴
 dice_list = arislena_dice.indipendent_dice_list + arislena_dice.group_only_dice_list
@@ -12,11 +14,11 @@ dice_choice = [app_commands.Choice(name=dice.category, value=dice.category) for 
 # indipendent_dice_list만 등록 가능함
 dice_choice_for_register = [app_commands.Choice(name=dice.category, value=dice.category) for dice in arislena_dice.indipendent_dice_list]
 
-def find_dice(dice_category: str):
+def find_dice(dice_category: str) -> arislena_dice.Dice:
     for dice in dice_list:
         if dice.category == dice_category:
             return dice
-    return None
+    raise Exception(f"주사위를 찾을 수 없습니다. ({dice_category})")
 
 # 주사위 시행 엠베드 생성 함수
 def create_dice_embed(dice:arislena_dice.Dice, more_information:bool):
@@ -78,8 +80,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         registered_dice:arislena_dice.Dice = find_dice(dice_category.value)(dice_mod)
         
         registered_dice.name = dice_name
-        dicemem = jsonobj.DiceMemory()
-        dicemem.update(dice_name, registered_dice.__dict__)
+        dice_memory.update_a_key(dice_name, registered_dice.__dict__)
 
         # 등록한 주사위의 종류, 이름, dice_mod, grade_mod를 출력하는 embed 생성
         embed = discord.Embed(
@@ -110,7 +111,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         description = "등록한 주사위 목록을 출력합니다."
     )
     async def show_dice_list(self, interaction: discord.Interaction):
-        registered_dice_list = jsonobj.DiceMemory().content
+        registered_dice_list = list(dice_memory.__dict__.keys())
 
         # 등록한 주사위의 이름을 출력하는 embed 생성
         
@@ -142,8 +143,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         more_information: bool = False
     ):
         # 주사위 불러오기
-        dicemem = jsonobj.DiceMemory()
-        registered_dice_data = dicemem.content[dice_name]
+        registered_dice_data = dice_memory.get(dice_name)
         registered_dice = find_dice(registered_dice_data["category"]).from_dice_data(registered_dice_data)
 
         # 이벤트 주사위를 굴릴 경우
@@ -155,8 +155,8 @@ class dice_package(commands.GroupCog, name="주사위"):
         registered_dice.roll(immediate_dice_mod)
 
         # 주사위 저장
-        dicemem.update(dice_name, registered_dice.__dict__)
-        dicemem.dump()
+        dice_memory.update_a_key(dice_name, registered_dice.__dict__)
+        dump_json(dice_memory.to_json(), "dice_memory.json")
 
         # embed 생성
         embed = create_dice_embed(registered_dice, more_information)
@@ -187,7 +187,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         self, interaction: discord.Interaction,
         dice_name: str
     ):
-        jsonobj.DiceMemory().delete_one(dice_name)
+        dice_memory.delete_a_key(dice_name)
 
         embed = discord.Embed(
             title = "주사위 삭제 결과",
@@ -212,9 +212,9 @@ class dice_package(commands.GroupCog, name="주사위"):
         second_dice_name: str
     ):
         if first_dice_name == second_dice_name: raise warnings.Default("같은 이름의 주사위를 비교할 수 없습니다.")
-        dicemem = jsonobj.DiceMemory()
-        dice_1_data = dicemem.content[first_dice_name]
-        dice_2_data = dicemem.content[second_dice_name]
+
+        dice_1_data = dice_memory.get(first_dice_name)
+        dice_2_data = dice_memory.get(second_dice_name)
 
         dice_1 = find_dice(dice_1_data["category"]).from_dice_data(dice_1_data)
         dice_2 = find_dice(dice_2_data["category"]).from_dice_data(dice_2_data)

@@ -37,9 +37,9 @@ class NotOwner(Default):
     def __init__(self):
         super().__init__("주인 권한이 있는 유저만 사용할 수 있어요!")
 
-class NoNation(Default):
+class NoFaction(Default):
     def __init__(self):
-        super().__init__("나라가 없어요! `/나라신청` 명령어로 나라를 만들거나, 이미 신청했다면 관리자에게 문의하세요.")
+        super().__init__("세력을 아직 창설하지 않았어요!")
 
 class NoBlock(Default):
     def __init__(self, category:str=None):

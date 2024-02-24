@@ -4,5 +4,5 @@
     "arislena_end_turn": 60,
     "cron_days_of_week": "mon,tue,wed,thu,fri,sat,sun",
     "cron_hour": "21",
-    "faction_name_length_limit": 30
+    "name_length_limit": 30
 }

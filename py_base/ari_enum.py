@@ -3,6 +3,13 @@
 """
 import enum
 
+def get_enum(annotation:str, value:int) -> enum.IntEnum:
+    """
+    enum을 반환함
+    """
+    enum_class = annotation.split("'")[1]
+    return globals()[enum_class](value)
+
 # 스케줄 상태
 class Schedule(enum.IntEnum):
     # 0: 시작 대기, 1: 게임 중, 2: 중단, 3: 종료

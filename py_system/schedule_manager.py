@@ -3,12 +3,12 @@ import shutil, datetime
 
 from py_base import ari_enum, utility
 from py_base.dbmanager import DatabaseManager
-from py_system.jsonobj import Schedule
+from py_base.jsonobj import Schedule, GameSetting
 
 ARISLENA_JOB_ID = "game_schedule"
 
 class ScheduleManager:
-    def __init__(self, main_db:DatabaseManager, schedule:Schedule, settings):
+    def __init__(self, main_db:DatabaseManager, schedule:Schedule, game_setting:GameSetting):
         """
         main_db: 게임의 메인 데이터베이스\n
         schedule: 스케줄 json 데이터\n
@@ -16,7 +16,7 @@ class ScheduleManager:
         self.sched = BackgroundScheduler(timezone='Asia/Seoul')
         self.main_db = main_db
         self.schedule = schedule
-        self.settings = settings
+        self.settings = game_setting
 
         self.sched.start()
         self.sched_add_job()

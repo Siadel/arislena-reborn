@@ -7,7 +7,7 @@ from py_discord.bot_base import BotBase
 
 from py_base import utility 
 from py_system.tableobj import form_database_from_tableobjects
-from py_system.global_ import main_db, keys
+from py_system.global_ import main_db, bot_setting
 
 form_database_from_tableobjects(main_db)
 
@@ -22,7 +22,7 @@ class AriBot(BotBase):
         for file in os.listdir(utility.current_path + "cogs"):
             if file.endswith(".py"):
                 await self.load_extension(f"cogs.{file[:-3]}")
-        await aribot.tree.sync(guild=discord.Object(id=keys.main_guild_id))
+        await aribot.tree.sync(guild=discord.Object(id=bot_setting.main_guild_id))
 
     async def on_ready(self):
         await self.wait_until_ready()
@@ -86,7 +86,7 @@ async def on_app_command_completion(interaction: discord.Interaction, command: U
     log_file.write(f"{utility.get_date(utility.DATE_EXPRESSION_FULL)}\t{interaction.user.id}\t{interaction.user.name}\t{interaction.user.nick}\t{interaction.data['name']}\t{command.name}\n{interaction.data}\n")
     log_file.close()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # 봇 실행
-    aribot.run(aribot.token)
+    aribot.run()

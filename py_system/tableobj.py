@@ -1,10 +1,13 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-from py_base import ari_enum
+from typing import ClassVar
+from dataclasses import dataclass
+
+from py_base.ari_enum import get_enum, YesNo, TerritorySafety
 from py_base.datatype import ExtInt
 from py_base.dbmanager import MainDB
-from py_system.abstract import TableObject
+from py_base.abstract import TableObject
 
 def deserialize(table_name:str, data:list) -> TableObject:
     """
@@ -15,12 +18,18 @@ def deserialize(table_name:str, data:list) -> TableObject:
     # table_name의 첫 글자를 대문자로 바꿔서 클래스 이름으로 사용
     table_name = table_name[0].upper() + table_name[1:]
     tableobj:TableObject = globals()[table_name]()
-    for key, value in zip(tableobj.items.keys(), data):
+    for key, value in zip(tableobj.__dict__.keys(), data):
 
-        if "ExtInt" in str(tableobj.__annotations__[key]):
-            tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
-        else:
+        annotation = str(tableobj.__annotations__[key]).lower()
+
+        if annotation in ["int", "str", "float"]:
             tableobj.__setattr__(key, value)
+        elif "extint" in annotation:
+            tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
+        elif "enum" in annotation:
+            tableobj.__setattr__(key, get_enum(annotation, value))
+        else:
+            raise ValueError(f"지원하지 않는 데이터 형식입니다: {annotation}, 값: {value}")
         # if not isinstance(value, int):
         #     tableobj.__setattr__(key, value)
         # else:
@@ -77,6 +86,7 @@ def form_database_from_tableobjects(main_db:MainDB):
                 backup_data = [dict(zip([column[0] for column in main_db.cursor.description], data)) for data in main_db.cursor.fetchall()]
                 # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
                 for data in backup_data:
+                    # TODO 이거 다시 짜야 해!!
                     main_db.insert(subclass(**data))
                 # 임시 저장 테이블 삭제
                 main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
@@ -93,108 +103,63 @@ abstract properties: kr_list
 """
 액티브 데이터
 """
+@dataclass
 class User(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "discord_id",
-        "discord_name",
-        "register_date"
-    )
+    id: int = 0
+    discord_id:int = 0
+    discord_name:str = ""
+    register_date:str = ""
 
-    def __init__(
-        self,
-        id: int = 0,
-        discord_id:int = 0,
-        discord_name:str = "",
-        register_date:str = ""
-    ):
-        super().__init__(id)
-        self.discord_id = discord_id
-        self.discord_name = discord_name
-        self.register_date = register_date
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "discord_name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "discord_id": "디스코드 아이디",
+        "discord_name": "디스코드 이름",
+        "register_date": "가입일"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "discord_name"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "디스코드 아이디",
-            "디스코드 이름",
-            "가입일"
-        ])
-
-
-
+@dataclass
 class Faction(TableObject):
     
-    __columns__: tuple = (
-        "id",
-        "user_id",
-        "name",
-        "level"
-    )
+    id: int = 0
+    user_id:int = 0
+    name:str = ""
+    level:int = 0
 
-    def __init__(
-        self,
-        id: int = 0,
-        user_id:int = 0,
-        name:str = "",
-        level:int = 0
-    ):
-        super().__init__(id)
-        self.user_id = user_id
-        self.name = name
-        self.level = level
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "user_id": "유저 아이디",
+        "name": "세력명",
+        "level": "레벨"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "name"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "유저 아이디",
-            "세력명",
-            "레벨"
-        ])
-
-    def insert_new_territory(self):
+    def insert_new_territory(self, territory_name:str):
         """
         faction을 주인으로 하는 새로운 영토 생성
         """
         # 영토 생성
-        self._database.insert(
-            self
-        )
+        t = Territory(faction_id=self.id, name=territory_name)
+        t.database = self._database
+        t.push()
 
+@dataclass
 class FactionHierarchyNode(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "higher",
-        "lower"
-    )
+    id: int = 0
+    higher:int = 0
+    lower:int = 0
 
-    def __init__(
-        self,
-        id: int = 0,
-        higher:int = 0,
-        lower:int = 0
-    ):
-        super().__init__(id)
-        self.higher = higher
-        self.lower = lower
-
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "higher"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "상위 세력",
-            "하위 세력"
-        ])
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "higher"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "higher": "상위 세력",
+        "lower": "하위 세력"
+    }
     
     def push(self, lower_fation:Faction, higher_faction:Faction):
         """
@@ -233,207 +198,109 @@ class FactionHierarchyNode(TableObject):
 
         return [node.id for node in nodes]
 
-
+@dataclass
 class Population(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "faction_id",
-        "name",
-        "labor",
-        "food_consumption",
-        "water_consumption",
-        "is_laboring"
-    )
+    id: int = 0
+    faction_id:int = 0
+    name:str = ""
+    labor:int = 1
+    food_consumption:int = 1
+    water_consumption:int = 1
+    is_laboring:YesNo = YesNo.NO
 
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id:int = 0,
-        name:str = "",
-        labor:int = 1,
-        food_consumption:int = 1,
-        water_consumption:int = 1,
-        is_laboring:int = ari_enum.YesNo.NO.value
-    ):
-        super().__init__(id)
-        self.faction_id = faction_id
-        self.name = name
-        self.labor = labor
-        self.food_consumption = food_consumption
-        self.water_consumption = water_consumption
-        self.is_laboring = is_laboring
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "faction_id": "세력 아이디",
+        "name": "이름",
+        "labor": "노동력",
+        "food_consumption": "식량 소비",
+        "water_consumption": "물 소비",
+        "is_laboring": "노동 중"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "name"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "세력 아이디",
-            "이름",
-            "노동력",
-            "식량 소비",
-            "물 소비",
-            "노동 중"
-        ])
-
-
+@dataclass
 class Livestock(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "faction_id",
-        "labor",
-        "feed_consumption",
-        "is_laboring"
-    )
+    id: int = 0
+    faction_id:int = 0
+    labor:int = 1
+    feed_consumption:int = 1
+    is_laboring:YesNo = YesNo.NO
 
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id:int = 0,
-        labor:int = 1,
-        feed_consumption:int = 1,
-        is_laboring:int = ari_enum.YesNo.NO.value
-    ):
-        super().__init__(id)
-        self.faction_id = faction_id
-        self.labor = labor
-        self.feed_consumption = feed_consumption
-        self.is_laboring = is_laboring
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "ID"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "faction_id": "세력 아이디",
+        "labor": "노동력",
+        "feed_consumption": "사료 소비",
+        "is_laboring": "노동 중"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "ID"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "세력 아이디",
-            "노동력",
-            "식량 소비",
-            "물 소비",
-            "노동 중"
-        ])
-
+@dataclass
 class Resource(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "faction_id",
-        "water",
-        "food",
-        "feed",
-        "wood",
-        "soil",
-        "stone",
-        "building_material"
-    )
+    id: int = 0
+    faction_id:int = 0
+    water:ExtInt = ExtInt(0, min_value = 0)
+    food:ExtInt = ExtInt(0, min_value = 0)
+    feed:ExtInt = ExtInt(0, min_value = 0)
+    wood:ExtInt = ExtInt(0, min_value = 0)
+    soil:ExtInt = ExtInt(0, min_value = 0)
+    stone:ExtInt = ExtInt(0, min_value = 0)
+    building_material:ExtInt = ExtInt(0, min_value = 0)
 
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id:int = 0,
-        water:ExtInt = ExtInt(0, min_value = 0),
-        food:ExtInt = ExtInt(0, min_value = 0),
-        feed:ExtInt = ExtInt(0, min_value = 0),
-        wood:ExtInt = ExtInt(0, min_value = 0),
-        soil:ExtInt = ExtInt(0, min_value = 0),
-        stone:ExtInt = ExtInt(0, min_value = 0),
-        building_material:ExtInt = ExtInt(0, min_value = 0)
-    ):
-        super().__init__(id)
-        self.faction_id = faction_id
-        self.water = water
-        self.food = food
-        self.feed = feed
-        self.wood = wood
-        self.soil = soil
-        self.stone = stone
-        self.building_material = building_material
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "ID"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "faction_id": "세력 아이디",
+        "water": "물",
+        "food": "식량",
+        "feed": "사료",
+        "wood": "목재",
+        "soil": "흙",
+        "stone": "돌",
+        "building_material": "건축자재"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "ID"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "세력 아이디",
-            "물",
-            "식량",
-            "사료",
-            "목재",
-            "흙",
-            "건축자재"
-        ])
-
-
+@dataclass
 class Territory(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "faction_id",
-        "name",
-        "space_limit",
-        "safety"
-    )
+    id: int = 0
+    faction_id:int = 0
+    name:str = ""
+    space_limit:int = 1
+    safety:TerritorySafety = TerritorySafety.GREEN
 
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id:int = 0,
-        name:str = "",
-        space_limit:int = 1,
-        safety:int = 0
-    ):
-        super().__init__(id)
-        self.faction_id = faction_id
-        self.name = name
-        self.space_limit = space_limit
-        self.safety = safety
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "faction_id": "세력 아이디",
+        "name": "이름",
+        "space_limit": "공간 제한",
+        "safety": "안정도"
+    }
 
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "name"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "세력 아이디",
-            "이름",
-            "공간 제한",
-            "안정도"
-        ])
-
+@dataclass
 class Building(TableObject):
 
-    __columns__: tuple = (
-        "id",
-        "territory_id",
-        "discriminator",
-        "name"
-    )
+    id: int = 0
+    territory_id:int = 0
+    discriminator:int = 0
+    name:str = ""
 
-    def __init__(
-        self,
-        id: int = 0,
-        territory_id:int = 0,
-        discriminator:int = 0,
-        name:str = ""
-    ):
-        super().__init__(id)
-        self.territory_id = territory_id
-        self.discriminator = discriminator
-        self.name = name
-
-        # __slots__에 추가되지 않는 속성은 여기에 추가
-        self.display_column = "name"
-    
-    @property
-    def kr_list(self) -> list[str]:
-        return super().kr_list.extend([
-            "영토 아이디",
-            "구분",
-            "이름"
-        ])
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "territory_id": "영토 아이디",
+        "discriminator": "구분",
+        "name": "이름"
+    }
 
 

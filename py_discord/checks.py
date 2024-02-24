@@ -5,9 +5,7 @@
 
 import discord
 
-from py_discord import warnings
-from py_system import jsonobj
-from py_system.global_ import bot_settings, main_db
+from py_system.global_ import setting_by_guild, main_db
 
 def is_admin(interaction:discord.Interaction) -> bool:
     """
@@ -15,18 +13,18 @@ def is_admin(interaction:discord.Interaction) -> bool:
     """
     if discord.utils.get(
             interaction.user.guild.roles, 
-            id=bot_settings.admin_role_id[str(interaction.user.guild.id)]
+            id=setting_by_guild.admin_role_id[str(interaction.user.guild.id)]
         ):
         return True
     return False
 
-def is_owner(interaction:discord.Interaction) -> bool:
+def is_user(interaction:discord.Interaction) -> bool:
     """
-    interaction.user가 주인 역할을 가지고 있는지 확인합니다.
+    interaction.user가 유저 역할을 가지고 있는지 확인합니다.
     """
     if discord.utils.get(
             interaction.user.guild.roles, 
-            id=bot_settings.owner_role_id[str(interaction.user.guild.id)]
+            id=setting_by_guild.user_role_id[str(interaction.user.guild.id)]
         ):
         return True
     return False

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from py_system.abstract import Buildings, Storages, Resource
+from py_base.abstract import Buildings, Storages, Resource
 
 @dataclass()
 class DefaultResource(Resource):
