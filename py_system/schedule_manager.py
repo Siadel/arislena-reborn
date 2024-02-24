@@ -1,7 +1,8 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import shutil, datetime
 
-from py_base import ari_enum, utility
+from py_base.ari_enum import ScheduleState
+from py_base.utility import get_date, DATE_EXPRESSION, BACKUP_DIR, DATE_EXPRESSION_FULL_2, DATE_EXPRESSION_FULL
 from py_base.dbmanager import DatabaseManager
 from py_base.jsonobj import Schedule, GameSetting
 
@@ -20,7 +21,7 @@ class ScheduleManager:
 
         self.sched.start()
         self.sched_add_job()
-        self.schedule.state = ari_enum.Schedule.ONGOING
+        self.schedule.state = ScheduleState.ONGOING
 
     def __del__(self):
         self.sched.shutdown()
@@ -44,31 +45,31 @@ class ScheduleManager:
         - 게임 중 아니면 schedule.json 생성
         '''
 
-        if self.schedule.state == ari_enum.Schedule.ONGOING:
-            print(f'{utility.get_date()} 게임 시작 요청(이미 게임 시작됨)')
+        if self.schedule.state == ScheduleState.ONGOING:
+            print(f'{get_date()} 게임 시작 요청(이미 게임 시작됨)')
             return "게임이 이미 시작되었습니다. | 현재 턴: " + str(self.schedule.now_turn)
             
         else:
-            if self.schedule.state == ari_enum.Schedule.WAITING:
+            if self.schedule.state == ScheduleState.WAITING:
                 # 시작 대기 중일 때 (0)
                 self.sched_add_job()
                 self.schedule.dump()
                 
-                print(f'{utility.get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(utility.DATE_EXPRESSION)} 게임 시작 예정')
-                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(utility.DATE_EXPRESSION)} 시작 예정'
+                print(f'{get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 게임 시작 예정')
+                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 시작 예정'
             
-            elif self.schedule.state == ari_enum.Schedule.PAUSED:
+            elif self.schedule.state == ScheduleState.PAUSED:
                 # 중단 중일 때 (2)
-                self.schedule.state = ari_enum.Schedule.ONGOING
+                self.schedule.state = ScheduleState.ONGOING
                 self.schedule.dump()
 
                 self.sched.resume_job(ARISLENA_JOB_ID)
                 
-                message = f'{utility.get_date()} 게임 재개 되었습니다.'
+                message = f'{get_date()} 게임 재개 되었습니다.'
                 print(message)
                 return message
 
-            elif self.schedule.state == ari_enum.Schedule.ENDED:
+            elif self.schedule.state == ScheduleState.ENDED:
                 return "종료된 게임은 재개할 수 없습니다."
     
     def ongoing_game(self):
@@ -79,10 +80,10 @@ class ScheduleManager:
         '''
 
         # 진행 상황 백업
-        shutil.copy(self.main_db.path, utility.BACKUP_DIR + f"{utility.get_date(utility.DATE_EXPRESSION_FULL_2)}_"+self.main_db.filename)
+        shutil.copy(self.main_db.path, BACKUP_DIR + f"{get_date(DATE_EXPRESSION_FULL_2)}_"+self.main_db.filename)
 
-        if self.schedule.state == ari_enum.Schedule.WAITING:
-            self.schedule.state = ari_enum.Schedule.ONGOING
+        if self.schedule.state == ScheduleState.WAITING:
+            self.schedule.state = ScheduleState.ONGOING
 
         if self.schedule.now_turn >= self.settings.arislena_end_turn:
             self.end_game()
@@ -90,7 +91,7 @@ class ScheduleManager:
 
         self.schedule.now_turn += 1
         
-        print(self.schedule.now_turn.__str__() + f'일차 시작 {utility.get_date(utility.DATE_EXPRESSION_FULL)}')
+        print(self.schedule.now_turn.__str__() + f'일차 시작 {get_date(DATE_EXPRESSION_FULL)}')
 
         # 나라의 블럭에 대한 업데이트 사항
         # 블럭이 없으면 continue
@@ -188,10 +189,10 @@ class ScheduleManager:
         게임 중단 함수
         '''
 
-        if self.schedule.state != ari_enum.Schedule.WAITING and self.schedule.state != ari_enum.Schedule.ONGOING:
+        if self.schedule.state != ScheduleState.WAITING and self.schedule.state != ScheduleState.ONGOING:
             return "게임이 진행 중이 아닙니다."
         
-        self.schedule.state = ari_enum.Schedule.PAUSED
+        self.schedule.state = ScheduleState.PAUSED
         self.schedule.dump()
 
         self.sched.pause_job(ARISLENA_JOB_ID)
@@ -204,8 +205,8 @@ class ScheduleManager:
         게임 종료 함수
         '''
         
-        self.schedule.state = ari_enum.Schedule.ENDED
-        self.schedule.end_date = utility.get_date()
+        self.schedule.state = ScheduleState.ENDED
+        self.schedule.end_date = get_date()
 
         self.sched.remove_job(ARISLENA_JOB_ID)
 

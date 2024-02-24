@@ -1,7 +1,16 @@
-from py_base.ari_enum import Troop
-from py_system.tableobj import Faction
-print(type(Troop.IDLE), Troop(1), Troop(1).name, type(Troop(1)))
-# f = Faction()
-# print(f.__dict__)
-# for annotation in f.__annotations__:
-#     print(annotation, f.__annotations__[annotation], type(f.__annotations__[annotation]))
+# from py_base.ari_enum import ScheduleState
+
+# import json
+
+# with open("test.json", "r", encoding="utf-8") as file:
+#     # json.dump({
+#     #     "start_date": "2021-08-01",
+#     #     "end_date": "",
+#     #     "now_turn": 0,
+#     #     "state": ScheduleState.WAITING
+#     # }, file, ensure_ascii=False, indent=4)
+
+#     data = json.load(file)
+
+#     if data["state"] == ScheduleState.WAITING:
+#         print("waiting")

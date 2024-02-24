@@ -17,18 +17,20 @@ class Schedule(JsonObject):
     - now_turn : 게임 진행 턴 수
     - state : 현재 상태(0: 시작 대기, 1: 게임 중, 2: 중단, 3: 종료)
     '''
-    start_date: str = f'{(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)}'
+    start_date: str = (datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)
     end_date: str = ""
     now_turn: int = 0
     state: int = 0
 
     file_name: ClassVar[str] = "schedule.json"
 
-@dataclass
+@dataclass(init=False)
 class DiceMemory(FluidJsonObject):
     """
     . 대신 getattr()로 클래스 변수를 가져오는 것을 권장
     """
+    file_name: ClassVar[str] = "dice_memory.json"
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -37,6 +39,8 @@ class SettingByGuild(JsonObject):
     announce_location: dict[str, int]
     user_role_id: dict[str, int]
     admin_role_id: dict[str, int]
+
+    file_name: ClassVar[str] = "setting_by_guild.json"
 
 @dataclass
 class GameSetting(JsonObject):
@@ -47,11 +51,15 @@ class GameSetting(JsonObject):
     cron_hour: int
     name_length_limit: int
 
+    file_name: ClassVar[str] = "game_setting.json"
+
 @dataclass
 class BotSetting(JsonObject):
     main_guild_id: int
     guild_ids: list[int]
     application_id: int
+
+    file_name: ClassVar[str] = "bot_setting.json"
 
 # @dataclass
 # class Sign_up_waitlist:

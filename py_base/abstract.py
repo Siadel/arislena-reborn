@@ -7,14 +7,21 @@ from py_base import jsonwork
 from py_base.utility import sql_value
 from py_base.dbmanager import MainDB
 
+@dataclass
 class JsonObject(metaclass=ABCMeta):
     """
     json 파일과 연동되는 클래스들의 부모 클래스
     """
 
+    file_name: ClassVar[str] = None
+
     @classmethod
     def from_json(cls, data:dict):
         return cls(**data)
+    
+    @classmethod
+    def from_json_file(cls):
+        return cls.from_json(jsonwork.load_json(cls.file_name))
     
     def get(self, key:str):
         return getattr(self, key)
@@ -27,8 +34,14 @@ class JsonObject(metaclass=ABCMeta):
     
     def update_a_key(self, key:str, value):
         setattr(self, key, value)
+    
+    def dump(self):
+        jsonwork.dump_json(self.__dict__, self.__class__.file_name)
 
+@dataclass(init=False)
 class FluidJsonObject(JsonObject, metaclass=ABCMeta):
+
+    file_name: ClassVar[str] = None
 
     @abstractmethod
     def __init__(self, **kwargs):

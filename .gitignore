@@ -1,4 +1,4 @@
-# key file (or any file with sensitive data)
+# any file with sensitive data
 json/bot_setting.json
 json/token.json
 

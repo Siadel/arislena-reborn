@@ -11,7 +11,7 @@ def get_enum(annotation:str, value:int) -> enum.IntEnum:
     return globals()[enum_class](value)
 
 # 스케줄 상태
-class Schedule(enum.IntEnum):
+class ScheduleState(enum.IntEnum):
     # 0: 시작 대기, 1: 게임 중, 2: 중단, 3: 종료
     WAITING = 0
     ONGOING = 1
