@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 
 from py_base import jsonwork
-from py_base.utility import sql_value
+from py_base.utility import sql_value, sql_type
 from py_base.dbmanager import MainDB
 
 @dataclass
@@ -132,35 +132,19 @@ class TableObject(metaclass=ABCMeta):
         return self.__class__.__name__
     
     @property
-    def column_set(self):
-        return set(self.__dict__.keys())
-    
-    @property
     def kr_dict(self) -> dict[str, str]:
         # 한국어 : 대응되는 attribute 값
         return dict(zip(self.en_kr_map.values(), self.__dict__.values()))
-        
-    def get_insert_pair(self) -> tuple[str]:
-        """
-        Returns the names of all attributes in SQL format, excluding the 'id' attribute.
-
-        :return: A tuple containing a string of attribute names separated by commas and a string of corresponding attribute values separated by commas.
-        :rtype: tuple[str]
-
-        :example:
-        ```python
-        keys_string, values_string = tableobj.get_insert_pair()
-        sql = f"INSERT INTO {tableobj.table_name} ({keys_string}) VALUES ({values_string})"
-        ```
-        """
-        keys = []
-        values = []
-        for key, value in self.__dict__.items():
-            if key == "id":
-                continue
-            keys.append(key)
-            values.append(sql_value(value))
-        return ", ".join(keys), ", ".join(values)
+    
+    def get_column_names(self) -> list[str]:
+        columns = list(self.__dict__.keys())
+        columns.remove("id")
+        return columns
+    
+    def get_data_tuple(self) -> tuple:
+        datas = list(self.__dict__.values())
+        datas.pop(0)
+        return tuple(datas)
     
     def get_wildcard_string(self) -> str:
         """
@@ -185,7 +169,7 @@ class TableObject(metaclass=ABCMeta):
 
         """
 
-        return sql_value(getattr(self, column_name))
+        return sql_type(getattr(self, column_name))
     
     def get_create_table_string(self) -> str:
         """
@@ -250,8 +234,7 @@ class TableObject(metaclass=ABCMeta):
         if self._database.is_exist(self.table_name, f"id = {self.id}"):
             self._database.update_with_id(self.table_name, self.id, **self.__dict__)
         else:
-            keys_string, values_string = self.get_insert_pair()
-            self._database.insert(self.table_name, keys_string, values_string)
+            self._database.insert(self.table_name, self.get_column_names(), self.get_data_tuple())
     
     def delete(self):
         """

@@ -55,7 +55,7 @@ def form_database_from_tableobjects(main_db:MainDB):
         sql_table_column_set = main_db.table_column_set(table_name)
 
         # TableObject를 상속하는 객체의 데이터 형식을 불러옴
-        tableobj_column_set = subclass.column_set
+        tableobj_column_set = set(subclass.__dict__.keys())
 
         # 데이터베이스 테이블의 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
         # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, main_db에서 해당 데이터 형식을 삭제함
@@ -87,7 +87,7 @@ def form_database_from_tableobjects(main_db:MainDB):
                 # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
                 for data in backup_data:
                     # TODO 이거 다시 짜야 해!!
-                    main_db.insert(subclass(**data))
+                    main_db.insert(subclass.table_name, data.keys(), data.values())
                 # 임시 저장 테이블 삭제
                 main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
     
@@ -136,15 +136,6 @@ class Faction(TableObject):
         "name": "세력명",
         "level": "레벨"
     }
-
-    def insert_new_territory(self, territory_name:str):
-        """
-        faction을 주인으로 하는 새로운 영토 생성
-        """
-        # 영토 생성
-        t = Territory(faction_id=self.id, name=territory_name)
-        t.database = self._database
-        t.push()
 
 @dataclass
 class FactionHierarchyNode(TableObject):

@@ -131,6 +131,8 @@ class FactionDeleteButton(GeneralLookupButton):
         # 세력 해산
         self.faction.delete()
 
+        main_db.connection.commit()
+
         self.disabled = True
 
         await interaction.response.edit_message(view = self.view)

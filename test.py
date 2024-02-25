@@ -1,16 +1,5 @@
-# from py_base.ari_enum import ScheduleState
+from py_system.tableobj import Territory
 
-# import json
+t = Territory(name="테스트")
 
-# with open("test.json", "r", encoding="utf-8") as file:
-#     # json.dump({
-#     #     "start_date": "2021-08-01",
-#     #     "end_date": "",
-#     #     "now_turn": 0,
-#     #     "state": ScheduleState.WAITING
-#     # }, file, ensure_ascii=False, indent=4)
-
-#     data = json.load(file)
-
-#     if data["state"] == ScheduleState.WAITING:
-#         print("waiting")
+print(t.get_column_names(), t.get_data_tuple())

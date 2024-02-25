@@ -34,7 +34,6 @@ class FactionCommand(GroupCog, name="세력"):
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
         faction_list = [Faction(**data) for data in faction_data_list]
-        for faction in faction_list: faction.database = main_db
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
@@ -66,7 +65,7 @@ class FactionCommand(GroupCog, name="세력"):
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
         faction_list = [Faction(**data) for data in faction_data_list]
-        for faction in faction_list: faction.database = main_db
+        for faction in faction_list: faction.set_database(main_db)
         
         await interaction.response.send_message(
             "세력 해산", 

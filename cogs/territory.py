@@ -19,14 +19,13 @@ class TerritoryCommand(GroupCog, name="영토"):
         # 모든 영토 정보 가져오기
         territory_data_list = main_db.fetch_all("territory")
         territory_list = [Territory(**data) for data in territory_data_list]
-        for territory in territory_list: territory.database = main_db
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
             "영토 정보 열람", 
             view=views.LookupView(
                 territory_list,
-                button_class=views.FactionLookupButton,
+                button_class=views.TerritoryLookupButton,
                 bot=self.bot,
                 interaction=interaction)
         )

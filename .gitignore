@@ -5,6 +5,9 @@ json/token.json
 # user data file
 *.db
 
+# zip files
+*.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

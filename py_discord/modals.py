@@ -4,7 +4,7 @@ from discord.ui import Modal, TextInput
 from py_discord import warnings
 from py_discord import func
 from py_discord.bot_base import BotBase
-from py_system.tableobj import Faction, FactionHierarchyNode
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory
 from py_system.global_ import main_db, name_regex, game_setting
 
 # 테스트 모달
@@ -61,7 +61,10 @@ class FactionCreateModal(ArislenaGeneralModal):
         # id가 가장 낮은 세력의 하위 세력으로 설정
         optimal_faction = Faction.from_database(main_db, "id = (SELECT MIN(id) FROM faction)")
         new_fhn = FactionHierarchyNode()
+        new_fhn.set_database(main_db)
         new_fhn.push(new_faction, optimal_faction)
+
+        main_db.connection.commit()
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다!", ephemeral=True)
         
@@ -89,8 +92,11 @@ class NewTerritoryModal(ArislenaGeneralModal):
 
         # 세력 데이터베이스에 추가
         faction = Faction.from_database(main_db, user_id=interaction.user.id)
-
         # 새 영토 생성
-        faction.insert_new_territory(territory_name)
+        t = Territory(faction_id=faction.id, name=territory_name)
+        t.set_database(main_db)
+        t.push()
+
+        main_db.connection.commit()
 
         await interaction.response.send_message(f"성공적으로 **{territory_name}** 영토를 생성했습니다!", ephemeral=True)

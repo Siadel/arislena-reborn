@@ -2,6 +2,7 @@
 .db 파일과 sqlite3으로서 상호작용하는 클래스들
 """
 import sqlite3
+from typing import Iterable, Any
 from py_base.utility import DATA_DIR, sql_value
 
 class DatabaseManager:
@@ -14,7 +15,11 @@ class DatabaseManager:
         db_name += "_test" if test_mode else ""
         self.filename = db_name + ".db"
         self.path = DATA_DIR + self.filename
-        self.connection = sqlite3.connect(self.path, check_same_thread=False, isolation_level=None)
+        self.connection = sqlite3.connect(
+            self.path, 
+            check_same_thread=False 
+            # isolation_level=None
+        )
         self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
     
@@ -160,19 +165,19 @@ class DatabaseManager:
         sql = f"DELETE FROM {table} WHERE ID = {ID}"
         self.cursor.execute(sql)
     
-    def insert(self, table_name:str, keys_string:str, values_string:str):
+    def insert(self, table_name:str, keys_iter:Iterable[str], values_iter:Iterable[Any]):
         """
         Insert a new row into the specified table.
 
         Args:
             table_name (str): The name of the table.
-            keys_string (str): A comma-separated string of column names.
-            values_string (str): A comma-separated string of values to be inserted.
+            keys_iter (Iterable): An iterable containing the column names.
+            values_iter (Iterable): An iterable containing the values to be inserted.
 
         Returns:
             None
         """
-        sql = f"INSERT INTO {table_name} ({keys_string}) VALUES ({values_string})"
+        sql = f"INSERT INTO {table_name} ({', '.join(keys_iter)}) VALUES ({', '.join(sql_value(v) for v in values_iter)})"
         self.cursor.execute(sql)
     
     def table_column_set(self, table_name:str) -> set:

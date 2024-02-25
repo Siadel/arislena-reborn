@@ -1,6 +1,7 @@
 """
 파일 경로, 유틸리티 함수 모음 모듈
 """
+from typing import Any
 import datetime
 import os
 
@@ -48,6 +49,13 @@ def wrap(word:str, wrapper:str=""):
     if wrapper == "": return word
     return wrapper + word + wrapper
 
+def sql_type(value: Any) -> str:
+    
+    for k, v in PYTHON_SQL_DTYPE_MAP.items():
+        if k in str(type(value)).lower():
+            return v
+    raise Exception(f"Type {type(value)} is not supported in SQL. Please use 'str', 'int', or 'float'.")
+
 def sql_value(value: str | int | float | None) -> str:
     """
     Convert a Python value to its SQL representation.
@@ -71,10 +79,13 @@ def sql_value(value: str | int | float | None) -> str:
         >>> sql_value(None)
         'NULL'
     """
-    for key, value in PYTHON_SQL_DTYPE_MAP.items():
-        if key in str(type(value)):
-            return value
-    raise Exception(f"Type {type(value)} is not supported in SQL. Please use 'str', 'int', or 'float'.")
+    if isinstance(value, str):
+        return f"'{value}'"
+    elif value is None:
+        return "NULL"
+    else:
+        return str(value)
+
     # if isinstance(value, str):
     #     return f"'{value}'"
     # elif value is None:
