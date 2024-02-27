@@ -5,7 +5,7 @@ from datetime import datetime
 
 from py_base import utility
 from py_system.global_ import main_db, setting_by_guild
-from py_system.tableobj import User
+from py_system.tableobj import User, deserialize
 from py_discord import checks, embeds, views, warnings
 from py_discord.bot_base import BotBase
 
@@ -58,7 +58,7 @@ class UserManagement(GroupCog, name="유저"):
 
             # 유저 정보 가져오기
             user_data_list = main_db.fetch_all("user")
-            user_list = [User(**data) for data in user_data_list]
+            user_list = [deserialize(User, data) for data in user_data_list]
             
             await interaction.response.send_message(
                 "유저 정보 열람", 

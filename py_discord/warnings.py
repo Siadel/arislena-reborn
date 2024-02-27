@@ -239,3 +239,11 @@ class NameTooLong(Default):
 class NameContainsSpecialCharacter(Default):
     def __init__(self):
         super().__init__(f"이름에 특수문자가 포함되어 있습니다!")
+
+class NoInput(Default):
+    def __init__(self):
+        super().__init__("입력이 없어요!")
+
+class DuplicatedInput(Default):
+    def __init__(self):
+        super().__init__("중복된 입력이 있어요!")

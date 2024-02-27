@@ -4,7 +4,8 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 
 from py_base import jsonwork
-from py_base.utility import sql_value, sql_type
+from py_base.ari_enum import get_enum
+from py_base.utility import sql_type
 from py_base.dbmanager import MainDB
 
 @dataclass
@@ -132,7 +133,7 @@ class TableObject(metaclass=ABCMeta):
         return self.__class__.__name__
     
     @property
-    def kr_dict(self) -> dict[str, str]:
+    def kr_dict(self) -> dict[str]:
         # 한국어 : 대응되는 attribute 값
         return dict(zip(self.en_kr_map.values(), self.__dict__.values()))
     
@@ -214,10 +215,22 @@ class TableObject(metaclass=ABCMeta):
         row = self._database.fetch(self.table_name, *raw_statements, **statements)
         
         if not row:
-            raise Exception("해당 조건으로 데이터베이스에서 데이터를 찾을 수 없습니다.")
+            raise ValueError(f"해당 조건({raw_statements} | {statements})으로 데이터베이스에서 데이터를 찾을 수 없습니다.")
 
         for key in row.keys():
-            setattr(self, key, row[key])
+
+            annotation = str(self.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+            ref_instance = annotation[0].strip()
+            class_name = annotation[1].strip()
+
+            if class_name in ["int", "str", "float"]:
+                self.__setattr__(key, row[key])
+            elif class_name == "ExtInt":
+                self.__setattr__(key, self.__getattribute__(key) + row[key])
+            elif ref_instance == "enum":
+                self.__setattr__(key, get_enum(class_name, row[key]))
+            else:
+                raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
     
     def push(self):
         """

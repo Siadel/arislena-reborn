@@ -4,7 +4,7 @@ from discord import app_commands
 
 from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
-from py_system.tableobj import Faction
+from py_system.tableobj import Faction, deserialize
 from py_system.global_ import main_db, name_regex, game_setting
 
 class FactionCommand(GroupCog, name="세력"):
@@ -33,7 +33,7 @@ class FactionCommand(GroupCog, name="세력"):
         
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
-        faction_list = [Faction(**data) for data in faction_data_list]
+        faction_list = [deserialize(Faction, data) for data in faction_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
@@ -64,7 +64,7 @@ class FactionCommand(GroupCog, name="세력"):
 
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
-        faction_list = [Faction(**data) for data in faction_data_list]
+        faction_list = [deserialize(Faction, data) for data in faction_data_list]
         for faction in faction_list: faction.set_database(main_db)
         
         await interaction.response.send_message(

@@ -1,6 +1,7 @@
 from discord import Embed, Colour, utils
-from py_base import abstract
+from enum import IntEnum
 
+from py_base import abstract
 from py_system import tableobj
 
 def embed_for_user(*messages) -> Embed:
@@ -48,13 +49,23 @@ def register(user:tableobj.User):
     embed.add_field(name="등록일", value=user.register_date)
     return embed
 
+def table_info_text_list(table_obj:abstract.TableObject) -> list[str]:
+    """
+    테이블 객체의 정보를 텍스트로 반환합니다.
+    """
+    texts = []
+    for key, value in table_obj.kr_dict.items():
+        if isinstance(value, IntEnum):
+            value = f"**{value.name}** ({value.value})"
+        else:
+            value = f"**{value}**"
+        texts.append(f"- {key} : {value}")
+    return texts
+
 # 각종 정보 열람 시 테이블에 있는 데이터를 자동으로 반환하는 함수
 def table_info(embed:Embed, table_obj:abstract.TableObject):
-    
-    txt = ""
-    for key, value in table_obj.kr_dict.items():
-        txt += f"- {key} : **{value}**\n"
-    embed.add_field(name="기본 정보", value=txt)
+
+    embed.add_field(name="기본 정보", value="\n".join(table_info_text_list(table_obj)))
     
     return embed
 

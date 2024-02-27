@@ -94,6 +94,7 @@ class NewTerritoryModal(ArislenaGeneralModal):
         faction = Faction.from_database(main_db, user_id=interaction.user.id)
         # 새 영토 생성
         t = Territory(faction_id=faction.id, name=territory_name)
+        t.explicit_post_init()
         t.set_database(main_db)
         t.push()
 

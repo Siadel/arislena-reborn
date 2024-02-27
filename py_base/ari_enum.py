@@ -3,12 +3,12 @@
 """
 import enum
 
-def get_enum(annotation:str, value:int) -> enum.IntEnum:
+def get_enum(enum_class_name, value:int|None) -> enum.IntEnum:
     """
     enum을 반환함
     """
-    enum_class = annotation.split("'")[1]
-    return globals()[enum_class](value)
+    if value is None: raise ValueError("enum의 값이 None입니다. 데이터에서 값을 확인해주세요.")
+    return globals()[enum_class_name](value)
 
 # 스케줄 상태
 class ScheduleState(enum.IntEnum):
@@ -27,36 +27,32 @@ class Color(enum.IntEnum):
     INDIGO = 0x4B0082
     VIOLET = 0xEE82EE
 
-class User(enum.IntEnum):
-    BEFORE_START = 0
-    AFTER_START = 1
-
 # 범용 예, 아니요
 class YesNo(enum.IntEnum):
     YES = 1
     NO = 0
 
-# 부대 상태
-class Troop(enum.IntEnum):
-    IDLE = 0
-    ALERT = 1
-    FORTIFYING = 2
-    MOVING = 3
-# 블럭 상태
-class Block(enum.IntEnum):
-    SAFE = 0
-    CRISIS = 1
-    CONQUERED = 2
-# 건물 상태
-class Building(enum.IntEnum):
-    ONGOING_CONSTRUCTION = 0
-    COMPLETED = 1
-    PILLAGED = 2
-# 기술 상태
-class Technology(enum.IntEnum):
-    ONGOING_RESEARCH = 0
-    COMPLETED = 1
-    SABOTAGED = 2
+# # 부대 상태
+# class Troop(enum.IntEnum):
+#     IDLE = 0
+#     ALERT = 1
+#     FORTIFYING = 2
+#     MOVING = 3
+# # 블럭 상태
+# class Block(enum.IntEnum):
+#     SAFE = 0
+#     CRISIS = 1
+#     CONQUERED = 2
+# # 건물 상태
+# class Building(enum.IntEnum):
+#     ONGOING_CONSTRUCTION = 0
+#     COMPLETED = 1
+#     PILLAGED = 2
+# # 기술 상태
+# class Technology(enum.IntEnum):
+#     ONGOING_RESEARCH = 0
+#     COMPLETED = 1
+#     SABOTAGED = 2
 
 
 # 인구 분류
@@ -79,4 +75,13 @@ class TerritorySafety(enum.IntEnum):
     RED = 2
     YELLOW = 3
     GREEN = 4
-    
+
+    @classmethod
+    def max_value():
+        return max(TerritorySafety.__members__.values()).value
+
+class TerritoryCategory(enum.IntEnum):
+    UNSET = -1
+    FRESH_WATER_SOURCE = 0
+    HUNTING_GROUND = 1
+    FARMLAND = 2

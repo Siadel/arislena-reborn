@@ -891,3 +891,72 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: AttributeError: 'Territory' object has no attribute 'user_id'
 
+2024-02-26 22:11:01 : Command '열람' raised an exception: KeyError: 'i'
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\territory.py", line 27, in lookup
+    view=views.LookupView(
+         ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\views.py", line 176, in __init__
+    self.add_item(button_class(tableobj, **kwargs))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_discord\views.py", line 109, in __init__
+    faction = Faction.from_database(main_db, id = territory.faction_id)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_base\abstract.py", line 128, in from_database
+    new_obj.pull(*raw_statements, **statements)
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_base\abstract.py", line 222, in pull
+    annotation = str(self.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+                     ~~~~~~~~~~~~~~~~~~~~^^^^^
+KeyError: 'i'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: KeyError: 'i'
+
+2024-02-26 22:49:50 : Command '열람' raised an exception: ValueError: None is not a valid TerritoryCategory
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 827, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\territory.py", line 22, in lookup
+    territory_list = [deserialize(Territory, data) for data in territory_data_list]
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\cogs\territory.py", line 22, in <listcomp>
+    territory_list = [deserialize(Territory, data) for data in territory_data_list]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 36, in deserialize
+    tableobj.__setattr__(key, get_enum(class_name, sqlite_row[key]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\Documents\GitHub\arislena-reborn\py_base\ari_enum.py", line 10, in get_enum
+    return globals()[enum_class_name](value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Program Files\Python311\Lib\enum.py", line 712, in __call__
+    return cls.__new__(cls, value)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Program Files\Python311\Lib\enum.py", line 1135, in __new__
+    raise ve_exc
+ValueError: None is not a valid TerritoryCategory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1248, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 853, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ghftr\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 846, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: ValueError: None is not a valid TerritoryCategory
+

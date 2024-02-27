@@ -1,35 +1,41 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-from typing import ClassVar
+from numpy import random
+from sqlite3 import Row
+
+from typing import ClassVar, Type
 from dataclasses import dataclass
 
-from py_base.ari_enum import get_enum, YesNo, TerritorySafety
+from py_base.ari_enum import get_enum, YesNo, TerritorySafety, TerritoryCategory
 from py_base.datatype import ExtInt
 from py_base.dbmanager import MainDB
 from py_base.abstract import TableObject
 
-def deserialize(table_name:str, data:list) -> TableObject:
+def deserialize(table_type:Type[TableObject], sqlite_row:Row) -> Type[TableObject]:
     """
     sql 테이블 데이터에서 불러온 데이터를 이곳에 구현된 클래스로 변환하는 함수\n
     자료형이 ExtInt인 경우, ExtInt에 데이터의 int값을 더해서 반환함 (기본적으로 ExtInt는 0으로 초기화됨)
     주의: 이 함수는 **반드시** py_system.tableobj 모듈에 있어야 함
     """
     # table_name의 첫 글자를 대문자로 바꿔서 클래스 이름으로 사용
-    table_name = table_name[0].upper() + table_name[1:]
-    tableobj:TableObject = globals()[table_name]()
-    for key, value in zip(tableobj.__dict__.keys(), data):
+    # table_name = table_name[0].upper() + table_name[1:]
+    # tableobj:TableObject = globals()[table_name]()
+    tableobj:TableObject = table_type()
+    for key in sqlite_row.keys():
 
-        annotation = str(tableobj.__annotations__[key]).lower()
+        annotation = str(tableobj.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+        ref_instance = annotation[0].strip()
+        class_name = annotation[1].strip()
 
-        if annotation in ["int", "str", "float"]:
-            tableobj.__setattr__(key, value)
-        elif "extint" in annotation:
-            tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
-        elif "enum" in annotation:
-            tableobj.__setattr__(key, get_enum(annotation, value))
+        if class_name in ["int", "str", "float"]:
+            tableobj.__setattr__(key, sqlite_row[key])
+        elif class_name == "ExtInt":
+            tableobj.__setattr__(key, tableobj.__getattribute__(key) + sqlite_row[key])
+        elif ref_instance == "enum":
+            tableobj.__setattr__(key, get_enum(class_name, sqlite_row[key]))
         else:
-            raise ValueError(f"지원하지 않는 데이터 형식입니다: {annotation}, 값: {value}")
+            raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(tableobj.__annotations__[key])}, 값: {sqlite_row[key]}")
         # if not isinstance(value, int):
         #     tableobj.__setattr__(key, value)
         # else:
@@ -262,10 +268,11 @@ class Resource(TableObject):
 class Territory(TableObject):
 
     id: int = 0
-    faction_id:int = 0
-    name:str = ""
-    space_limit:int = 1
-    safety:TerritorySafety = TerritorySafety.GREEN
+    faction_id: int = 0
+    name: str = ""
+    space_limit: int = 1
+    category: TerritoryCategory = TerritoryCategory.UNSET
+    safety: TerritorySafety = TerritorySafety.UNKNOWN
 
     _database: ClassVar[MainDB] = None
     display_column: ClassVar[str] = "name"
@@ -274,8 +281,26 @@ class Territory(TableObject):
         "faction_id": "세력 아이디",
         "name": "이름",
         "space_limit": "공간 제한",
+        "category": "카테고리",
         "safety": "안정도"
     }
+    initial_safety_ratio_map: ClassVar[dict[TerritorySafety, float]] = {
+        TerritorySafety.BLACK : 0.2,
+        TerritorySafety.RED : 0.6,
+        TerritorySafety.YELLOW : 0.2,
+    }
+
+    def explicit_post_init(self):
+        """
+        카테고리와 안전도를 랜덤으로 설정함
+        """
+        self.category = random.choice([tercat for tercat in TerritoryCategory if tercat != TerritoryCategory.UNSET])
+        self.safety = TerritorySafety(
+            random.choice(
+                list(self.__class__.initial_safety_ratio_map.keys()),
+                p = list(self.__class__.initial_safety_ratio_map.values())
+            )
+        )
 
 @dataclass
 class Building(TableObject):

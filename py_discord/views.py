@@ -79,7 +79,8 @@ class GeneralLookupButton(Button):
                 discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), 
                 self.table_object
             ),
-            ephemeral = True)
+            ephemeral = False # 일단은 False로
+        )
         
 class UserLookupButton(GeneralLookupButton):
 
@@ -125,7 +126,7 @@ class FactionDeleteButton(GeneralLookupButton):
     async def callback(self, interaction:discord.Interaction):
         # hierarchy 제거
         main_db.connection.execute(
-            f"DELETE FROM FactionHierarchy WHERE higher = {self.faction.id} OR lower = {self.faction.id}"
+            f"DELETE FROM FactionHierarchyNode WHERE higher = {self.faction.id} OR lower = {self.faction.id}"
         )
 
         # 세력 해산
