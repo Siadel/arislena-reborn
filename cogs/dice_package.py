@@ -6,7 +6,7 @@ from py_base.jsonwork import dump_json
 from py_discord.bot_base import BotBase
 from py_discord import warnings
 from py_system import arislena_dice, arislena_dice_extension
-from py_system.global_ import dice_memory
+from py_system._global import dice_memory
 
 # arislena_dice 모듈에 선언된 모든 주사위 객체를 불러옴
 dice_list = arislena_dice.indipendent_dice_list + arislena_dice.group_only_dice_list

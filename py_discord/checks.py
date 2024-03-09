@@ -5,28 +5,31 @@
 
 import discord
 
-from py_system.global_ import setting_by_guild, main_db
+from py_system._global import setting_by_guild, main_db
 
 def is_admin(interaction:discord.Interaction) -> bool:
     """
     interaction.user가 관리자 역할을 가지고 있는지 확인합니다.
     """
-    if discord.utils.get(
-            interaction.user.guild.roles, 
-            id=setting_by_guild.admin_role_id[str(interaction.user.guild.id)]
-        ):
-        return True
+    if (guild_id_key := str(interaction.user.guild.id)) in setting_by_guild.admin_role_id:
+        if discord.utils.get(
+                interaction.user.guild.roles, 
+                id=setting_by_guild.admin_role_id[guild_id_key]
+            ):
+            return True
+
     return False
 
 def is_user(interaction:discord.Interaction) -> bool:
     """
     interaction.user가 유저 역할을 가지고 있는지 확인합니다.
     """
-    if discord.utils.get(
-            interaction.user.guild.roles, 
-            id=setting_by_guild.user_role_id[str(interaction.user.guild.id)]
-        ):
-        return True
+    if (guild_id_key := str(interaction.user.guild.id)) in setting_by_guild.user_role_id:
+        if discord.utils.get(
+                interaction.user.guild.roles, 
+                id=setting_by_guild.user_role_id[guild_id_key]
+            ):
+            return True
     return False
 
 def user_exists(interaction:discord.Interaction) -> bool:

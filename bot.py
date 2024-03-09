@@ -2,12 +2,12 @@ import traceback, os, discord
 from typing import Union
 from discord import app_commands
 
-from py_discord import warnings
-from py_discord.bot_base import BotBase
-
 from py_base import utility 
 from py_system.tableobj import form_database_from_tableobjects
-from py_system.global_ import main_db, bot_setting
+from py_system._global import main_db, bot_setting
+from py_discord import warnings
+from py_discord.bot_base import BotBase
+from py_discord.checks import is_admin
 
 form_database_from_tableobjects(main_db)
 
@@ -17,6 +17,7 @@ class AriBot(BotBase):
     def __init__(self):
 
         super().__init__()
+        self.ready_flag = False
 
     async def setup_hook(self):
         for file in os.listdir(utility.current_path + "cogs"):
@@ -27,12 +28,18 @@ class AriBot(BotBase):
     async def on_ready(self):
         await self.wait_until_ready()
         await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
+        if not self.ready_flag:
+            for guild in self.guilds:
+                await self.announce(f"아리가 {guild.name}에 들어왔어요!", guild.id)
+            self.ready_flag = True
 
         # 정보 출력
         print(f"discord.py version: {discord.__version__}")
         print(f'We have logged in as {self.user}')
 
     async def close(self):
+        for guild in self.guilds:
+            await self.announce(f"아리가 {guild.name}에서 나가요!", guild.id)
         await super().close()
 
 # 봇 객체 생성
@@ -86,6 +93,15 @@ async def on_app_command_completion(interaction: discord.Interaction, command: U
     log_file.write(f"{utility.get_date(utility.DATE_EXPRESSION_FULL)}\t{interaction.user.id}\t{interaction.user.name}\t{interaction.user.nick}\t{interaction.data['name']}\t{command.name}\n{interaction.data}\n")
     log_file.close()
 
+@aribot.tree.command(
+    name = "종료",
+    description = "봇을 공식적으로 종료합니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다.",
+    guilds=aribot.objectified_guilds
+)
+async def exit_bot(interaction: discord.Interaction):
+    if not is_admin(interaction): raise warnings.NotAdmin()
+    await interaction.response.send_message("봇을 종료합니다.", ephemeral=True)
+    await aribot.close()
 
 if __name__ == "__main__":
     # 봇 실행

@@ -2,6 +2,9 @@
 json/bot_setting.json
 json/token.json
 
+# vscode
+.vscode/
+
 # user data file
 *.db
 

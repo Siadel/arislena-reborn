@@ -2,7 +2,7 @@ import discord, logging, json
 from discord.ext import commands
 from os import environ, path
 
-from py_system.global_ import setting_by_guild, bot_setting
+from py_system._global import setting_by_guild, bot_setting
 
 # 봇 권한 설정
 intents = discord.Intents.default()
@@ -39,10 +39,13 @@ class BotBase(commands.Bot):
                 exit_bot()
 
     async def announce(self, message:str, guild_id:int):
-        # 지정된 봇 전용 공지 채널에 메세지를 보내기
-        
-        channel = self.get_channel(setting_by_guild.announce_location[str(guild_id)])
-        await channel.send(message)
+        """
+        지정된 봇 전용 공지 채널에 메세지를 보냄. 지정 채널이 없으면 아무것도 하지 않음.
+        """
+        if (guild_id_key := str(guild_id)) in setting_by_guild.announce_location:
+            
+            channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
+            await channel.send(message)
     
     def run(self):
         super().run(self.token, log_handler=self.log_handler, log_level=logging.INFO)

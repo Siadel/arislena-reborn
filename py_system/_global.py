@@ -6,7 +6,7 @@ import re
 
 from py_base.jsonobj import SettingByGuild, GameSetting, BotSetting, Schedule, DiceMemory
 from py_base.dbmanager import MainDB
-from py_system.schedule_manager import ScheduleManager
+from py_base.schedule_manager import ScheduleManager
 
 
 bot_setting = BotSetting.from_json_file()

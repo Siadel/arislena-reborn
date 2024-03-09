@@ -5,8 +5,8 @@ from discord import app_commands
 from py_discord import warnings, views
 from py_discord.bot_base import BotBase
 from py_base.ari_enum import TerritorySafety
-from py_system.global_ import main_db, game_setting
-from py_system.tableobj import Faction, Territory, deserialize
+from py_system._global import main_db, game_setting
+from py_system.tableobj import Faction, Territory
 from py_discord.modals import NewTerritoryModal
 
 class TerritoryCommand(GroupCog, name="영토"):
@@ -19,7 +19,7 @@ class TerritoryCommand(GroupCog, name="영토"):
         
         # 모든 영토 정보 가져오기
         territory_data_list = main_db.fetch_all("territory")
-        territory_list = [deserialize(Territory, data) for data in territory_data_list]
+        territory_list = [Territory.from_data(data) for data in territory_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(

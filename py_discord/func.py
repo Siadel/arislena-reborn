@@ -1,4 +1,4 @@
-from py_system.global_ import name_regex
+from py_system._global import name_regex
 from py_discord.warnings import NameContainsSpecialCharacter
 
 def check_special_character_and_raise(name:str):

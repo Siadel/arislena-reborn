@@ -1,11 +1,12 @@
 import discord
 from discord.ui import Modal, TextInput
 
+from py_base.koreanstring import objective
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory
+from py_system._global import main_db, name_regex, game_setting
 from py_discord import warnings
 from py_discord import func
 from py_discord.bot_base import BotBase
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory
-from py_system.global_ import main_db, name_regex, game_setting
 
 # 테스트 모달
 class ModalTest(Modal):
@@ -101,3 +102,5 @@ class NewTerritoryModal(ArislenaGeneralModal):
         main_db.connection.commit()
 
         await interaction.response.send_message(f"성공적으로 **{territory_name}** 영토를 생성했습니다!", ephemeral=True)
+
+        await self.bot.announce(f"**{interaction.user.display_name}**님께서 새로운 영토, {objective(territory_name, '**')} 얻었어요!", interaction.guild.id)

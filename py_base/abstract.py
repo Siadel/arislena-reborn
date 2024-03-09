@@ -1,10 +1,12 @@
 import re
-from typing import ClassVar
+
+from typing import ClassVar, Any
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
+from sqlite3 import Row
 
 from py_base import jsonwork
-from py_base.ari_enum import get_enum
+from py_base.ari_enum import get_enum, ResourceCategory
 from py_base.utility import sql_type
 from py_base.dbmanager import MainDB
 
@@ -78,7 +80,7 @@ class TableObject(metaclass=ABCMeta):
     # External database connection is required.
     from py_system.global_ import main_db
     faction = Faction()
-    faction.database = main_db
+    faction.set_database(main_db)
     faction.pull("id = 1")
     print(faction)
     # modify the attributes
@@ -90,10 +92,12 @@ class TableObject(metaclass=ABCMeta):
     ```python
     # External database connection is required.
     from py_system.global_ import main_db
-    faction = Faction(**main_db.fetch("faction", "id = 1"))
+    faction = Faction.from_data(main_db.fetch("faction", "id = 1"))
+    # also:
+    faction = Faction.from_database(main_db, id=1)
     print(faction)
     # set database
-    faction.database = main_db
+    faction.set_database(main_db)
     # modify the attributes
     faction.name = "Survivors"
     # push the data to the database
@@ -110,6 +114,28 @@ class TableObject(metaclass=ABCMeta):
         rtn = list(self.__dict__.values())
         rtn.pop(0) # ID 제거
         return iter(rtn)
+    
+    def _set_attributes_from_sqlite_row(self, row:Row):
+        """
+        Sets the attributes of the table object from the sqlite3.Row object.
+        """
+
+        for key in row.keys():
+
+            annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+            ref_instance = annotation[0].strip()
+            class_name = annotation[1].strip()
+
+            match (class_name, ref_instance):
+
+                case ("int", _) | ("str", _) | ("float", _):
+                    setattr(self, key, row[key])
+                case ("ExtInt", _):
+                    setattr(self, key, self.__getattribute__(key) + row[key])
+                case (_, "enum"):
+                    setattr(self, key, get_enum(class_name, row[key]))
+                case _:
+                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
     
     @classmethod
     def set_database(cls, database:MainDB):
@@ -128,6 +154,23 @@ class TableObject(metaclass=ABCMeta):
             new_obj.pull(*raw_statements, **statements)
         return new_obj
     
+    @classmethod
+    def from_data(cls, sqlite_row:Row):
+        """
+        Creates a table object from the database, using the sqlite3.Row object.
+
+        This function not sets the database attribute of the table object. You should set the database attribute manually.
+        """
+
+        new_obj = cls()
+
+        if not set(sqlite_row.keys()).issubset(set(cls.__annotations__.keys())):
+            raise ValueError(f"데이터베이스의 컬럼과 클래스의 어노테이션에 불일치가 있습니다: {set(sqlite_row.keys()) - set(cls.__annotations__.keys())}")
+
+        new_obj._set_attributes_from_sqlite_row(sqlite_row)
+            
+        return new_obj
+    
     @property
     def table_name(self):
         return self.__class__.__name__
@@ -136,6 +179,14 @@ class TableObject(metaclass=ABCMeta):
     def kr_dict(self) -> dict[str]:
         # 한국어 : 대응되는 attribute 값
         return dict(zip(self.en_kr_map.values(), self.__dict__.values()))
+    
+    @property
+    def database(self) -> MainDB:
+        return self._database
+    
+    def _check_database(self):
+        if not self._database:
+            raise Exception("Database is not set.")
     
     def get_column_names(self) -> list[str]:
         columns = list(self.__dict__.keys())
@@ -209,28 +260,14 @@ class TableObject(metaclass=ABCMeta):
             Exception: If the database is not set.
             Exception: If the data is not fetched from the database successfully.
         """
-        if not self._database:
-            raise Exception("Database is not set.")
+        self._check_database()
         
         row = self._database.fetch(self.table_name, *raw_statements, **statements)
         
         if not row:
             raise ValueError(f"해당 조건({raw_statements} | {statements})으로 데이터베이스에서 데이터를 찾을 수 없습니다.")
 
-        for key in row.keys():
-
-            annotation = str(self.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
-            ref_instance = annotation[0].strip()
-            class_name = annotation[1].strip()
-
-            if class_name in ["int", "str", "float"]:
-                self.__setattr__(key, row[key])
-            elif class_name == "ExtInt":
-                self.__setattr__(key, self.__getattribute__(key) + row[key])
-            elif ref_instance == "enum":
-                self.__setattr__(key, get_enum(class_name, row[key]))
-            else:
-                raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
+        self._set_attributes_from_sqlite_row(row)
     
     def push(self):
         """
@@ -243,7 +280,7 @@ class TableObject(metaclass=ABCMeta):
         Raises:
             Exception: If the database is not set.
         """
-        if not self._database: raise Exception("Database is not set.")
+        self._check_database()
         if self._database.is_exist(self.table_name, f"id = {self.id}"):
             self._database.update_with_id(self.table_name, self.id, **self.__dict__)
         else:
@@ -256,8 +293,65 @@ class TableObject(metaclass=ABCMeta):
         Raises:
             Exception: If the database is not set.
         """
-        if not self._database: raise Exception("Database is not set.")
+        self._check_database()
         self._database.delete_with_id(self.table_name, self.id)
+
+
+class ResourceBase(metaclass=ABCMeta):
+    
+    def __init__(self, category:ResourceCategory, amount:int):
+        self.category = category
+        self.amount = amount
+
+    def __str__(self):
+        return self.category.name
+    
+    def __int__(self):
+        return int(self.amount)
+    
+    def _check_category(self, other:"ResourceBase"):
+        """
+        같은 카테고리인지 확인
+        """
+        if not isinstance(other, ResourceBase): raise TypeError("ResourceBase 객체가 아닙니다.")
+        if self.category != other.category: raise ValueError("카테고리가 다릅니다.")
+
+    def move(self, other:"ResourceBase", *, amount:int = None):
+        """
+        다른 자원 객체로 자원을 이동
+        """
+        self._check_category(other)
+        if amount is None or amount > self.amount: amount = self.amount
+        
+        other.amount += amount
+        self.amount -= amount
+        
+    def __add__(self, other:"ResourceBase"):
+        self._check_category(other)
+        return ResourceBase(self.category, self.amount + other.amount)
+    
+    def __sub__(self, other:"ResourceBase"):
+        self._check_category(other)
+        return ResourceBase(self.category, self.amount - other.amount)
+    
+    def __lt__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount < other.amount
+    
+    def __le__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount <= other.amount
+    
+    def __eq__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount == other.amount
+    
+    def __ne__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount != other.amount
+    
+    def __gt__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount > other.amount
+    
+    def __ge__(self, other:"ResourceBase"):
+        return self.category == other.category and self.amount >= other.amount
+        
 
 @dataclass
 class Buildings(metaclass=ABCMeta):
@@ -265,34 +359,23 @@ class Buildings(metaclass=ABCMeta):
     시설 클래스들의 부모 클래스
     """
     discriminator: int = None
-    name: str = None
-    dice_cost: int = None
+    dice_cost: int = 0
     level: int = 0
-    consumptions: list = field(default_factory=list)
-    productions: list = field(default_factory=list)
-
-
-class Resource(metaclass=ABCMeta):
     
-    def __init__(self, name:str, amount:int):
-        self.name = name
-        self.amount = amount
-
-    def __str__(self):
-        return str(self.name)
+    @abstractmethod
+    def produce(self) -> Any:
+        raise NotImplementedError("produce 메소드가 구현되지 않았습니다.")
     
-    def __int__(self):
-        return int(self.amount)
 
+# deprecated
 @dataclass
 class Storages(Buildings, metaclass=ABCMeta):
     """
     창고 클래스들의 부모 클래스
     """
     discriminator: int = None
-    name: str = None
     level: int = 0
-    storages: list[Resource] = field(default_factory=list)
+    storages: list[ResourceBase] = field(default_factory=list)
 
     def level_up(self):
         self.level += 1

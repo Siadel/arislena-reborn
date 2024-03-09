@@ -1,49 +1,14 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-from numpy import random
-from sqlite3 import Row
 
-from typing import ClassVar, Type
+from typing import ClassVar
 from dataclasses import dataclass
 
-from py_base.ari_enum import get_enum, YesNo, TerritorySafety, TerritoryCategory
+from py_base.ari_enum import YesNo, TerritorySafety, BuildingCategory, ResourceCategory
 from py_base.datatype import ExtInt
 from py_base.dbmanager import MainDB
-from py_base.abstract import TableObject
-
-def deserialize(table_type:Type[TableObject], sqlite_row:Row) -> Type[TableObject]:
-    """
-    sql 테이블 데이터에서 불러온 데이터를 이곳에 구현된 클래스로 변환하는 함수\n
-    자료형이 ExtInt인 경우, ExtInt에 데이터의 int값을 더해서 반환함 (기본적으로 ExtInt는 0으로 초기화됨)
-    주의: 이 함수는 **반드시** py_system.tableobj 모듈에 있어야 함
-    """
-    # table_name의 첫 글자를 대문자로 바꿔서 클래스 이름으로 사용
-    # table_name = table_name[0].upper() + table_name[1:]
-    # tableobj:TableObject = globals()[table_name]()
-    tableobj:TableObject = table_type()
-    for key in sqlite_row.keys():
-
-        annotation = str(tableobj.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
-        ref_instance = annotation[0].strip()
-        class_name = annotation[1].strip()
-
-        if class_name in ["int", "str", "float"]:
-            tableobj.__setattr__(key, sqlite_row[key])
-        elif class_name == "ExtInt":
-            tableobj.__setattr__(key, tableobj.__getattribute__(key) + sqlite_row[key])
-        elif ref_instance == "enum":
-            tableobj.__setattr__(key, get_enum(class_name, sqlite_row[key]))
-        else:
-            raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(tableobj.__annotations__[key])}, 값: {sqlite_row[key]}")
-        # if not isinstance(value, int):
-        #     tableobj.__setattr__(key, value)
-        # else:
-        #     if "ExtInt" in str(tableobj.__annotations__[key]):
-        #         tableobj.__setattr__(key, tableobj.__getattribute__(key) + value)
-        #     else:
-        #         tableobj.__setattr__(key, value)
-    return tableobj
+from py_base.abstract import TableObject, ResourceBase
 
 def form_database_from_tableobjects(main_db:MainDB):
     """
@@ -97,6 +62,19 @@ def form_database_from_tableobjects(main_db:MainDB):
                 # 임시 저장 테이블 삭제
                 main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
     
+    # 데이터베이스의 테이블 목록 불러오기
+    main_db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables: set[str] = {table[0] for table in main_db.cursor.fetchall()}
+    tables.remove("sqlite_sequence")
+    # TableObject를 상속하는 객체의 테이블 목록 불러오기
+    tableobj_tables: set[str] = {subclass().table_name for subclass in TableObject.__subclasses__()}
+    
+    # 데이터베이스에 존재하지 않는 테이블을 삭제함
+    for table in (tables - tableobj_tables):
+        main_db.cursor.execute(f"DROP TABLE {table}")
+    
+    main_db.connection.commit()
+    
     print("Database initialized")
 
 """
@@ -127,73 +105,30 @@ class User(TableObject):
     }
 
 @dataclass
-class Faction(TableObject):
-    
-    id: int = 0
-    user_id:int = 0
-    name:str = ""
-    level:int = 0
-
-    _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "user_id": "유저 아이디",
-        "name": "세력명",
-        "level": "레벨"
-    }
-
-@dataclass
-class FactionHierarchyNode(TableObject):
+class Resource(TableObject, ResourceBase):
 
     id: int = 0
-    higher:int = 0
-    lower:int = 0
+    faction_id: int = 0
+    category: ResourceCategory = ResourceCategory.UNSET
+    amount: ExtInt = ExtInt(0, min_value=0)
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "higher"
+    display_column: ClassVar[str] = "id"
     en_kr_map: ClassVar[dict[str, str]] = {
         "id": "아이디",
-        "higher": "상위 세력",
-        "lower": "하위 세력"
+        "faction_id": "세력 아이디",
+        "category": "카테고리",
+        "amount": "수량"
     }
-    
-    def push(self, lower_fation:Faction, higher_faction:Faction):
-        """
-        계급 설정
-        """
-        if lower_fation.level > higher_faction.level:
-            raise ValueError("하위 세력의 레벨이 상위 세력의 레벨보다 높습니다.")
-        self.higher = higher_faction.id
-        self.lower = lower_fation.id
-        super().push()
-
-    def fetch_all_high_hierarchy(self, faction:Faction) -> list[Faction]:
-        """
-        해당 세력의 상위 계급을 모두 가져옴
-        """
-
-        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"lower = {faction.id}")
-
-        return [self._database.fetch("faction", f"ID = {node.higher}") for node in nodes]
-    
-    def fetch_all_low_hierarchy(self, faction:Faction) -> list[Faction]:
-        """
-        해당 세력의 하위 계급을 모두 가져옴
-        """
-
-        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"higher = {faction.id}")
-
-        return [self._database.fetch("faction", f"ID = {node.lower}") for node in nodes]
-    
-    def fetch_all_hierarchy_id(self, faction:Faction) -> list[int]:
-        """
-        해당 세력의 계급을 모두 가져옴
-        """
-
-        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"higher = {faction.id} OR lower = {faction.id}")
-
-        return [node.id for node in nodes]
+    category_en_kr_map: ClassVar[dict[str, str]] = {
+        "WATER": "물",
+        "FOOD": "식량",
+        "FEDD": "사료",
+        "WOOD": "목재",
+        "SOIL": "흙",
+        "STONE": "석재",
+        "BUILDING_MATERIAL": "건축자재"
+    }
 
 @dataclass
 class Population(TableObject):
@@ -219,6 +154,32 @@ class Population(TableObject):
     }
 
 @dataclass
+class FactionHierarchyNode(TableObject):
+
+    id: int = 0
+    higher:int = 0
+    lower:int = 0
+
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "higher"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "higher": "상위 세력",
+        "lower": "하위 세력"
+    }
+    
+    def push(self, lower_fation:"Faction", higher_faction:"Faction"):
+        """
+        계급 설정
+        """
+        if lower_fation.level > higher_faction.level:
+            raise ValueError("하위 세력의 레벨이 상위 세력의 레벨보다 높습니다.")
+        self.higher = higher_faction.id
+        self.lower = lower_fation.id
+        super().push()
+
+
+@dataclass
 class Livestock(TableObject):
 
     id: int = 0
@@ -237,32 +198,6 @@ class Livestock(TableObject):
         "is_laboring": "노동 중"
     }
 
-@dataclass
-class Resource(TableObject):
-
-    id: int = 0
-    faction_id:int = 0
-    water:ExtInt = ExtInt(0, min_value = 0)
-    food:ExtInt = ExtInt(0, min_value = 0)
-    feed:ExtInt = ExtInt(0, min_value = 0)
-    wood:ExtInt = ExtInt(0, min_value = 0)
-    soil:ExtInt = ExtInt(0, min_value = 0)
-    stone:ExtInt = ExtInt(0, min_value = 0)
-    building_material:ExtInt = ExtInt(0, min_value = 0)
-
-    _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "ID"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "water": "물",
-        "food": "식량",
-        "feed": "사료",
-        "wood": "목재",
-        "soil": "흙",
-        "stone": "돌",
-        "building_material": "건축자재"
-    }
 
 @dataclass
 class Territory(TableObject):
@@ -271,7 +206,6 @@ class Territory(TableObject):
     faction_id: int = 0
     name: str = ""
     space_limit: int = 1
-    category: TerritoryCategory = TerritoryCategory.UNSET
     safety: TerritorySafety = TerritorySafety.UNKNOWN
 
     _database: ClassVar[MainDB] = None
@@ -281,33 +215,22 @@ class Territory(TableObject):
         "faction_id": "세력 아이디",
         "name": "이름",
         "space_limit": "공간 제한",
-        "category": "카테고리",
         "safety": "안정도"
-    }
-    initial_safety_ratio_map: ClassVar[dict[TerritorySafety, float]] = {
-        TerritorySafety.BLACK : 0.2,
-        TerritorySafety.RED : 0.6,
-        TerritorySafety.YELLOW : 0.2,
     }
 
     def explicit_post_init(self):
         """
-        카테고리와 안전도를 랜덤으로 설정함
+        안전도를 랜덤으로 설정함
         """
-        self.category = random.choice([tercat for tercat in TerritoryCategory if tercat != TerritoryCategory.UNSET])
-        self.safety = TerritorySafety(
-            random.choice(
-                list(self.__class__.initial_safety_ratio_map.keys()),
-                p = list(self.__class__.initial_safety_ratio_map.values())
-            )
-        )
+        if self.safety == TerritorySafety.UNKNOWN:
+            self.safety = TerritorySafety.get_randomly()
 
 @dataclass
 class Building(TableObject):
 
     id: int = 0
     territory_id:int = 0
-    discriminator:int = 0
+    discriminator:BuildingCategory = BuildingCategory.UNSET
     name:str = ""
 
     _database: ClassVar[MainDB] = None
@@ -318,5 +241,67 @@ class Building(TableObject):
         "discriminator": "구분",
         "name": "이름"
     }
+    
+    def set_randomly_discriminator(self):
+        self.discriminator = BuildingCategory.get_ramdomly_base_building()
 
+@dataclass
+class Faction(TableObject):
+    
+    id: int = 0
+    user_id:int = 0
+    name:str = ""
+    level:int = 0
 
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "name"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "user_id": "유저 아이디",
+        "name": "세력명",
+        "level": "레벨"
+    }
+    
+    def fetch_all_high_hierarchy(self) -> list[FactionHierarchyNode]:
+        """
+        해당 세력의 상위 계급을 모두 가져옴
+        """
+
+        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"lower = {self.id}")
+
+        return nodes
+    
+    def fetch_all_low_hierarchy(self) -> list[FactionHierarchyNode]:
+        """
+        해당 세력의 하위 계급을 모두 가져옴
+        """
+
+        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"higher = {self.id}")
+
+        return nodes
+    
+    def fetch_all_hierarchy_id(self) -> list[int]:
+        """
+        해당 세력의 계급을 모두 가져옴
+        """
+
+        nodes:list[FactionHierarchyNode] = self._database.fetch_many("FactionHierarchyNode", f"higher = {self.id} OR lower = {self.id}")
+
+        return nodes
+    
+    def get_resource(self, category:ResourceCategory) -> Resource:
+        """
+        해당 세력의 자원을 가져옴
+        """
+        r = self._database.fetch("resource", faction_id=self.id, category=category.value)
+        if not r: return Resource(faction_id=self.id, category=ResourceCategory(category))
+        return Resource.from_data(r)
+    
+    def get_population(self, name:str) -> Population:
+        """
+        해당 세력의 인구를 가져옴
+        """
+        p = self._database.fetch("population", faction_id=self.id, name=name)
+
+        if not p: return Population(faction_id=self.id, name=name)
+        return Population.from_data(p)

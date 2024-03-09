@@ -12,9 +12,10 @@ class Default(Exception):
 
 class NotRegistered(Default):
     def __init__(self, user_name:str=None):
-        txt = "등록되지 않았어요! `/유저 등록` 명령어로 등록해주세요."
+        txt = "등록되지 않았어요!"
         if user_name:
             txt = f"{koreanstring.topicmarker(user_name, wrapper='**')} 등록되지 않았어요!"
+        txt += "`/유저 등록` 명령어로 등록해주세요."
         super().__init__(txt)
 
 class AlreadyRegistered(Default):

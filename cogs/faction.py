@@ -4,8 +4,8 @@ from discord import app_commands
 
 from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
-from py_system.tableobj import Faction, deserialize
-from py_system.global_ import main_db, name_regex, game_setting
+from py_system.tableobj import Faction
+from py_system._global import main_db
 
 class FactionCommand(GroupCog, name="세력"):
 
@@ -18,6 +18,9 @@ class FactionCommand(GroupCog, name="세력"):
         description = "세력을 창설합니다. 관리자가 아닌 경우, 세력 1개만 창설할 수 있습니다."
     )
     async def create(self, interaction: discord.Interaction):
+
+        if not main_db.is_exist("user", f"discord_id = {interaction.user.id}"):
+            raise warnings.NotRegistered(interaction.user.display_name)
 
         # 이미 세력을 가지고 있는지 확인 (관리자는 예외)
         if main_db.is_exist("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
@@ -33,7 +36,7 @@ class FactionCommand(GroupCog, name="세력"):
         
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
-        faction_list = [deserialize(Faction, data) for data in faction_data_list]
+        faction_list = [Faction.from_data(data) for data in faction_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
@@ -53,8 +56,6 @@ class FactionCommand(GroupCog, name="세력"):
     async def edit(self, interaction: discord.Interaction, attribute:str, value:str = None, message_link:str = None, faction_id:int = None):
         pass
 
-    
-
     @app_commands.command(
         name = "해산",
         description = "[관리자 전용] 세력을 해산하여 데이터에서 삭제합니다."
@@ -64,7 +65,7 @@ class FactionCommand(GroupCog, name="세력"):
 
         # 모든 세력 정보 가져오기
         faction_data_list = main_db.fetch_all("faction")
-        faction_list = [deserialize(Faction, data) for data in faction_data_list]
+        faction_list = [Faction.from_data(data) for data in faction_data_list]
         for faction in faction_list: faction.set_database(main_db)
         
         await interaction.response.send_message(

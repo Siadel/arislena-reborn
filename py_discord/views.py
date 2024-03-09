@@ -5,7 +5,7 @@ from discord import ui, Colour
 from py_discord.embeds import table_info
 from py_discord.bot_base import BotBase
 from py_base.koreanstring import nominative
-from py_system.global_ import main_db
+from py_system._global import main_db
 from py_system.tableobj import TableObject, User, Faction, Territory
 
 # /유저 설정 - 설정 정보 출력
