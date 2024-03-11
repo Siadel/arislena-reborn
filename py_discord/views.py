@@ -2,11 +2,13 @@ import discord
 from discord.ui import View, Button
 from discord import ui, Colour
 
+from py_base.koreanstring import nominative
+from py_base.ari_enum import BuildingCategory
+from py_system._global import main_db
+from py_system.tableobj import TableObject, User, Faction, Territory, Building
+from py_discord import warnings
 from py_discord.embeds import table_info
 from py_discord.bot_base import BotBase
-from py_base.koreanstring import nominative
-from py_system._global import main_db
-from py_system.tableobj import TableObject, User, Faction, Territory
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -48,7 +50,7 @@ class NoDataButton(Button):
 # 인자로 table 이름을 받아서 해당 테이블의 name column과 ID column을 출력
 # 출력 양식은 "이름 (ID : %d)" 형태
         
-class GeneralLookupButton(Button):
+class TableObjectButton(Button):
     
     def __init__(
             self, 
@@ -82,7 +84,7 @@ class GeneralLookupButton(Button):
             ephemeral = False # 일단은 False로
         )
         
-class UserLookupButton(GeneralLookupButton):
+class UserLookupButton(TableObjectButton):
 
     def __init__(self, user:User, bot:BotBase, interaction:discord.Interaction):
         member = discord.utils.get(interaction.guild.members, id = user.discord_id)
@@ -91,9 +93,8 @@ class UserLookupButton(GeneralLookupButton):
             bot = bot, 
             label_complementary = f"{member.display_name}"
         )
-        self.interaction = interaction
 
-class FactionLookupButton(GeneralLookupButton):
+class FactionLookupButton(TableObjectButton):
 
     def __init__(self, faction:Faction, bot:BotBase, interaction:discord.Interaction):
         user = discord.utils.get(interaction.guild.members, id = faction.user_id)
@@ -102,21 +103,51 @@ class FactionLookupButton(GeneralLookupButton):
             bot = bot, 
             label_complementary = f"소유자 : {user.display_name}"
         )
-        self.interaction = interaction
 
-class TerritoryLookupButton(GeneralLookupButton):
+class TerritoryLookupButton(TableObjectButton):
 
-    def __init__(self, territory:Territory, bot:BotBase, interaction:discord.Interaction):
-        faction = Faction.from_database(main_db, id = territory.faction_id)
+    def __init__(self, territory:Territory, bot:BotBase):
+        self.faction = Faction.from_database(main_db, id = territory.faction_id)
         super().__init__(
             territory, 
             bot = bot, 
-            label_complementary = f"소유 세력 : {faction.name}"
+            label_complementary = f"소유 세력 : {self.faction.name}"
         )
-        self.interaction = interaction
+
+class BuildButton(TerritoryLookupButton):
+    
+    def __init__(self, territory:Territory, bot:BotBase, prev_interaction:discord.Interaction, building_category:discord.app_commands.Choice[int], building_name:str):
+        super().__init__(territory, bot = bot)
+        self.table_object = territory
+        self.prev_interaction = prev_interaction
+        self.building_category = building_category
+        self.building_name = building_name
+        
+    async def callback(self, interaction:discord.Interaction):
+        
+        if interaction.user.id != self.prev_interaction.user.id: raise warnings.ImpossibleToInterrupt()
+        
+        self.table_object.set_database(main_db)
+        
+        if self.table_object.remaining_space == 0: raise warnings.NoSpace()
+
+        category = BuildingCategory(self.building_category.value)
+        
+        building = Building(
+            territory_id=self.table_object.id,
+            discriminator=category,
+            name=self.building_name
+        )
+        
+        Building.set_database(main_db)
+        building.push()
+        
+        await interaction.response.send_message(f"성공적으로 **{self.building_name}** 건물을 건설했습니다!", ephemeral=True)
+        
+        main_db.connection.commit()
 
 # 세력 해산 버튼
-class FactionDeleteButton(GeneralLookupButton):
+class FactionDeleteButton(TableObjectButton):
 
     def __init__(self, faction:Faction, bot:BotBase):
         super().__init__(faction, bot = bot)
@@ -147,18 +178,17 @@ class FactionDeleteButton(GeneralLookupButton):
 
 
 # 범용 열람 버튼 ui
-class LookupView(View):
+class TableObjectView(View):
 
     def __init__(
             self, 
             fetch_list:list, 
-            *, 
-            timeout = 180, 
-            button_class = GeneralLookupButton, 
-            **kwargs
+            *, timeout = 180, 
+            button_class = TableObjectButton, 
+            **button_class_param
         ):
         """
-        fetch_list : 테이블 객체 리스트, 즉 list[TableObject] (fetch_all로 가져온 것)
+        fetch_list : 테이블 객체 리스트, 즉 list[TableObject]
         display_column : 버튼에 표시할 데이터의 컬럼 이름 (None일 경우 ID로 대체)
             출력 양식은 "%s (ID : %d)" 형태, 이름이 None일 경우 "%d" 형태
         button_class : 버튼 클래스 객체, GeneralLookupButton을 상속받아야 함
@@ -166,7 +196,7 @@ class LookupView(View):
         """
         super().__init__(timeout = timeout)
         
-        if button_class and not issubclass(button_class, GeneralLookupButton):
+        if button_class and not issubclass(button_class, TableObjectButton):
             raise TypeError("button_class는 GeneralLookupButton을 상속받아야 합니다.")
 
         if not fetch_list:
@@ -174,7 +204,13 @@ class LookupView(View):
             return
 
         for tableobj in fetch_list:
-            self.add_item(button_class(tableobj, **kwargs))
+            self.add_item(button_class(tableobj, **button_class_param))
+
+class SelectView(View):
+    
+    def __init__(self, select, *, timeout = 180):
+        super().__init__(timeout = timeout)
+        self.add_item(select)
 
 # 테스트
 

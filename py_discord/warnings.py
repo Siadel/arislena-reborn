@@ -248,3 +248,11 @@ class NoInput(Default):
 class DuplicatedInput(Default):
     def __init__(self):
         super().__init__("중복된 입력이 있어요!")
+
+class ImpossibleToInterrupt(Default):
+    def __init__(self):
+        super().__init__("다른 유저의 명령 인터랙션에 접근할 수 없어요!")
+
+class NoSpace(Default):
+    def __init__(self):
+        super().__init__("영토에 남은 공간이 없어요!")

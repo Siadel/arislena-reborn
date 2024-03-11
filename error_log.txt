@@ -960,3 +960,60 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: ValueError: None is not a valid TerritoryCategory
 
+2024-03-11 15:26:44 : Command '건설' raised an exception: AttributeError: 'sqlite3.Row' object has no attribute 'faction_id'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\territory.py", line 89, in build
+    view=views.LookupView(
+         ^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 188, in __init__
+    self.add_item(button_class(tableobj, **kwargs))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 121, in __init__
+    super().__init__(territory, bot = bot, interaction = interaction)
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 110, in __init__
+    self.faction = Faction.from_database(main_db, id = territory.faction_id)
+                                                       ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'sqlite3.Row' object has no attribute 'faction_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '건설' raised an exception: AttributeError: 'sqlite3.Row' object has no attribute 'faction_id'
+
+2024-03-11 16:24:58 : Command '선택지' raised an exception: AttributeError: 'BuildingSelect' object has no attribute 'to_components'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\test.py", line 26, in test2
+    await interaction.response.send_message("선택지를 선택해봐!", view=BuildingSelect())
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 754, in send_message
+    params = interaction_message_response_params(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 577, in interaction_message_response_params
+    data['components'] = view.to_components()
+                         ^^^^^^^^^^^^^^^^^^
+AttributeError: 'BuildingSelect' object has no attribute 'to_components'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '선택지' raised an exception: AttributeError: 'BuildingSelect' object has no attribute 'to_components'
+

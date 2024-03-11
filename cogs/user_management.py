@@ -62,7 +62,7 @@ class UserManagement(GroupCog, name="유저"):
             
             await interaction.response.send_message(
                 "유저 정보 열람", 
-                view=views.LookupView(
+                view=views.TableObjectView(
                     user_list,
                     button_class=views.UserLookupButton,
                     bot=self.bot,

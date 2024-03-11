@@ -1,0 +1,59 @@
+{
+    "table_object" : {
+        "general" : {
+            "id" : "아이디",
+            "discord_id" : "디스코드 아이디",
+            "faction_id" : "세력 아이디",
+            "territory_id": "영토 아이디",
+            "user_id": "유저 아이디",
+            "name": "이름",
+            "discord_name" : "디스코드 이름",
+            "register_date" : "등록일",
+            "category" : "카테고리",
+            "amount" : "수량",
+            "labor": "노동력",
+            "higher": "상위 세력",
+            "lower": "하위 세력",
+            "food_consumption": "식량 소비",
+            "water_consumption": "물 소비",
+            "feed_consumption": "사료 소비",
+            "is_laboring": "노동 중",
+            "space_limit": "공간 제한",
+            "safety": "안정도",
+            "discriminator": "구분"
+        },
+        "Faction" : {
+            "name" : "세력명"
+        }
+    },
+    "ari_enum": {
+        "general" : {
+            "WATER" : "물",
+            "FOOD": "식량",
+            "FEDD": "사료",
+            "WOOD": "목재",
+            "SOIL": "흙",
+            "STONE": "석재",
+            "BUILDING_MATERIAL": "건축자재",
+            "UNKNOWN": "회색",
+            "BLACK": "흑색",
+            "RED": "적색",
+            "YELLOW": "황색",
+            "GREEN": "녹색",
+            "MALE": "남성",
+            "FEMALE": "여성",
+            "COMMON": "일반인력",
+            "ADVANCED": "고급인력",
+            "UNSET": "미지정",
+            "FRESH_WATER_SOURCE": "담수원",
+            "HUNTING_GROUND": "수렵지",
+            "PASTURELAND": "목초지",
+            "FARMLAND": "농경지",
+            "WOOD_GATHERING_POST": "목재 채취장",
+            "EARTH_GATHERING_POST": "토석 채취장",
+            "BUILDING_MATERIAL_FACTORY": "건축자재 공장",
+            "RECRUITING_CAMP": "모병소",
+            "AUTOMATED_GATHERING_FACILITY": "자동 채취 시설"
+        }
+    }
+}

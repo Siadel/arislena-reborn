@@ -28,7 +28,7 @@ class AriBot(BotBase):
     async def on_ready(self):
         await self.wait_until_ready()
         await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
-        if not self.ready_flag:
+        if not self.ready_flag and not "test" in main_db.filename: # 테스트용 데이터베이스가 아닐 경우에만 봇 입장 메시지 출력
             for guild in self.guilds:
                 await self.announce(f"아리가 {guild.name}에 들어왔어요!", guild.id)
             self.ready_flag = True

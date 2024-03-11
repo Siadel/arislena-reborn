@@ -4,6 +4,7 @@
 from typing import Any
 import datetime
 import os
+from enum import Enum
 
 UTF8 = "utf-8"
 
@@ -56,7 +57,7 @@ def sql_type(value: Any) -> str:
             return v
     raise Exception(f"Type {type(value)} is not supported in SQL. Please use 'str', 'int', or 'float'.")
 
-def sql_value(value: str | int | float | None) -> str:
+def sql_value(value: str | Enum | None | int | float) -> str:
     """
     Convert a Python value to its SQL representation.
 
@@ -78,9 +79,15 @@ def sql_value(value: str | int | float | None) -> str:
         '3.14'
         >>> sql_value(None)
         'NULL'
+        >>> class MyEnum(Enum):
+        ...     VALUE = 1
+        >>> sql_value(MyEnum.VALUE)
+        '1'
     """
     if isinstance(value, str):
         return f"'{value}'"
+    if isinstance(value, Enum):
+        return str(value.value)
     elif value is None:
         return "NULL"
     else:

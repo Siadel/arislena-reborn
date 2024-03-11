@@ -104,3 +104,19 @@ class NewTerritoryModal(ArislenaGeneralModal):
         await interaction.response.send_message(f"성공적으로 **{territory_name}** 영토를 생성했습니다!", ephemeral=True)
 
         await self.bot.announce(f"**{interaction.user.display_name}**님께서 새로운 영토, {objective(territory_name, '**')} 얻었어요!", interaction.guild.id)
+
+class NewBuildingModal(ArislenaGeneralModal):
+    
+    building_name = TextInput(
+        label="건물 이름",
+        min_length=1,
+        max_length=30,
+        placeholder="한글, 다이어크리틱 없는 영문, 숫자, 공백만 허용됩니다.",
+        style=discord.TextStyle.short
+    )
+    
+    def __init__(self, *, bot:BotBase = None):
+        super().__init__(title="새 건물이예요!")
+        self.bot = bot
+        
+        

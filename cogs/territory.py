@@ -2,14 +2,18 @@ import discord
 from discord.ext.commands import GroupCog
 from discord import app_commands
 
+from py_base.ari_enum import TerritorySafety
+from py_system._global import main_db
+from py_system.tableobj import Territory
 from py_discord import warnings, views
 from py_discord.bot_base import BotBase
-from py_base.ari_enum import TerritorySafety
-from py_system._global import main_db, game_setting
-from py_system.tableobj import Faction, Territory
 from py_discord.modals import NewTerritoryModal
 
 class TerritoryCommand(GroupCog, name="영토"):
+    
+    def __init__(self, bot: BotBase):
+        self.bot = bot
+        super().__init__()
 
     @app_commands.command(
         name = "열람", 
@@ -24,16 +28,12 @@ class TerritoryCommand(GroupCog, name="영토"):
         # 세력 정보 열람 버튼 ui 출력
         await interaction.response.send_message(
             "영토 정보 열람", 
-            view=views.LookupView(
+            view=views.TableObjectView(
                 territory_list,
                 button_class=views.TerritoryLookupButton,
-                bot=self.bot,
-                interaction=interaction)
+                bot=self.bot
+            )
         )
-
-    def __init__(self, bot: BotBase):
-        self.bot = bot
-        super().__init__()
 
     @app_commands.command(
         name = "정찰",
@@ -74,6 +74,8 @@ class TerritoryCommand(GroupCog, name="영토"):
             interaction.response.send_message("이미 최대 정화 단계입니다.", ephemeral=True)
             return
         territory.safety = TerritorySafety(territory.safety.value + 1)
+    
+    
 
 async def setup(bot: BotBase):
     await bot.add_cog(TerritoryCommand(bot), guilds=bot.objectified_guilds)

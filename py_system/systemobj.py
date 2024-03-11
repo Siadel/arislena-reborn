@@ -1,12 +1,12 @@
 """
 table object와 연계되는 데이터 클래스, 하지만 db에 직접 저장되지 않는다.
 """
-
 from dataclasses import dataclass, field
 from py_base.ari_enum import ResourceCategory, BuildingCategory
-from py_base.datatype import ExtInt
-from py_base.abstract import Buildings, ResourceBase
+from py_system.abstract import ResourceBase, BasicBuilding, AdvancedBuilding
 from py_system.arislena_dice import Dice
+
+
 
 @dataclass
 class GeneralResource(ResourceBase):
@@ -45,7 +45,7 @@ class ProductionRecipe:
 # 건물
 
 @dataclass
-class FreshWaterSource(Buildings):
+class FreshWaterSource(BasicBuilding):
     discriminator = BuildingCategory.FRESH_WATER_SOURCE
     dice_cost: int = 0
     
@@ -55,7 +55,7 @@ class FreshWaterSource(Buildings):
         )
 
 @dataclass
-class HuntingGround(Buildings):
+class HuntingGround(BasicBuilding):
     discriminator = BuildingCategory.HUNTING_GROUND
     dice_cost: int = 0
     
@@ -76,7 +76,7 @@ class HuntingGround(Buildings):
         )
 
 @dataclass
-class Pastureland(Buildings):
+class Pastureland(BasicBuilding):
     discriminator = BuildingCategory.PASTURELAND
     dice_cost: int = 0
     
@@ -86,7 +86,7 @@ class Pastureland(Buildings):
         )
 
 @dataclass
-class Farmland(Buildings):
+class Farmland(AdvancedBuilding):
     discriminator = BuildingCategory.FARMLAND
     dice_cost: int = 30
     
@@ -97,7 +97,7 @@ class Farmland(Buildings):
         )
 
 @dataclass
-class WoodGatheringPost(Buildings):
+class WoodGatheringPost(AdvancedBuilding):
     discriminator = BuildingCategory.WOOD_GATHERING_POST
     dice_cost: int = 30
     
@@ -107,7 +107,7 @@ class WoodGatheringPost(Buildings):
         )
 
 @dataclass
-class EarthGatheringPost(Buildings):
+class EarthGatheringPost(AdvancedBuilding):
     discriminator = BuildingCategory.EARTH_GATHERING_POST
     dice_cost: int = 30
     
@@ -120,7 +120,7 @@ class EarthGatheringPost(Buildings):
         )
 
 @dataclass
-class BuildingMaterialFactory(Buildings):
+class BuildingMaterialFactory(AdvancedBuilding):
     discriminator = BuildingCategory.BUILDING_MATERIAL_FACTORY
     dice_cost: int = 30
     
@@ -135,7 +135,7 @@ class BuildingMaterialFactory(Buildings):
         )
 
 @dataclass
-class RecruitingCamp(Buildings):
+class RecruitingCamp(AdvancedBuilding):
     discriminator = BuildingCategory.RECRUITING_CAMP
     dice_cost: int = 30
     
@@ -146,7 +146,7 @@ class RecruitingCamp(Buildings):
         return 
 
 @dataclass
-class AutomatedGatheringFacility(Buildings):
+class AutomatedGatheringFacility(AdvancedBuilding):
     discriminator = BuildingCategory.AUTOMATED_GATHERING_FACILITY
     dice_cost: int = 30
     

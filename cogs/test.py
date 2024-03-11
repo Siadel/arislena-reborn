@@ -22,7 +22,7 @@ class CommandTest(GroupCog, name="테스트"):
         description = "선택지를 테스트합니다."
     )
     async def test2(self, interaction: discord.Interaction):
-        await interaction.response.send_message("선택지를 선택해봐!", view=views.test_select_view())
+        await interaction.response.send_message("선택지를 선택해봐!", view=views.test_select())
 
     @app_commands.command(
         name = "모달",

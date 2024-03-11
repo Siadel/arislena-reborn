@@ -1,8 +1,9 @@
 from discord import Embed, Colour, utils
 from enum import IntEnum
 
-from py_base import abstract
-from py_system import tableobj
+from py_system.abstract import TableObject
+from py_system.tableobj import User
+from py_system._global import translate
 
 def embed_for_user(*messages) -> Embed:
     """
@@ -39,7 +40,7 @@ def parse_embeds(title:str, fields:list[dict], quantity:int=25) -> list[Embed]:
     return embeds
 
 # /유저 등록
-def register(user:tableobj.User):
+def register(user:User):
     """
     유저 등록
     """
@@ -49,21 +50,22 @@ def register(user:tableobj.User):
     embed.add_field(name="등록일", value=user.register_date)
     return embed
 
-def table_info_text_list(table_obj:abstract.TableObject) -> list[str]:
+def table_info_text_list(table_obj:TableObject) -> list[str]:
     """
     테이블 객체의 정보를 텍스트로 반환합니다.
     """
     texts = []
-    for key, value in table_obj.kr_dict.items():
+    for key, value in table_obj.__dict__.items():
+        key = translate.get_from_map('table_object', key, table_obj.table_name, key)
         if isinstance(value, IntEnum):
-            value = f"**{value.name}** ({value.value})"
+            value = f"**{translate.get_from_map('ari_enum', value.name, default=value.name)}** ({value.value})"
         else:
             value = f"**{value}**"
         texts.append(f"- {key} : {value}")
     return texts
 
 # 각종 정보 열람 시 테이블에 있는 데이터를 자동으로 반환하는 함수
-def table_info(embed:Embed, table_obj:abstract.TableObject):
+def table_info(embed:Embed, table_obj:TableObject):
 
     embed.add_field(name="기본 정보", value="\n".join(table_info_text_list(table_obj)))
     

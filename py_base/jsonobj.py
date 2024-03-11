@@ -24,16 +24,6 @@ class Schedule(JsonObject):
 
     file_name: ClassVar[str] = "schedule.json"
 
-@dataclass(init=False)
-class DiceMemory(FluidJsonObject):
-    """
-    . 대신 getattr()로 클래스 변수를 가져오는 것을 권장
-    """
-    file_name: ClassVar[str] = "dice_memory.json"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 @dataclass
 class SettingByGuild(JsonObject):
     announce_location: dict[str, int]
@@ -60,6 +50,32 @@ class BotSetting(JsonObject):
     application_id: int
 
     file_name: ClassVar[str] = "bot_setting.json"
+
+@dataclass(init=False)
+class DiceMemory(FluidJsonObject):
+    file_name: ClassVar[str] = "dice_memory.json"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+@dataclass(init=False)
+class Translate(FluidJsonObject):
+    file_name: ClassVar[str] = "translate.json"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+    def get_from_map(self, map_key:str, key:str, table_name:str=None, default=None):
+        """
+        json/translate.json에서 영문 key에 대응되는 한국어 value를 반환함
+        """
+        tr_map:dict = self.get(map_key)
+        if isinstance(table_name, str) and table_name in tr_map and key in tr_map[table_name]:
+            return tr_map[table_name][key]
+        elif key in tr_map["general"]:
+            return tr_map["general"][key]
+        else:
+            return default
 
 # @dataclass
 # class Sign_up_waitlist:

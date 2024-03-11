@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from py_base.ari_enum import YesNo, TerritorySafety, BuildingCategory, ResourceCategory
 from py_base.datatype import ExtInt
 from py_base.dbmanager import MainDB
-from py_base.abstract import TableObject, ResourceBase
+from py_system.abstract import TableObject, ResourceBase
 
 def form_database_from_tableobjects(main_db:MainDB):
     """
@@ -224,6 +224,13 @@ class Territory(TableObject):
         """
         if self.safety == TerritorySafety.UNKNOWN:
             self.safety = TerritorySafety.get_randomly()
+    
+    @property
+    def remaining_space(self) -> int:
+        """
+        남은 공간
+        """
+        return self.space_limit - len(self._database.fetch_many("building", territory_id=self.id))
 
 @dataclass
 class Building(TableObject):
