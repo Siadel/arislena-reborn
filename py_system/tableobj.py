@@ -248,9 +248,6 @@ class Building(TableObject):
         "discriminator": "구분",
         "name": "이름"
     }
-    
-    def set_randomly_discriminator(self):
-        self.discriminator = BuildingCategory.get_ramdomly_base_building()
 
 @dataclass
 class Faction(TableObject):
@@ -301,7 +298,7 @@ class Faction(TableObject):
         해당 세력의 자원을 가져옴
         """
         r = self._database.fetch("resource", faction_id=self.id, category=category.value)
-        if not r: return Resource(faction_id=self.id, category=ResourceCategory(category))
+        if not r: return Resource(faction_id=self.id, category=category)
         return Resource.from_data(r)
     
     def get_population(self, name:str) -> Population:

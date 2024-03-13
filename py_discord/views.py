@@ -3,7 +3,7 @@ from discord.ui import View, Button
 from discord import ui, Colour
 
 from py_base.koreanstring import nominative
-from py_base.ari_enum import BuildingCategory
+from py_base.ari_enum import BuildingCategory, TerritorySafety
 from py_system._global import main_db
 from py_system.tableobj import TableObject, User, Faction, Territory, Building
 from py_discord import warnings
@@ -113,6 +113,52 @@ class TerritoryLookupButton(TableObjectButton):
             bot = bot, 
             label_complementary = f"소유 세력 : {self.faction.name}"
         )
+    
+    async def callback(self, interaction:discord.Interaction):
+        embed = table_info(
+            discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), 
+            self.table_object
+        )
+        # 건물 정보 추가
+        buildings = main_db.fetch_many("building", territory_id = self.table_object.id)
+        field_value = ""
+        if buildings:
+            for building in buildings:
+                building_object = Building.from_data(building)
+                field_value += f"- {building_object.name} ({building_object.discriminator.emoji} {building_object.discriminator.local_name})\n"
+        else:
+            field_value = "- 건물 없음"
+        embed.add_field(
+            name="건물 정보",
+            value=field_value
+        )
+        await interaction.response.send_message(
+            embed = embed,
+            ephemeral = False # 일단은 False로
+        )
+
+class PurifyButton(TerritoryLookupButton):
+    
+    def __init__(self, territory:Territory, bot:BotBase, prev_interaction:discord.Interaction):
+        super().__init__(territory, bot = bot)
+        self.table_object = territory
+        self.prev_interaction = prev_interaction
+    
+    async def callback(self, interaction:discord.Interaction):
+        
+        if interaction.user.id != self.prev_interaction.user.id: raise warnings.ImpossibleToInterrupt()
+        
+        self.table_object.set_database(main_db)
+        
+        if self.table_object.safety.value == TerritorySafety.max_value():
+            await interaction.response.send_message("이미 최대 정화 단계입니다.", ephemeral=True)
+            return
+        self.table_object.safety = TerritorySafety(self.table_object.safety.value + 1)
+        self.table_object.push()
+        
+        await interaction.response.send_message(f"성공적으로 **{self.table_object.name}** 영토를 정화했습니다!", ephemeral=True)
+        
+        main_db.connection.commit()
 
 class BuildButton(TerritoryLookupButton):
     

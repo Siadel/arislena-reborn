@@ -53,28 +53,24 @@ class TerritoryCommand(GroupCog, name="영토"):
         name = "정화",
         description = "🕒영토를 정화합니다. 악마들과 마주칠 것입니다! 승리하면 영토의 정화 단계를 1단계 올립니다."
     )
-    @app_commands.describe(
-        territory_name = "영토 이름 (영토 이름이나 아이디 중 하나는 필수로 입력해야 합니다.)",
-        territory_id = "영토 아이디 (영토 이름이나 아이디 중 하나는 필수로 입력해야 합니다.)"
-    )
-    async def purify(self, interaction: discord.Interaction, territory_name:str=None, territory_id:int=None):
+    async def purify(self, interaction: discord.Interaction):
         
-        if territory_name is None and territory_id is None: raise warnings.NoInput()
+        if not main_db.is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
+        
+        territory_list = main_db.fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
+        
+        if len(territory_list) == 0:
+            await interaction.response.send_message("정화할 영토가 없습니다.", ephemeral=True)
 
-        if territory_name and territory_id: raise warnings.DuplicatedInput()
-
-        territory: Territory = None
-
-        if territory_name: territory = Territory.from_database(main_db, name=territory_name)
-        elif territory_id: territory = Territory.from_database(main_db, id=territory_id)
-
-        # TODO 기능 코드 작성
-
-        if territory.safety == TerritorySafety.max_value():
-            interaction.response.send_message("이미 최대 정화 단계입니다.", ephemeral=True)
-            return
-        territory.safety = TerritorySafety(territory.safety.value + 1)
-    
+        await interaction.response.send_message(
+            "정화할 영토를 선택해주세요.",
+            view=views.TableObjectView(
+                [Territory.from_data(data) for data in territory_list],
+                button_class=views.PurifyButton,
+                bot=self.bot,
+                prev_interaction=interaction
+            )
+        )
     
 
 async def setup(bot: BotBase):

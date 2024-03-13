@@ -32,7 +32,6 @@ class BuildingCommand(GroupCog, name="건물"):
         
         territory_list = main_db.fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
         
-        # 이 명령을 evoke한 사람에 한해 영토 버튼 출력
         if len(territory_list) == 0:
             await interaction.response.send_message("건설할 영토가 없습니다.", ephemeral=True)
             

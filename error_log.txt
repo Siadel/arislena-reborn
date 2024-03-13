@@ -1017,3 +1017,25 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '선택지' raised an exception: AttributeError: 'BuildingSelect' object has no attribute 'to_components'
 
+2024-03-13 14:51:29 : Command '정화' raised an exception: TypeError: TerritorySafety.max_value() takes 0 positional arguments but 1 was given
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\territory.py", line 73, in purify
+    if territory.safety == TerritorySafety.max_value():
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TerritorySafety.max_value() takes 0 positional arguments but 1 was given
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '정화' raised an exception: TypeError: TerritorySafety.max_value() takes 0 positional arguments but 1 was given
+

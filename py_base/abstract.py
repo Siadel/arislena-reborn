@@ -1,7 +1,7 @@
 from typing import ClassVar
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, Enum
 
 from py_base import jsonwork
 
@@ -9,6 +9,15 @@ class ArislenaEnum(IntEnum):
     """
     Arislena에서 사용하는 Enum의 기본 클래스
     """
+    def __new__(cls, *args, **kwds):
+        obj = int.__new__(cls)
+        obj._value_ = len(cls.__members__)
+        return obj
+    
+    def __init__(self, local_name:str, emoji:str):
+        self.local_name:str = local_name
+        self.emoji:str = emoji
+    
     def __str__(self) -> str:
         return self.name
     
@@ -17,6 +26,10 @@ class ArislenaEnum(IntEnum):
     
     def __repr__(self) -> str:
         return super().__repr__()
+    
+    @classmethod
+    def from_int(cls, value:int) -> "ArislenaEnum":
+        return cls(value)
 
 @dataclass
 class JsonObject(metaclass=ABCMeta):

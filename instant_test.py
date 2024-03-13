@@ -1,13 +1,13 @@
 from pprint import pprint
 
-from py_base.ari_enum import ResourceCategory, ArislenaEnum
+from py_base.ari_enum import ResourceCategory, ArislenaEnum, TerritorySafety
 from py_system._global import main_db
 from py_system.tableobj import Resource, Faction, form_database_from_tableobjects
 from py_system.systemobj import ResourceBase, ProductionResource, GeneralResource
 from py_system.arislena_dice import Nonahedron
 
-
-
+safety = TerritorySafety(0)
+print(type(safety+3))
 
 # dice = Nonahedron()
 # dice.roll()

@@ -2,8 +2,9 @@ import discord
 from discord.ui import Modal, TextInput
 
 from py_base.koreanstring import objective
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory
-from py_system._global import main_db, name_regex, game_setting
+from py_base.ari_enum import BuildingCategory
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building
+from py_system._global import main_db, name_regex, game_setting, translate
 from py_discord import warnings
 from py_discord import func
 from py_discord.bot_base import BotBase
@@ -98,12 +99,23 @@ class NewTerritoryModal(ArislenaGeneralModal):
         t.explicit_post_init()
         t.set_database(main_db)
         t.push()
-
-        main_db.connection.commit()
+        # 생성된 영토 데이터 가져오기
+        t = Territory.from_database(main_db, "id = (SELECT MAX(id) FROM territory)")
+        # 기본 건물 중 하나를 생성
+        b_cat = BuildingCategory.get_ramdom_base_building_category()
+        b = Building(
+            territory_id=t.id,
+            discriminator=b_cat,
+            name=b_cat.local_name
+        )
+        b.set_database(main_db)
+        b.push()
 
         await interaction.response.send_message(f"성공적으로 **{territory_name}** 영토를 생성했습니다!", ephemeral=True)
 
         await self.bot.announce(f"**{interaction.user.display_name}**님께서 새로운 영토, {objective(territory_name, '**')} 얻었어요!", interaction.guild.id)
+
+        main_db.connection.commit()
 
 class NewBuildingModal(ArislenaGeneralModal):
     
