@@ -37,11 +37,18 @@ class GameSetting(JsonObject):
     test_mode: bool
     admin_mode: bool
     arislena_end_turn: int
-    cron_days_of_week: str
-    cron_hour: int
     name_length_limit: int
 
     file_name: ClassVar[str] = "game_setting.json"
+
+@dataclass
+class JobSetting(JsonObject):
+    trigger: str
+    day_of_week: str
+    hour: str
+    minute: str
+    
+    file_name: ClassVar[str] = "job_setting.json"
 
 @dataclass
 class BotSetting(JsonObject):
@@ -76,6 +83,18 @@ class Translate(FluidJsonObject):
             return tr_map["general"][key]
         else:
             return default
+
+@dataclass
+class PendingComponent:
+    id: int
+    run_time: str
+
+@dataclass(init=False)
+class Pending(JsonObject):
+    file_name: ClassVar[str] = "pending.json"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 # @dataclass
 # class Sign_up_waitlist:

@@ -1,6 +1,7 @@
 from discord import Embed, Colour, utils
-from enum import IntEnum
+from enum import Enum
 
+from py_base.abstract import ArislenaEnum
 from py_system.abstract import TableObject
 from py_system.tableobj import User
 from py_system._global import translate
@@ -57,8 +58,8 @@ def table_info_text_list(table_obj:TableObject) -> list[str]:
     texts = []
     for key, value in table_obj.__dict__.items():
         key = translate.get_from_map('table_object', key, table_obj.table_name, key)
-        if isinstance(value, IntEnum):
-            value = f"**{translate.get_from_map('ari_enum', value.name, default=value.name)}** ({value.value})"
+        if isinstance(value, ArislenaEnum):
+            value = f"{value.emoji} **{value.local_name}** ({value.value})"
         else:
             value = f"**{value}**"
         texts.append(f"- {key} : {value}")

@@ -108,7 +108,7 @@ class TableObject(metaclass=ABCMeta):
         Also sets the database attribute of the table object.
         """
         new_obj = cls()
-        new_obj._database = database
+        new_obj.set_database(database)
         if raw_statements or statements:
             new_obj.pull(*raw_statements, **statements)
         return new_obj
@@ -316,7 +316,7 @@ class BuildingBase(metaclass=ABCMeta):
     """
     시설 클래스들의 부모 클래스
     """
-    discriminator: int = None
+    category: int = None
     dice_cost: int = 0
     level: int = 0
     
@@ -329,7 +329,7 @@ class BasicBuilding(BuildingBase, metaclass=ABCMeta):
     """
     기초 건물 클래스들의 부모 클래스
     """
-    discriminator: BuildingCategory
+    category: BuildingCategory
 
     @abstractmethod
     def produce(self) -> Any:
@@ -340,7 +340,7 @@ class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
     """
     고급 건물 클래스들의 부모 클래스
     """
-    discriminator: BuildingCategory
+    category: BuildingCategory
 
     @abstractmethod
     def produce(self) -> Any:
@@ -352,7 +352,7 @@ class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
 #     """
 #     창고 클래스들의 부모 클래스
 #     """
-#     discriminator: int = None
+#     category: int = None
 #     level: int = 0
 #     storages: list[ResourceBase] = field(default_factory=list)
 

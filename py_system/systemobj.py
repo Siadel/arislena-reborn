@@ -3,10 +3,19 @@ table object와 연계되는 데이터 클래스, 하지만 db에 직접 저장�
 """
 from dataclasses import dataclass, field
 from py_base.ari_enum import ResourceCategory, BuildingCategory
+from py_system import tableobj
 from py_system.abstract import ResourceBase, BasicBuilding, AdvancedBuilding
 from py_system.arislena_dice import Dice
 
-
+class Client:
+    
+    def __init__(self, user:tableobj.User = None, faction:tableobj.Faction = None):
+        """
+        데이터베이스에 저장된 유저 정보를 받아서 클라이언트를 생성한다.
+        """
+        self.user = user
+        self.faction = faction
+        self.command_counter = faction.get_command_counter() if faction else None
 
 @dataclass
 class GeneralResource(ResourceBase):
@@ -46,7 +55,7 @@ class ProductionRecipe:
 
 @dataclass
 class FreshWaterSource(BasicBuilding):
-    discriminator = BuildingCategory.FRESH_WATER_SOURCE
+    category = BuildingCategory.FRESH_WATER_SOURCE
     dice_cost: int = 0
     
     def produce(self):
@@ -56,7 +65,7 @@ class FreshWaterSource(BasicBuilding):
 
 @dataclass
 class HuntingGround(BasicBuilding):
-    discriminator = BuildingCategory.HUNTING_GROUND
+    category = BuildingCategory.HUNTING_GROUND
     dice_cost: int = 0
     
     def produce(self):
@@ -77,7 +86,7 @@ class HuntingGround(BasicBuilding):
 
 @dataclass
 class Pastureland(BasicBuilding):
-    discriminator = BuildingCategory.PASTURELAND
+    category = BuildingCategory.PASTURELAND
     dice_cost: int = 0
     
     def produce(self):
@@ -87,7 +96,7 @@ class Pastureland(BasicBuilding):
 
 @dataclass
 class Farmland(AdvancedBuilding):
-    discriminator = BuildingCategory.FARMLAND
+    category = BuildingCategory.FARMLAND
     dice_cost: int = 30
     
     def produce(self):
@@ -98,7 +107,7 @@ class Farmland(AdvancedBuilding):
 
 @dataclass
 class WoodGatheringPost(AdvancedBuilding):
-    discriminator = BuildingCategory.WOOD_GATHERING_POST
+    category = BuildingCategory.WOOD_GATHERING_POST
     dice_cost: int = 30
     
     def produce(self):
@@ -108,7 +117,7 @@ class WoodGatheringPost(AdvancedBuilding):
 
 @dataclass
 class EarthGatheringPost(AdvancedBuilding):
-    discriminator = BuildingCategory.EARTH_GATHERING_POST
+    category = BuildingCategory.EARTH_GATHERING_POST
     dice_cost: int = 30
     
     def produce(self):
@@ -121,7 +130,7 @@ class EarthGatheringPost(AdvancedBuilding):
 
 @dataclass
 class BuildingMaterialFactory(AdvancedBuilding):
-    discriminator = BuildingCategory.BUILDING_MATERIAL_FACTORY
+    category = BuildingCategory.BUILDING_MATERIAL_FACTORY
     dice_cost: int = 30
     
     def produce(self):
@@ -136,7 +145,7 @@ class BuildingMaterialFactory(AdvancedBuilding):
 
 @dataclass
 class RecruitingCamp(AdvancedBuilding):
-    discriminator = BuildingCategory.RECRUITING_CAMP
+    category = BuildingCategory.RECRUITING_CAMP
     dice_cost: int = 30
     
     def produce(self):
@@ -147,7 +156,7 @@ class RecruitingCamp(AdvancedBuilding):
 
 @dataclass
 class AutomatedGatheringFacility(AdvancedBuilding):
-    discriminator = BuildingCategory.AUTOMATED_GATHERING_FACILITY
+    category = BuildingCategory.AUTOMATED_GATHERING_FACILITY
     dice_cost: int = 30
     
     def produce(self):
@@ -155,7 +164,7 @@ class AutomatedGatheringFacility(AdvancedBuilding):
 
 # @dataclass()
 # class Reservoir(Storages):
-#     discriminator: int = 3
+#     category: int = 3
 #     name: str = "저수지"
 #     dice_cost: int = 30
 #     storages: list[GeneralResource] = field(
@@ -166,7 +175,7 @@ class AutomatedGatheringFacility(AdvancedBuilding):
 
 # @dataclass()
 # class Granary(Storages):
-#     discriminator: int = 4
+#     category: int = 4
 #     name: str = "곡창"
 #     dice_cost: int = 30
 #     storages: list[GeneralResource] = field(
@@ -178,7 +187,7 @@ class AutomatedGatheringFacility(AdvancedBuilding):
 
 # @dataclass()
 # class BuildingMaterialStorage(Storages):
-#     discriminator: int = 5
+#     category: int = 5
 #     name: str = "건자재 창고"
 #     dice_cost: int = 30
 #     storages: list[GeneralResource] = field(

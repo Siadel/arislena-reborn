@@ -5,6 +5,9 @@ import sqlite3
 from typing import Iterable, Any
 from py_base.utility import DATA_DIR, sql_value
 
+def print_query(query:str):
+    print(f"[DB Manager]\t{query}")
+
 class DatabaseManager:
 
     def __init__(self, db_name: str, test_mode = False):
@@ -13,6 +16,7 @@ class DatabaseManager:
         test_mode: 테스트 모드일 경우, 파일 이름에 _test를 붙여서 생성
         """
         db_name += "_test" if test_mode else ""
+        self.test_mode = test_mode
         self.filename = db_name + ".db"
         self.path = DATA_DIR + self.filename
         self.connection = sqlite3.connect(
@@ -58,7 +62,7 @@ class DatabaseManager:
         
         sql = f"SELECT * FROM {table} WHERE {' AND '.join(s)}"
         self.cursor.execute(sql)
-
+        if self.test_mode: print_query(sql)
         return self.cursor.fetchone()
 
     def is_exist(self, table:str, *raw_statements, **statements) -> bool:
@@ -105,6 +109,7 @@ class DatabaseManager:
         s += list(raw_statements)
 
         sql = f"SELECT * FROM {table} WHERE {' AND '.join(s)}"
+        if self.test_mode: print_query(sql)
         self.cursor.execute(sql)
 
         return self.cursor.fetchall()
@@ -121,7 +126,7 @@ class DatabaseManager:
         """
         sql = f"SELECT * FROM {table}"
         self.cursor.execute(sql)
-
+        if self.test_mode: print_query(sql)
         return self.cursor.fetchall()
     
     def fetch_column(self, table:str, column:str, *statements) -> list:
@@ -139,7 +144,7 @@ class DatabaseManager:
             sql = f"SELECT {column} FROM {table} WHERE "
             sql += " AND ".join(statements)
         self.cursor.execute(sql)
-
+        if self.test_mode: print_query(sql)
         data = self.cursor.fetchall()
         if data is None:
             return None
@@ -154,6 +159,7 @@ class DatabaseManager:
         """
         components = [f"{key} = {sql_value(value)}" for key, value in kwargs.items()]
         sql = f"UPDATE {table} SET {', '.join(components)} WHERE ID = {ID}"
+        if self.test_mode: print_query(sql)
         self.cursor.execute(sql)
 
     def delete_with_id(self, table:str, ID:int):

@@ -45,7 +45,8 @@ class FactionCommand(GroupCog, name="세력"):
                 faction_list,
                 button_class=views.FactionLookupButton,
                 bot=self.bot,
-                interaction=interaction)
+                interaction=interaction
+            )
         )
     
     @app_commands.command(
@@ -87,6 +88,7 @@ class FactionCommand(GroupCog, name="세력"):
     async def set_hierarchy(self, interaction: discord.Interaction):
         pass
 
+    
 
 async def setup(bot: BotBase):
     await bot.add_cog(FactionCommand(bot), guilds=bot.objectified_guilds)

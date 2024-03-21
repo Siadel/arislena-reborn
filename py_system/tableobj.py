@@ -5,7 +5,7 @@ Sql과 연동되는 데이터 클래스들
 from typing import ClassVar
 from dataclasses import dataclass
 
-from py_base.ari_enum import YesNo, TerritorySafety, BuildingCategory, ResourceCategory
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability
 from py_base.datatype import ExtInt
 from py_base.dbmanager import MainDB
 from py_system.abstract import TableObject, ResourceBase
@@ -131,7 +131,7 @@ class Resource(TableObject, ResourceBase):
     }
 
 @dataclass
-class Population(TableObject):
+class Crew(TableObject):
 
     id: int = 0
     faction_id:int = 0
@@ -139,7 +139,7 @@ class Population(TableObject):
     labor:int = 1
     food_consumption:int = 1
     water_consumption:int = 1
-    is_laboring:YesNo = YesNo.NO
+    availability: Availability = Availability.STANDBY
 
     _database: ClassVar[MainDB] = None
     display_column: ClassVar[str] = "name"
@@ -150,7 +150,26 @@ class Population(TableObject):
         "labor": "노동력",
         "food_consumption": "식량 소비",
         "water_consumption": "물 소비",
-        "is_laboring": "노동 중"
+        "availability": "상태"
+    }
+
+@dataclass
+class Livestock(TableObject):
+
+    id: int = 0
+    faction_id:int = 0
+    labor:int = 1
+    feed_consumption:int = 1
+    availability: Availability = Availability.STANDBY
+
+    _database: ClassVar[MainDB] = None
+    display_column: ClassVar[str] = "ID"
+    en_kr_map: ClassVar[dict[str, str]] = {
+        "id": "아이디",
+        "faction_id": "세력 아이디",
+        "labor": "노동력",
+        "feed_consumption": "사료 소비",
+        "availability": "상태"
     }
 
 @dataclass
@@ -178,25 +197,6 @@ class FactionHierarchyNode(TableObject):
         self.lower = lower_fation.id
         super().push()
 
-
-@dataclass
-class Livestock(TableObject):
-
-    id: int = 0
-    faction_id:int = 0
-    labor:int = 1
-    feed_consumption:int = 1
-    is_laboring:YesNo = YesNo.NO
-
-    _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "ID"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "labor": "노동력",
-        "feed_consumption": "사료 소비",
-        "is_laboring": "노동 중"
-    }
 
 
 @dataclass
@@ -237,7 +237,7 @@ class Building(TableObject):
 
     id: int = 0
     territory_id:int = 0
-    discriminator:BuildingCategory = BuildingCategory.UNSET
+    category:BuildingCategory = BuildingCategory.UNSET
     name:str = ""
 
     _database: ClassVar[MainDB] = None
@@ -245,17 +245,39 @@ class Building(TableObject):
     en_kr_map: ClassVar[dict[str, str]] = {
         "id": "아이디",
         "territory_id": "영토 아이디",
-        "discriminator": "구분",
+        "category": "구분",
         "name": "이름"
     }
+
+@dataclass
+class CommandCounter(TableObject):
+    
+    id: int = 0
+    faction_id: int = 0
+    category: CommandCountCategory = CommandCountCategory.UNSET
+    amount: int = 0
+    
+    def reset(self):
+        """
+        id, faction_id를 제외한 모든 데이터를 0으로 초기화
+        """
+        for key in self.__dict__.keys():
+            if key not in ["id", "faction_id"]:
+                setattr(self, key, 0)
+                
+    def increase(self):
+        """
+        amount를 1 증가시킴
+        """
+        self.amount += 1
 
 @dataclass
 class Faction(TableObject):
     
     id: int = 0
-    user_id:int = 0
-    name:str = ""
-    level:int = 0
+    user_id: int = 0
+    name: str = ""
+    level: int = 0
 
     _database: ClassVar[MainDB] = None
     display_column: ClassVar[str] = "name"
@@ -301,11 +323,19 @@ class Faction(TableObject):
         if not r: return Resource(faction_id=self.id, category=category)
         return Resource.from_data(r)
     
-    def get_population(self, name:str) -> Population:
+    def get_crew(self, name:str) -> Crew:
         """
         해당 세력의 인구를 가져옴
         """
-        p = self._database.fetch("population", faction_id=self.id, name=name)
+        cr = self._database.fetch("crew", faction_id=self.id, name=name)
 
-        if not p: return Population(faction_id=self.id, name=name)
-        return Population.from_data(p)
+        if not cr: return Crew(faction_id=self.id, name=name)
+        return Crew.from_data(cr)
+    
+    def get_command_counter(self, category:CommandCountCategory) -> CommandCounter:
+        """
+        해당 세력의 명령 카운터를 가져옴
+        """
+        cc = self._database.fetch("CommandCounter", faction_id=self.id, category=category.value)
+        if not cc: return CommandCounter(faction_id=self.id, category=category)
+        return CommandCounter.from_data(cc)

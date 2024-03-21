@@ -20,7 +20,8 @@
             "is_laboring": "노동 중",
             "space_limit": "공간 제한",
             "safety": "안정도",
-            "discriminator": "구분"
+            "discriminator": "구분",
+            "availability": "상태"
         },
         "Faction" : {
             "name" : "세력명"

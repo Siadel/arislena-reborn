@@ -2,13 +2,19 @@ import discord, logging, json
 from discord.ext import commands
 from os import environ, path
 
-from py_system._global import setting_by_guild, bot_setting
+from py_system._global import setting_by_guild, bot_setting, game_setting, job_setting, main_db, schedule
+from py_system.schedule_manager import ScheduleManager
+from py_system.tableobj import form_database_from_tableobjects
 
 # 봇 권한 설정
 intents = discord.Intents.default()
 intents.presences = True
 intents.message_content = True
 intents.members = True
+
+form_database_from_tableobjects(main_db)
+
+schedule_manager = ScheduleManager(main_db, schedule, game_setting, job_setting)
 
 def exit_bot():
     print("봇을 종료합니다.")

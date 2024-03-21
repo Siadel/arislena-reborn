@@ -1039,3 +1039,214 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '정화' raised an exception: TypeError: TerritorySafety.max_value() takes 0 positional arguments but 1 was given
 
+2024-03-19 19:18:14 : Command '모병' raised an exception: OperationalError: no such table: command_counter
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\faction.py", line 105, in recruit
+    cmd_counter = faction.get_command_counter()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 340, in get_command_counter
+    cc = self._database.fetch("command_counter", faction_id=self.id)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\dbmanager.py", line 60, in fetch
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such table: command_counter
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모병' raised an exception: OperationalError: no such table: command_counter
+
+2024-03-19 19:18:54 : Command '모병' raised an exception: OperationalError: no such column: building_category
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\faction.py", line 107, in recruit
+    recruit_limit = main_db.fetch_many(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\dbmanager.py", line 108, in fetch_many
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: building_category
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모병' raised an exception: OperationalError: no such column: building_category
+
+2024-03-19 19:24:26 : Command '모병' raised an exception: OperationalError: near "<": syntax error
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\faction.py", line 110, in recruit
+    recruit_limit += main_db.fetch_many(
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\dbmanager.py", line 108, in fetch_many
+    self.cursor.execute(sql)
+sqlite3.OperationalError: near "<": syntax error
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모병' raised an exception: OperationalError: near "<": syntax error
+
+2024-03-19 19:26:09 : Command '모병' raised an exception: OperationalError: near "<": syntax error
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\faction.py", line 110, in recruit
+    recruit_limit += main_db.fetch_many(
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\dbmanager.py", line 109, in fetch_many
+    self.cursor.execute(sql)
+sqlite3.OperationalError: near "<": syntax error
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모병' raised an exception: OperationalError: near "<": syntax error
+
+2024-03-19 19:27:27 : Command '모병' raised an exception: TypeError: 'int' object is not iterable
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\faction.py", line 121, in recruit
+    for _ in try_count:
+TypeError: 'int' object is not iterable
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모병' raised an exception: TypeError: 'int' object is not iterable
+
+2024-03-21 12:08:14 : Command '턴넘기기' raised an exception: ValueError: enum의 값이 None입니다. 데이터에서 값을 확인해주세요.
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\test.py", line 41, in elapse_turn
+    schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\schedule_manager.py", line 101, in end_turn
+    self.execute_after_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\schedule_manager.py", line 167, in execute_after_turn_end
+    cc_list = [tableobj.CommandCounter.from_data(cc) for cc in self.main_db.fetch_all(tableobj.CommandCounter.__name__)]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\schedule_manager.py", line 167, in <listcomp>
+    cc_list = [tableobj.CommandCounter.from_data(cc) for cc in self.main_db.fetch_all(tableobj.CommandCounter.__name__)]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\abstract.py", line 129, in from_data
+    new_obj._set_attributes_from_sqlite_row(sqlite_row)
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\abstract.py", line 95, in _set_attributes_from_sqlite_row
+    setattr(self, key, get_enum(class_name, row[key]))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\ari_enum.py", line 13, in get_enum
+    if value is None: raise ValueError("enum의 값이 None입니다. 데이터에서 값을 확인해주세요.")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: enum의 값이 None입니다. 데이터에서 값을 확인해주세요.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: ValueError: enum의 값이 None입니다. 데이터에서 값을 확인해주세요.
+
+2024-03-21 12:25:22 : Command '모집' raised an exception: OperationalError: no such column: discriminator
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\crew.py", line 37, in recruit
+    recruit_limit += main_db.fetch_many(
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_base\dbmanager.py", line 113, in fetch_many
+    self.cursor.execute(sql)
+sqlite3.OperationalError: no such column: discriminator
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '모집' raised an exception: OperationalError: no such column: discriminator
+
+2024-03-21 12:28:01 : Command '열람' raised an exception: AttributeError: 'sqlite3.Row' object has no attribute 'display_column'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\crew.py", line 74, in lookup
+    view=views.TableObjectView(
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 269, in __init__
+    self.add_item(button_class(tableobj, **button_class_param))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 147, in __init__
+    super().__init__(
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 67, in __init__
+    display_value = getattr(table_object, table_object.display_column, "-")
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'sqlite3.Row' object has no attribute 'display_column'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: AttributeError: 'sqlite3.Row' object has no attribute 'display_column'
+

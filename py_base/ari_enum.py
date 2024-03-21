@@ -35,6 +35,19 @@ class HumanSex(ArislenaEnum):
     MALE = "남성", "♂"
     FEMALE = "여성", "♀"
 
+class Availability(ArislenaEnum):
+    STANDBY = "배치 대기 중", "❌"
+    LABORING = "노동 중", "🛠️"
+    HEALING = "치료 중", "🩹"
+    IDLE = "작업 대기", "✅"
+    
+    @classmethod
+    def get_available(cls):
+        return cls.IDLE
+    
+    def is_available(self) -> bool:
+        return self == self.__class__.get_available()
+
 class TerritorySafety(ArislenaEnum):
     # 회색, 흑색, 적색, 황색, 녹색
     # 회색 : 미확인
@@ -98,6 +111,21 @@ class BuildingCategory(ArislenaEnum):
     def get_advanced_building_list(cls) -> list["BuildingCategory"]:
         rtn = [component for component in cls if component not in cls.get_basic_building_list() and component != cls.UNSET]
         return rtn
+
+class Strategy(ArislenaEnum):
+    PASS = "속행", "⏩"
+    SHOCK = "충격", "💥"
+    FIREPOWER = "화공", "🔥"
+    FIERCENESS = "맹공", "🦁"
+    DEFENSE = "방비", "🛡️"
+    ENCIRCLEMENT = "포위", "🔗"
+    RETREAT = "후퇴", "🏳️"
+
+class CommandCountCategory(ArislenaEnum):
+    UNSET = "미정", "❓"
+    RECRUIT = "모병", "🛡️"
+
+
 
 # # 부대 상태
 # class Troop(IntEnum):

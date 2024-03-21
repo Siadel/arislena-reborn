@@ -107,10 +107,45 @@ class Dice:
 
         if len(self.grade_distribution) > 0: self.make_grade_table()
         if len(self.judge_list) > 0: self.make_judge_table()
+        
+    def __str__(self):
+        rtn_str = f"[{self.judge}] **{self.last_roll}**"
+        if self.dice_mod != 0: rtn_str += f" (+ {self.dice_mod})"
+        return rtn_str
 
     def __repr__(self):
         # eval()로 다시 객체를 생성할 수 있도록 함
         return f"{self.__class__.__name__}('{self.category}', {self.dice_min}, {self.dice_max}, {self.grade_distribution}, {self.judge_list}, {self.dice_mod}, {self.grade_mod})"
+    
+    def __lt__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll < other.last_roll
+    
+    def __gt__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll > other.last_roll
+    
+    def __le__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll <= other.last_roll
+    
+    def __ge__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll >= other.last_roll
+    
+    def __eq__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll == other.last_roll
+    
+    def __ne__(self, other: "Dice"):
+        if not self.comparable: return NotImplemented
+        if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
+        return self.last_roll != other.last_roll
     
     @classmethod
     def from_dice_data(cls, dice_data:dict):
@@ -173,18 +208,17 @@ class Dice:
         value = min(value, max_value)
         return value
 
-    def roll(self, immediate_dice_mod:int=0) -> str:
+    def roll(self):
         """
         주사위를 굴리고, 그 숫자를 반환\n
         보정값이 적용된 주사위 눈은 정해진 범위를 벗어나지 않음\n
         last_roll last_grade, last_judge가 갱신됨\n
         return: **주사위 눈**(+ 보정값)*(+ 즉시 보정값)*\n
         """
-        self.last_roll = random.randint(self.dice_min, self.dice_max) + self.dice_mod + immediate_dice_mod
+        self.last_roll = random.randint(self.dice_min, self.dice_max) + self.dice_mod
         self.last_roll = self.adjust(self.last_roll, self.dice_min, self.dice_max)
         self.last_grade = self.grade
         self.last_judge = self.judge
-        return f"**{self.last_roll}**(+ {self.dice_mod})*(+ {immediate_dice_mod})*"
     
     @property
     def grade(self) -> int:
@@ -209,10 +243,9 @@ class Dice:
         주사위 숫자에 따른 판정을 반환\n
         """
         if not self.check_judge_table(): return
-        if self.last_grade is None: return 
-        return self.judge_table[str(self.last_grade)]
+        return self.judge_table[str(self.grade)]
 
-    def compare_gap(self, other_dice):
+    def compare_gap(self, other_dice: "Dice"):
         """
         이미 굴려진 주사위(다른 Dice류 객체)와 비교하여, 두 주사위의 grade 차이와 우위를 저장\n
         """
@@ -228,7 +261,7 @@ class Dice:
 
         self.last_gap = gap
 
-    def compare_gap_str(self, other_dice) -> str:
+    def compare_gap_str(self, other_dice: "Dice") -> str:
         """
         주사위 비교 결과를 문자열로 반환\n
         반환 양식은 'n단계 격차 ({우세한 주사위 이름} 우세)'\n

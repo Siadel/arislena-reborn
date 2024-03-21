@@ -1,15 +1,18 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import shutil, datetime
 
+from py_base import ari_enum
 from py_base.ari_enum import ScheduleState
 from py_base.utility import get_date, DATE_EXPRESSION, BACKUP_DIR, DATE_EXPRESSION_FULL_2, DATE_EXPRESSION_FULL
-from py_base.dbmanager import DatabaseManager
-from py_base.jsonobj import Schedule, GameSetting
+from py_base.dbmanager import MainDB
+from py_base.jsonobj import Schedule, GameSetting, JobSetting
+from py_system import tableobj
 
 ARISLENA_JOB_ID = "game_schedule"
 
 class ScheduleManager:
-    def __init__(self, main_db:DatabaseManager, schedule:Schedule, game_setting:GameSetting):
+    
+    def __init__(self, main_db:MainDB, schedule:Schedule, game_setting:GameSetting, job_setting:JobSetting):
         """
         main_db: 게임의 메인 데이터베이스\n
         schedule: 스케줄 json 데이터\n
@@ -17,7 +20,8 @@ class ScheduleManager:
         self.sched = BackgroundScheduler(timezone='Asia/Seoul')
         self.main_db = main_db
         self.schedule = schedule
-        self.settings = game_setting
+        self.game_setting = game_setting
+        self.job_setting = job_setting
 
         self.sched.start()
         self.sched_add_job()
@@ -28,11 +32,8 @@ class ScheduleManager:
 
     def sched_add_job(self):
         self.sched.add_job(
-            self.ongoing_game, 
-            "cron", 
-            # day_of_week=self.settings.cron_days_of_week, 
-            hour=self.settings.cron_hour, 
-            minute="00", 
+            self.end_turn, 
+            **self.job_setting.__dict__,
             id=ARISLENA_JOB_ID
         )
     
@@ -72,9 +73,9 @@ class ScheduleManager:
             elif self.schedule.state == ScheduleState.ENDED:
                 return "종료된 게임은 재개할 수 없습니다."
     
-    def ongoing_game(self):
+    def end_turn(self):
         '''
-        게임 진행 함수(매일 자정 실행)
+        게임 진행 함수(매일 21시 실행)
         ------------------------------
         진행 턴수가 60 이상이면 sched 종료
         '''
@@ -85,15 +86,95 @@ class ScheduleManager:
         if self.schedule.state == ScheduleState.WAITING:
             self.schedule.state = ScheduleState.ONGOING
 
-        if self.schedule.now_turn >= self.settings.arislena_end_turn:
+        if self.schedule.now_turn >= self.game_setting.arislena_end_turn:
             self.end_game()
             return
+        
+        self.execute_before_turn_end()
+        
+        print(self.schedule.now_turn.__str__() + f'일차 종료 {get_date(DATE_EXPRESSION_FULL)}')
 
         self.schedule.now_turn += 1
         
+        self.execute_after_turn_end()
+        
         print(self.schedule.now_turn.__str__() + f'일차 시작 {get_date(DATE_EXPRESSION_FULL)}')
+                
+        self.schedule.dump()
 
-        # 나라의 블럭에 대한 업데이트 사항
+    def stop_game(self):
+        '''
+        게임 중단 함수
+        '''
+
+        if self.schedule.state != ScheduleState.WAITING and self.schedule.state != ScheduleState.ONGOING:
+            return "게임이 진행 중이 아닙니다."
+        
+        self.schedule.state = ScheduleState.PAUSED
+        self.schedule.dump()
+
+        self.sched.pause_job(ARISLENA_JOB_ID)
+
+        print(f"게임 중단 됨 | {self.schedule.now_turn}일 차")
+        return f"게임이 중단 되었습니다. | {self.schedule.now_turn}일 차"
+
+    def end_game(self):
+        '''
+        게임 종료 함수
+        '''
+        
+        self.schedule.state = ScheduleState.ENDED
+        self.schedule.end_date = get_date()
+
+        self.sched.remove_job(ARISLENA_JOB_ID)
+
+        self.schedule.dump()
+
+        print("게임 종료 됨")
+        # 게임 종료 메시지 추가 예정
+        return "게임이 종료 되었습니다."
+
+    def execute_before_turn_end(self):
+        '''
+        턴 종료 전 실행 함수
+        '''
+        pass
+    
+    def execute_after_turn_end(self):
+        '''
+        턴 종료 후 실행 함수
+        '''
+        
+        # 대원 업데이트: availablity가 UNAVAILABLE인 대원은 AVAILABLE로 변경
+        # for population_row in self.main_db.fetch_many(tableobj.Population.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
+        #     population = tableobj.Population.from_data(population_row)
+        #     population.availability = ari_enum.Availability.AVAILABLE
+        #     population.push()
+        
+        # for livestock_row in self.main_db.fetch_many(tableobj.Livestock.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
+        #     livestock = tableobj.Livestock.from_data(livestock_row)
+        #     livestock.availability = ari_enum.Availability.AVAILABLE
+        #     livestock.push()
+            
+        # 위의 작업 리팩토링
+        make_available_list:list[tableobj.Crew | tableobj.Livestock] = [tableobj.Crew, tableobj.Livestock]
+        for table in make_available_list:
+            for row in self.main_db.fetch_many(table.__name__, availability=ari_enum.Availability.STANDBY.value):
+                obj = table.from_data(row)
+                obj.set_database(self.main_db)
+                obj.availability = ari_enum.Availability.IDLE
+                obj.push()
+
+        # 모든 CommandCounter 0으로 설정
+        cc_list = [tableobj.CommandCounter.from_data(cc) for cc in self.main_db.fetch_all(tableobj.CommandCounter.__name__)]
+        for cc in cc_list:
+            cc.set_database(self.main_db)
+            cc.amount = 0
+            cc.push()
+
+        self.main_db.connection.commit()
+
+# 나라의 블럭에 대한 업데이트 사항
         # 블럭이 없으면 continue
         # constants = jsonwork.load_json("constants.json")
         # for nation in self.main_db.fetch_all_nations():
@@ -181,37 +262,3 @@ class ScheduleManager:
             
         #     if valid: 
         #         eval(pending.execute_code)
-                
-        self.schedule.dump()
-
-    def stop_game(self):
-        '''
-        게임 중단 함수
-        '''
-
-        if self.schedule.state != ScheduleState.WAITING and self.schedule.state != ScheduleState.ONGOING:
-            return "게임이 진행 중이 아닙니다."
-        
-        self.schedule.state = ScheduleState.PAUSED
-        self.schedule.dump()
-
-        self.sched.pause_job(ARISLENA_JOB_ID)
-
-        print(f"게임 중단 됨 | {self.schedule.now_turn}일 차")
-        return f"게임이 중단 되었습니다. | {self.schedule.now_turn}일 차"
-
-    def end_game(self):
-        '''
-        게임 종료 함수
-        '''
-        
-        self.schedule.state = ScheduleState.ENDED
-        self.schedule.end_date = get_date()
-
-        self.sched.remove_job(ARISLENA_JOB_ID)
-
-        self.schedule.dump()
-
-        print("게임 종료 됨")
-        # 게임 종료 메시지 추가 예정
-        return "게임이 종료 되었습니다."

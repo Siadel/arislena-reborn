@@ -1,13 +1,21 @@
 import discord
 from discord.ui import Modal, TextInput
 
-from py_base.koreanstring import objective
+from py_base.koreanstring import objective, instrumental
 from py_base.ari_enum import BuildingCategory
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building, Crew
 from py_system._global import main_db, name_regex, game_setting, translate
-from py_discord import warnings
-from py_discord import func
+from py_discord import warnings, func
 from py_discord.bot_base import BotBase
+
+def get_basic_text_input(label:str):
+    return TextInput(
+        label=label,
+        min_length=1,
+        max_length=game_setting.name_length_limit,
+        placeholder="한글, 다이어크리틱 없는 영문, 숫자, 공백만 허용됩니다.",
+        style=discord.TextStyle.short
+    )
 
 # 테스트 모달
 class ModalTest(Modal):
@@ -37,13 +45,7 @@ class ArislenaGeneralModal(Modal):
 
 class FactionCreateModal(ArislenaGeneralModal):
 
-    faction_name = TextInput(
-        label="세력명",
-        min_length=1,
-        max_length=game_setting.name_length_limit,
-        placeholder="한글, 다이어크리틱 없는 영문, 숫자, 공백만 허용됩니다.",
-        style=discord.TextStyle.short
-    )
+    faction_name = get_basic_text_input("세력 이름")
     
     def __init__(self, *, bot:BotBase = None):
         super().__init__(title="세력 창설")
@@ -65,7 +67,7 @@ class FactionCreateModal(ArislenaGeneralModal):
         new_fhn = FactionHierarchyNode()
         new_fhn.set_database(main_db)
         new_fhn.push(new_faction, optimal_faction)
-
+        
         main_db.connection.commit()
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다!", ephemeral=True)
@@ -74,13 +76,7 @@ class FactionCreateModal(ArislenaGeneralModal):
 
 class NewTerritoryModal(ArislenaGeneralModal):
 
-    territory_name = TextInput(
-        label="영토 이름",
-        min_length=1,
-        max_length=30,
-        placeholder="한글, 다이어크리틱 없는 영문, 숫자, 공백만 허용됩니다.",
-        style=discord.TextStyle.short
-    )
+    territory_name = get_basic_text_input("영토 이름")
 
     def __init__(self, *, bot:BotBase = None):
         super().__init__(title="새 영토예요!")
@@ -105,7 +101,7 @@ class NewTerritoryModal(ArislenaGeneralModal):
         b_cat = BuildingCategory.get_ramdom_base_building_category()
         b = Building(
             territory_id=t.id,
-            discriminator=b_cat,
+            category=b_cat,
             name=b_cat.local_name
         )
         b.set_database(main_db)
@@ -119,16 +115,31 @@ class NewTerritoryModal(ArislenaGeneralModal):
 
 class NewBuildingModal(ArislenaGeneralModal):
     
-    building_name = TextInput(
-        label="건물 이름",
-        min_length=1,
-        max_length=30,
-        placeholder="한글, 다이어크리틱 없는 영문, 숫자, 공백만 허용됩니다.",
-        style=discord.TextStyle.short
-    )
+    building_name = get_basic_text_input("건물 이름")
     
     def __init__(self, *, bot:BotBase = None):
         super().__init__(title="새 건물이예요!")
         self.bot = bot
         
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        raise NotImplementedError()
+
+class NameCrew(ArislenaGeneralModal):
+    
+    new_crew_name = get_basic_text_input("대원 이름")
+    
+    def __init__(self, *, bot:BotBase = None, previous_crew_name:str = None):
+        super().__init__(title="대원 이름 정하기")
+        self.bot = bot
+        self.previous_crew_name = previous_crew_name
+    
+    async def on_submit(self, interaction: discord.Interaction) -> None:
         
+        faction = Faction.from_database(main_db, user_id=interaction.user.id)
+        crew = Crew.from_database(main_db, faction_id=faction.id, name=self.previous_crew_name)
+        crew.name = self.new_crew_name.value
+        crew.push()
+        
+        await interaction.response.send_message(f"대원 이름을 {instrumental(self.new_crew_name.value, '**')} 변경했습니다.", ephemeral=True)
+        
+        main_db.connection.commit()

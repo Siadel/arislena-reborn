@@ -3,13 +3,11 @@ from typing import Union
 from discord import app_commands
 
 from py_base import utility 
-from py_system.tableobj import form_database_from_tableobjects
+
 from py_system._global import main_db, bot_setting
 from py_discord import warnings
 from py_discord.bot_base import BotBase
 from py_discord.checks import is_admin
-
-form_database_from_tableobjects(main_db)
 
 # 봇 객체 선언
 class AriBot(BotBase):

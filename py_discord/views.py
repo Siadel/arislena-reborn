@@ -5,8 +5,8 @@ from discord import ui, Colour
 from py_base.koreanstring import nominative
 from py_base.ari_enum import BuildingCategory, TerritorySafety
 from py_system._global import main_db
-from py_system.tableobj import TableObject, User, Faction, Territory, Building
-from py_discord import warnings
+from py_system.tableobj import TableObject, User, Faction, Territory, Building, Crew
+from py_discord import warnings, modals
 from py_discord.embeds import table_info
 from py_discord.bot_base import BotBase
 
@@ -75,12 +75,15 @@ class TableObjectButton(Button):
         self.label_txt = label_txt
         self.bot = bot
     
+    def _get_basic_embed(self):
+        return table_info(
+            discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), 
+            self.table_object
+        )
+    
     async def callback(self, interaction:discord.Interaction):
         await interaction.response.send_message(
-            embed = table_info(
-                discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), 
-                self.table_object
-            ),
+            embed = self._get_basic_embed(),
             ephemeral = False # 일단은 False로
         )
         
@@ -115,27 +118,44 @@ class TerritoryLookupButton(TableObjectButton):
         )
     
     async def callback(self, interaction:discord.Interaction):
-        embed = table_info(
-            discord.Embed(title = f"{self.label_txt} 정보", color = Colour.green()), 
-            self.table_object
-        )
+        embed = self._get_basic_embed()
         # 건물 정보 추가
         buildings = main_db.fetch_many("building", territory_id = self.table_object.id)
         field_value = ""
+        
         if buildings:
             for building in buildings:
                 building_object = Building.from_data(building)
-                field_value += f"- {building_object.name} ({building_object.discriminator.emoji} {building_object.discriminator.local_name})\n"
+                field_value += f"- {building_object.name} ({building_object.category.emoji} {building_object.category.local_name})\n"
         else:
             field_value = "- 건물 없음"
+        
         embed.add_field(
             name="건물 정보",
             value=field_value
         )
+        
         await interaction.response.send_message(
             embed = embed,
             ephemeral = False # 일단은 False로
         )
+
+class CrewLookupButton(TableObjectButton):
+    
+    def __init__(self, crew:Crew, bot:BotBase):
+        # faction = Faction.from_database(main_db, id = crew.faction_id)
+        super().__init__(
+            crew, 
+            bot = bot,
+            label_complementary = f"아이디 : {crew.id}"
+        )
+        self.crew = crew
+
+class CrewNameButton(CrewLookupButton):
+    
+    async def callback(self, interaction:discord.Interaction):
+        
+        await interaction.response.send_modal(modals.NameCrew(bot = self.bot, previous_crew_name = self.crew.name))
 
 class PurifyButton(TerritoryLookupButton):
     
@@ -181,7 +201,7 @@ class BuildButton(TerritoryLookupButton):
         
         building = Building(
             territory_id=self.table_object.id,
-            discriminator=category,
+            category=category,
             name=self.building_name
         )
         
@@ -209,7 +229,7 @@ class FactionDeleteButton(TableObjectButton):
         # 세력 해산
         self.faction.delete()
 
-        main_db.connection.commit()
+        
 
         self.disabled = True
 
@@ -221,6 +241,7 @@ class FactionDeleteButton(TableObjectButton):
             f"**{interaction.user.display_name}**님께서 **{self.faction.name}** 세력을 해산하셨습니다.",
             interaction.guild.id
         )
+        main_db.connection.commit()
 
 
 # 범용 열람 버튼 ui
@@ -228,7 +249,7 @@ class TableObjectView(View):
 
     def __init__(
             self, 
-            fetch_list:list, 
+            fetch_list:list[TableObject], 
             *, timeout = 180, 
             button_class = TableObjectButton, 
             **button_class_param
