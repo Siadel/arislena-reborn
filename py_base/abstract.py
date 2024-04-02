@@ -27,6 +27,12 @@ class ArislenaEnum(IntEnum):
     def __repr__(self) -> str:
         return super().__repr__()
     
+    def express(self) -> str:
+        """
+        이모지, 번역 이름을 반환함
+        """
+        return f"{self.emoji} {self.local_name}"
+    
     @classmethod
     def from_int(cls, value:int) -> "ArislenaEnum":
         return cls(value)

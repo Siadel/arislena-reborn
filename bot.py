@@ -4,10 +4,11 @@ from discord import app_commands
 
 from py_base import utility 
 
-from py_system._global import main_db, bot_setting
+from py_system._global import main_db, bot_setting, game_setting, job_setting, schedule
 from py_discord import warnings
 from py_discord.bot_base import BotBase
 from py_discord.checks import is_admin
+from py_discord.schedule_manager import ScheduleManager
 
 # 봇 객체 선언
 class AriBot(BotBase):
@@ -42,6 +43,8 @@ class AriBot(BotBase):
 
 # 봇 객체 생성
 aribot = AriBot()
+
+schedule_manager = ScheduleManager(aribot, bot_setting, main_db, schedule, game_setting, job_setting)
 
 # 명령어 오류 핸들링
 @aribot.tree.error

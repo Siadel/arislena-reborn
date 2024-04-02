@@ -2,8 +2,7 @@ import discord, logging, json
 from discord.ext import commands
 from os import environ, path
 
-from py_system._global import setting_by_guild, bot_setting, game_setting, job_setting, main_db, schedule
-from py_system.schedule_manager import ScheduleManager
+from py_system._global import setting_by_guild, bot_setting, main_db
 from py_system.tableobj import form_database_from_tableobjects
 
 # 봇 권한 설정
@@ -14,7 +13,7 @@ intents.members = True
 
 form_database_from_tableobjects(main_db)
 
-schedule_manager = ScheduleManager(main_db, schedule, game_setting, job_setting)
+
 
 def exit_bot():
     print("봇을 종료합니다.")
@@ -52,6 +51,15 @@ class BotBase(commands.Bot):
             
             channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
             await channel.send(message)
+            
+    async def announce_with_embed(self, embed:discord.Embed, guild_id:int):
+        """
+        지정된 봇 전용 공지 채널에 embed를 보냄. 지정 채널이 없으면 아무것도 하지 않음.
+        """
+        if (guild_id_key := str(guild_id)) in setting_by_guild.announce_location:
+            
+            channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
+            await channel.send(embed=embed)
     
     def run(self):
         super().run(self.token, log_handler=self.log_handler, log_level=logging.INFO)

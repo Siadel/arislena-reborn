@@ -30,8 +30,7 @@ class TerritoryCommand(GroupCog, name="영토"):
             "영토 정보 열람", 
             view=views.TableObjectView(
                 territory_list,
-                button_class=views.TerritoryLookupButton,
-                bot=self.bot
+                button=views.TerritoryLookupButton()
             )
         )
 
@@ -66,9 +65,7 @@ class TerritoryCommand(GroupCog, name="영토"):
             "정화할 영토를 선택해주세요.",
             view=views.TableObjectView(
                 [Territory.from_data(data) for data in territory_list],
-                button_class=views.PurifyButton,
-                bot=self.bot,
-                prev_interaction=interaction
+                button=views.PurifyButton(interaction)
             )
         )
     

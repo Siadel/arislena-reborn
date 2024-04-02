@@ -86,8 +86,9 @@ class ResourceCategory(ArislenaEnum):
 class BuildingCategory(ArislenaEnum):
     UNSET = "미정", "❓"
     FRESH_WATER_SOURCE = "담수원", "🚰"
-    HUNTING_GROUND = "수렵지", "🏹⛺"
-    PASTURELAND = "목초지", "🐄⛺"
+    HUNTING_GROUND = "수렵지", "🏹"
+    GATHERING_POST = "채집지", "🌾"
+    PASTURELAND = "목초지", "🐄"
     FARMLAND = "농경지", "🌾⛺"
     WOOD_GATHERING_POST = "목재 채취장", "🌲🏭"
     EARTH_GATHERING_POST = "토석 채취장", "🏞️🏭"
@@ -96,16 +97,17 @@ class BuildingCategory(ArislenaEnum):
     AUTOMATED_GATHERING_FACILITY = "자동 채취 시설", "🏭🤖"
     
     @classmethod
-    def get_ramdom_base_building_category(cls) -> "BuildingCategory":
-        return random.choice([cls.FRESH_WATER_SOURCE, cls.HUNTING_GROUND, cls.PASTURELAND])
-    
-    @classmethod
     def get_basic_building_list(cls) -> list["BuildingCategory"]:
         return [
             cls.FRESH_WATER_SOURCE,
             cls.HUNTING_GROUND,
-            cls.PASTURELAND
+            cls.PASTURELAND,
+            cls.GATHERING_POST
         ]
+    
+    @classmethod
+    def get_ramdom_base_building_category(cls) -> "BuildingCategory":
+        return random.choice(cls.get_basic_building_list())
     
     @classmethod
     def get_advanced_building_list(cls) -> list["BuildingCategory"]:

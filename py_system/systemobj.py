@@ -1,21 +1,16 @@
 """
 table object와 연계되는 데이터 클래스, 하지만 db에 직접 저장되지 않는다.
 """
-from dataclasses import dataclass, field
-from py_base.ari_enum import ResourceCategory, BuildingCategory
-from py_system import tableobj
-from py_system.abstract import ResourceBase, BasicBuilding, AdvancedBuilding
-from py_system.arislena_dice import Dice
+from dataclasses import dataclass
+from abc import ABCMeta, abstractmethod
+from typing import ClassVar
 
-class Client:
-    
-    def __init__(self, user:tableobj.User = None, faction:tableobj.Faction = None):
-        """
-        데이터베이스에 저장된 유저 정보를 받아서 클라이언트를 생성한다.
-        """
-        self.user = user
-        self.faction = faction
-        self.command_counter = faction.get_command_counter() if faction else None
+from py_base.ari_enum import ResourceCategory, BuildingCategory
+from py_base.arislena_dice import Dice
+from py_system.abstract import ResourceBase
+from py_system.tableobj import Building
+
+# 자원
 
 @dataclass
 class GeneralResource(ResourceBase):
@@ -26,7 +21,7 @@ class GeneralResource(ResourceBase):
 class ProductionResource:
     category: ResourceCategory
     amount: int = 1
-    dice_ratio: int = 1
+    dice_ratio: int = 1 # 1 이상의 정수
     
     def __str__(self) -> str:
         return f"{self.category.name}; 주사위 값 {self.dice_ratio} 당 {self.amount}개 생산"
@@ -39,24 +34,81 @@ class ProductionResource:
         return GeneralResource(self.category, self.amount * (dice // self.dice_ratio))
     
     def __mul__(self, other: int | Dice) -> GeneralResource:
-        dice: int = other if isinstance(other, int) else 0
-        if isinstance(other, Dice):
+        dice: int = 0
+        if isinstance(other, int):
+            dice = other
+        elif isinstance(other, Dice):
             if other.last_roll is None: raise ValueError("주사위를 굴려주세요")
             dice = other.last_roll
+        else:
+            raise TypeError(f"int 또는 Dice 타입만 가능합니다. (현재 타입: {type(other)})")
         
         return self._return_general_resource(dice)
 
 class ProductionRecipe:
-    def __init__(self, *, consume: list[GeneralResource] = [], produce: list[ProductionResource] = []):
+    def __init__(
+        self, *, 
+        consume: list[GeneralResource] = [], 
+        produce: list[ProductionResource] = []
+    ):
         self.consume = consume
         self.produce = produce
 
 # 건물
+ 
+@dataclass
+class BuildingBase(Building, metaclass=ABCMeta):
+    """
+    시설 클래스들의 부모 클래스
+    """
+    category: ClassVar[BuildingCategory] = BuildingCategory.UNSET
+    required_dice_cost: ClassVar[int] = 0
+    
+    @abstractmethod
+    def produce(self) -> ProductionRecipe:
+        raise ProductionRecipe()
+    
+    @classmethod
+    def from_building(cls, building:Building) -> "BuildingBase":
+        t = cls.get_building_type_by_category(building.category)
+        return t(**building.__dict__)
+    
+    @classmethod
+    def get_building_type_by_category(cls, category:BuildingCategory):
+        """
+        BuildingBase를 상속받은 클래스들 중에서 category에 해당하는 클래스를 반환
+        """
+        for sub_cls_type in cls.__subclasses__():
+            if sub_cls_type.category == category:
+                return sub_cls_type
+        raise ValueError(f"해당 카테고리({category})의 건물이 없습니다.")
+
+@dataclass
+class BasicBuilding(BuildingBase, metaclass=ABCMeta):
+    """
+    기초 건물 클래스들의 부모 클래스
+    """
+
+    def produce(self) -> ProductionRecipe:
+        super().produce()
+
+@dataclass
+class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
+    """
+    고급 건물 클래스들의 부모 클래스
+    """
+
+    def produce(self) -> ProductionRecipe:
+        super().produce()
 
 @dataclass
 class FreshWaterSource(BasicBuilding):
-    category = BuildingCategory.FRESH_WATER_SOURCE
-    dice_cost: int = 0
+    category: ClassVar[BuildingCategory] = BuildingCategory.FRESH_WATER_SOURCE
+    required_dice_cost: ClassVar[int] = 0
+    
+    @classmethod
+    def from_building(cls, building:Building) -> "FreshWaterSource":
+        return cls(**building.__dict__)
     
     def produce(self):
         return ProductionRecipe(
@@ -65,8 +117,8 @@ class FreshWaterSource(BasicBuilding):
 
 @dataclass
 class HuntingGround(BasicBuilding):
-    category = BuildingCategory.HUNTING_GROUND
-    dice_cost: int = 0
+    category: ClassVar[BuildingCategory] = BuildingCategory.HUNTING_GROUND
+    required_dice_cost: ClassVar[int] = 0
     
     def produce(self):
         """
@@ -75,19 +127,24 @@ class HuntingGround(BasicBuilding):
         return ProductionRecipe(
             produce=[ProductionResource(ResourceCategory.FOOD, amount=3, dice_ratio=7)]
         )
+
+@dataclass
+class GatheringPost(BasicBuilding):
+    category: ClassVar[BuildingCategory] = BuildingCategory.GATHERING_POST
+    required_dice_cost: ClassVar[int] = 0
     
-    def produce_alias(self):
+    def produce(self):
         """
         채집
         """
         return ProductionRecipe(
-            produce=[ProductionResource(ResourceCategory.WOOD, dice_ratio=3)]
+            produce=[ProductionResource(ResourceCategory.FOOD, dice_ratio=3)]
         )
 
 @dataclass
 class Pastureland(BasicBuilding):
-    category = BuildingCategory.PASTURELAND
-    dice_cost: int = 0
+    category: ClassVar[BuildingCategory] = BuildingCategory.PASTURELAND
+    required_dice_cost: ClassVar[int] = 0
     
     def produce(self):
         return ProductionRecipe(
@@ -96,8 +153,8 @@ class Pastureland(BasicBuilding):
 
 @dataclass
 class Farmland(AdvancedBuilding):
-    category = BuildingCategory.FARMLAND
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.FARMLAND
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         return ProductionRecipe(
@@ -107,8 +164,8 @@ class Farmland(AdvancedBuilding):
 
 @dataclass
 class WoodGatheringPost(AdvancedBuilding):
-    category = BuildingCategory.WOOD_GATHERING_POST
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.WOOD_GATHERING_POST
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         return ProductionRecipe(
@@ -117,8 +174,8 @@ class WoodGatheringPost(AdvancedBuilding):
 
 @dataclass
 class EarthGatheringPost(AdvancedBuilding):
-    category = BuildingCategory.EARTH_GATHERING_POST
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.EARTH_GATHERING_POST
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         return ProductionRecipe(
@@ -130,8 +187,8 @@ class EarthGatheringPost(AdvancedBuilding):
 
 @dataclass
 class BuildingMaterialFactory(AdvancedBuilding):
-    category = BuildingCategory.BUILDING_MATERIAL_FACTORY
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.BUILDING_MATERIAL_FACTORY
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         return ProductionRecipe(
@@ -145,28 +202,29 @@ class BuildingMaterialFactory(AdvancedBuilding):
 
 @dataclass
 class RecruitingCamp(AdvancedBuilding):
-    category = BuildingCategory.RECRUITING_CAMP
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.RECRUITING_CAMP
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         """
         이 건물은 아무것도 생산하지 않는다.
         """
-        return 
+        return ProductionRecipe()
 
 @dataclass
 class AutomatedGatheringFacility(AdvancedBuilding):
-    category = BuildingCategory.AUTOMATED_GATHERING_FACILITY
-    dice_cost: int = 30
+    category: ClassVar[BuildingCategory] = BuildingCategory.AUTOMATED_GATHERING_FACILITY
+    required_dice_cost: ClassVar[int] = 30
     
     def produce(self):
         raise NotImplementedError("자동 채집 시설은 아직 구현되지 않았습니다.")
+
 
 # @dataclass()
 # class Reservoir(Storages):
 #     category: int = 3
 #     name: str = "저수지"
-#     dice_cost: int = 30
+#     required_dice_cost: ClassVar[int] = 30
 #     storages: list[GeneralResource] = field(
 #         default_factory=lambda: [
 #             GeneralResource(ResourceCategory.WATER, 20),
@@ -177,7 +235,7 @@ class AutomatedGatheringFacility(AdvancedBuilding):
 # class Granary(Storages):
 #     category: int = 4
 #     name: str = "곡창"
-#     dice_cost: int = 30
+#     required_dice_cost: ClassVar[int] = 30
 #     storages: list[GeneralResource] = field(
 #         default_factory=lambda: [
 #             GeneralResource(ResourceCategory.FOOD, 20),
@@ -189,7 +247,7 @@ class AutomatedGatheringFacility(AdvancedBuilding):
 # class BuildingMaterialStorage(Storages):
 #     category: int = 5
 #     name: str = "건자재 창고"
-#     dice_cost: int = 30
+#     required_dice_cost: ClassVar[int] = 30
 #     storages: list[GeneralResource] = field(
 #         default_factory=lambda: [
 #             GeneralResource("building_material", 20),

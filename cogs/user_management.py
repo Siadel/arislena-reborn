@@ -64,9 +64,8 @@ class UserManagement(GroupCog, name="유저"):
                 "유저 정보 열람", 
                 view=views.TableObjectView(
                     user_list,
-                    button_class=views.UserLookupButton,
-                    bot=self.bot,
-                    interaction=interaction)
+                    button=views.UserLookupButton(interaction)
+                )
             )
         
         else:

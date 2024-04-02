@@ -100,6 +100,7 @@ class NewTerritoryModal(ArislenaGeneralModal):
         # 기본 건물 중 하나를 생성
         b_cat = BuildingCategory.get_ramdom_base_building_category()
         b = Building(
+            faction_id=faction.id,
             territory_id=t.id,
             category=b_cat,
             name=b_cat.local_name

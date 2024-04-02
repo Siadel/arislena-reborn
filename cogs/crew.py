@@ -73,8 +73,7 @@ class CrewCommand(GroupCog, name="대원"):
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                button_class=views.CrewLookupButton,
-                bot=self.bot
+                button=views.CrewLookupButton()
             )
         )
     
@@ -93,8 +92,26 @@ class CrewCommand(GroupCog, name="대원"):
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                button_class=views.CrewNameButton,
-                bot=self.bot
+                button=views.CrewNameButton(self.bot)
+            )
+        )
+    
+    @app_commands.command(
+        name = "배치",
+        description = "세력이 가지고 있는 대원을 건물에 배치합니다. 이미 배치되어 있는 경우에도 사용할 수 있습니다."
+    )
+    async def deploy(self, interaction: discord.Interaction):
+        
+        if (faction := Faction.from_database(main_db, user_id=interaction.user.id)) is None:
+            raise warnings.NoFaction()
+        
+        crew_list = [Crew.from_data(data) for data in main_db.fetch_many("crew", faction_id=faction.id)]
+        
+        await interaction.response.send_message(
+            "대원 목록",
+            view=views.TableObjectView(
+                crew_list, 
+                button=views.CrewDeployButton()
             )
         )
 

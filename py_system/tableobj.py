@@ -1,7 +1,7 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-
+from sqlite3 import Row
 from typing import ClassVar
 from dataclasses import dataclass
 
@@ -15,9 +15,10 @@ def form_database_from_tableobjects(main_db:MainDB):
     TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
     만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가
     """
-    for subclass in TableObject.__subclasses__():
+    for subclass_type in TableObject.__subclasses__():
         # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
-        subclass = subclass()
+        subclass_type.set_database(main_db)
+        subclass = subclass_type()
         main_db.cursor.execute(subclass.get_create_table_string())
 
         table_name = subclass.table_name
@@ -32,35 +33,39 @@ def form_database_from_tableobjects(main_db:MainDB):
         # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, main_db에서 해당 데이터 형식을 삭제함
         for column_name in (sql_table_column_set - tableobj_column_set):
             main_db.cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
-        # main_db에 없는 데이터 형식이 있을 경우, main_db에 해당 데이터 형식을 추가함
+        # main_db에 없는 데이터 형식이 있을 경우, main_db에 해당 데이터 형식을 추가하고, 기본값을 넣음
+        # subclass 객체는 기본값을 가지고 있다는 점을 이용함
         for column_name in (tableobj_column_set - sql_table_column_set):
-            main_db.cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)}")
+            main_db.cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)} DEFAULT {getattr(subclass, column_name)}")
         
-        # 데이터베이스 테이블의 데이터 형식을 다시 불러옴
-        sql_table_column_set = main_db.table_column_set(table_name)
         
-        # 새로 불러온 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
-        if set(sql_table_column_set) != set(tableobj_column_set):
-            has_row = main_db.has_row(table_name)
-            if has_row:
-                # 테이블 데이터 임시 저장
-                # 테이블에 데이터가 없는 경우 임시 저장할 필요 없음
-                main_db.cursor.execute(f"CREATE TABLE {table_name}_temp AS SELECT * FROM {table_name}")
-            # 테이블 삭제
-            main_db.cursor.execute(f"DROP TABLE {table_name}")
-            # 테이블 재생성
-            main_db.cursor.execute(subclass.get_create_table_string())
-            if has_row:
-                # 임시 저장 테이블의 column마다 작업하여 테이블 데이터 복원
-                # 임시 저장 테이블의 데이터를 {key:value} 형식으로 변환함
-                main_db.cursor.execute(f"SELECT * FROM {table_name}_temp")
-                backup_data = [dict(zip([column[0] for column in main_db.cursor.description], data)) for data in main_db.cursor.fetchall()]
-                # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
-                for data in backup_data:
-                    # TODO 이거 다시 짜야 해!!
-                    main_db.insert(subclass.table_name, data.keys(), data.values())
-                # 임시 저장 테이블 삭제
-                main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
+        # # 데이터베이스 테이블의 데이터 형식을 다시 불러옴
+        # sql_table_column_set = main_db.table_column_set(table_name)
+        
+        # # 이 아래의 코드가 실행되나? -> 실행되지 않음
+        
+        # # 새로 불러온 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
+        # if set(sql_table_column_set) != set(tableobj_column_set):
+        #     has_row = main_db.has_row(table_name)
+        #     if has_row:
+        #         # 테이블 데이터 임시 저장
+        #         # 테이블에 데이터가 없는 경우 임시 저장할 필요 없음
+        #         main_db.cursor.execute(f"CREATE TABLE {table_name}_temp AS SELECT * FROM {table_name}")
+        #     # 테이블 삭제
+        #     main_db.cursor.execute(f"DROP TABLE {table_name}")
+        #     # 테이블 재생성
+        #     main_db.cursor.execute(subclass.get_create_table_string())
+        #     if has_row:
+        #         # 임시 저장 테이블의 column마다 작업하여 테이블 데이터 복원
+        #         # 임시 저장 테이블의 데이터를 {key:value} 형식으로 변환함
+        #         main_db.cursor.execute(f"SELECT * FROM {table_name}_temp")
+        #         backup_data = [subclass_type.from_data(row) for row in main_db.cursor.fetchall()]
+                
+        #         # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
+        #         for data in backup_data:
+        #             data.push()
+        #         # 임시 저장 테이블 삭제
+        #         main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
     
     # 데이터베이스의 테이블 목록 불러오기
     main_db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -78,13 +83,6 @@ def form_database_from_tableobjects(main_db:MainDB):
     print("Database initialized")
 
 """
-!! ---------------------- 주의 ---------------------- !!
-
-abstract variables: __slots__, display_column
-abstract properties: kr_list
-"""
-
-"""
 액티브 데이터
 """
 @dataclass
@@ -96,13 +94,9 @@ class User(TableObject):
     register_date:str = ""
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "discord_name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "discord_id": "디스코드 아이디",
-        "discord_name": "디스코드 이름",
-        "register_date": "가입일"
-    }
+    
+    def display(self) -> str:
+        return str(self.discord_name)
 
 @dataclass
 class Resource(TableObject, ResourceBase):
@@ -113,22 +107,9 @@ class Resource(TableObject, ResourceBase):
     amount: ExtInt = ExtInt(0, min_value=0)
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "id"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "category": "카테고리",
-        "amount": "수량"
-    }
-    category_en_kr_map: ClassVar[dict[str, str]] = {
-        "WATER": "물",
-        "FOOD": "식량",
-        "FEDD": "사료",
-        "WOOD": "목재",
-        "SOIL": "흙",
-        "STONE": "석재",
-        "BUILDING_MATERIAL": "건축자재"
-    }
+    
+    def display(self) -> str:
+        return self.category.local_name
 
 @dataclass
 class Crew(TableObject):
@@ -142,17 +123,10 @@ class Crew(TableObject):
     availability: Availability = Availability.STANDBY
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "name": "이름",
-        "labor": "노동력",
-        "food_consumption": "식량 소비",
-        "water_consumption": "물 소비",
-        "availability": "상태"
-    }
-
+    
+    def display(self) -> str:
+        return self.name
+    
 @dataclass
 class Livestock(TableObject):
 
@@ -163,14 +137,9 @@ class Livestock(TableObject):
     availability: Availability = Availability.STANDBY
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "ID"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "labor": "노동력",
-        "feed_consumption": "사료 소비",
-        "availability": "상태"
-    }
+    
+    def display(self) -> str:
+        return f"가축 {self.id}"
 
 @dataclass
 class FactionHierarchyNode(TableObject):
@@ -180,12 +149,9 @@ class FactionHierarchyNode(TableObject):
     lower:int = 0
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "higher"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "higher": "상위 세력",
-        "lower": "하위 세력"
-    }
+    
+    def display(self) -> str:
+        return f"{self.higher} -> {self.lower}"
     
     def push(self, lower_fation:"Faction", higher_faction:"Faction"):
         """
@@ -209,14 +175,9 @@ class Territory(TableObject):
     safety: TerritorySafety = TerritorySafety.UNKNOWN
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "faction_id": "세력 아이디",
-        "name": "이름",
-        "space_limit": "공간 제한",
-        "safety": "안정도"
-    }
+    
+    def display(self) -> str:
+        return self.name
 
     def explicit_post_init(self):
         """
@@ -232,22 +193,84 @@ class Territory(TableObject):
         """
         return self.space_limit - len(self._database.fetch_many("building", territory_id=self.id))
 
+
+@dataclass
+class Deployment(TableObject):
+    
+    id: int = 0
+    crew_id: int = None
+    territory_id: int = None
+    building_id: int = None
+    
+    _database: ClassVar[MainDB] = None
+    
+    def display(self) -> str:
+        return f"배치 현황 {self.id}"
+
 @dataclass
 class Building(TableObject):
 
     id: int = 0
-    territory_id:int = 0
-    category:BuildingCategory = BuildingCategory.UNSET
-    name:str = ""
+    faction_id: int = 0
+    territory_id: int = 0
+    category: BuildingCategory = BuildingCategory.UNSET
+    name: str = ""
+    remaining_dice_cost: int = 0
+    level: int = 0
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "territory_id": "영토 아이디",
-        "category": "구분",
-        "name": "이름"
-    }
+    
+    def display(self) -> str:
+        return self.name
+    
+    @property
+    def deploy_limit(self) -> int:
+        return self.level + 2
+    
+    def deploy(self, crew: Crew, deployed_crew_ids:list[int] = None):
+        """
+        건물에 인원 배치
+        """
+        if not self.is_built():
+            raise ValueError("건물이 완공되지 않았습니다.")
+        
+        if deployed_crew_ids is None:
+            deployed_crew_ids = self.get_deployed_crew_ids()
+            
+        if len(deployed_crew_ids) >= self.deploy_limit:
+            raise ValueError("건물에 배치할 수 있는 인원이 꽉 찼습니다.")
+        
+        if crew.id in deployed_crew_ids:
+            raise ValueError("이미 배치된 인원입니다.")
+        
+        deployment = Deployment(crew_id=crew.id, building_id=self.id)
+        deployment.set_database(self._database)
+        deployment.push()
+        
+    def apply_production(self, dice:int):
+        if self.is_built():
+            raise ValueError("건물이 완공되었습니다.")
+        self.remaining_dice_cost = max(0, self.remaining_dice_cost - dice)
+    
+    def is_built(self) -> bool:
+        """
+        건물이 완공되었는지 확인
+        """
+        return self.remaining_dice_cost == 0
+    
+    def get_deployed_crew_ids(self) -> list[int]:
+        """
+        건물에 배치된 인원의 ID를 가져옴
+        """
+        ids:list[Row] = self._database.cursor.execute("SELECT crew_id FROM deployment WHERE building_id = ?", (self.id,)).fetchall()
+        return [id[0] for id in ids]
+    
+    def get_deployed_crews(self) -> list[Crew]:
+        """
+        건물에 배치된 인원을 가져옴
+        """
+        deployments = list[Deployment] = [Deployment.from_data(data) for data in self._database.fetch_many("deployment", building_id=self.id)]
+        return [Crew.from_data(self._database.fetch("crew", id=deployment.crew_id)) for deployment in deployments]
 
 @dataclass
 class CommandCounter(TableObject):
@@ -257,13 +280,16 @@ class CommandCounter(TableObject):
     category: CommandCountCategory = CommandCountCategory.UNSET
     amount: int = 0
     
+    _database: ClassVar[MainDB] = None
+    
+    def display(self) -> str:
+        return self.category.local_name
+    
     def reset(self):
         """
-        id, faction_id를 제외한 모든 데이터를 0으로 초기화
+        값 초기화
         """
-        for key in self.__dict__.keys():
-            if key not in ["id", "faction_id"]:
-                setattr(self, key, 0)
+        self.amount = 0
                 
     def increase(self):
         """
@@ -280,13 +306,9 @@ class Faction(TableObject):
     level: int = 0
 
     _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = "name"
-    en_kr_map: ClassVar[dict[str, str]] = {
-        "id": "아이디",
-        "user_id": "유저 아이디",
-        "name": "세력명",
-        "level": "레벨"
-    }
+    
+    def display(self) -> str:
+        return self.name
     
     def fetch_all_high_hierarchy(self) -> list[FactionHierarchyNode]:
         """

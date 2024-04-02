@@ -1,37 +1,42 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-import shutil, datetime
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import shutil, datetime, discord
 
 from py_base import ari_enum
 from py_base.ari_enum import ScheduleState
 from py_base.utility import get_date, DATE_EXPRESSION, BACKUP_DIR, DATE_EXPRESSION_FULL_2, DATE_EXPRESSION_FULL
 from py_base.dbmanager import MainDB
-from py_base.jsonobj import Schedule, GameSetting, JobSetting
-from py_system import tableobj
+from py_base.jsonobj import Schedule, GameSetting, JobSetting, BotSetting
+from py_base.arislena_dice import Nonahedron
+from py_system import tableobj, systemobj
+from py_discord.bot_base import BotBase
 
 ARISLENA_JOB_ID = "game_schedule"
 
 class ScheduleManager:
     
-    def __init__(self, main_db:MainDB, schedule:Schedule, game_setting:GameSetting, job_setting:JobSetting):
+    def __init__(self, bot:BotBase, bot_setting:BotSetting, main_db:MainDB, schedule:Schedule, game_setting:GameSetting, job_setting:JobSetting):
         """
         main_db: 게임의 메인 데이터베이스\n
         schedule: 스케줄 json 데이터\n
         """
-        self.sched = BackgroundScheduler(timezone='Asia/Seoul')
+        self.bot = bot
+        self.bot_setting = bot_setting
         self.main_db = main_db
         self.schedule = schedule
         self.game_setting = game_setting
         self.job_setting = job_setting
 
-        self.sched.start()
+        self.scheduler = AsyncIOScheduler(timezone='Asia/Seoul')
+        self.scheduler.start()
         self.sched_add_job()
         self.schedule.state = ScheduleState.ONGOING
 
     def __del__(self):
-        self.sched.shutdown()
+        self.scheduler.shutdown()
 
     def sched_add_job(self):
-        self.sched.add_job(
+        self.scheduler.add_job(
             self.end_turn, 
             **self.job_setting.__dict__,
             id=ARISLENA_JOB_ID
@@ -45,13 +50,15 @@ class ScheduleManager:
         - 게임 중단 중이면 재개
         - 게임 중 아니면 schedule.json 생성
         '''
-
-        if self.schedule.state == ScheduleState.ONGOING:
-            print(f'{get_date()} 게임 시작 요청(이미 게임 시작됨)')
-            return "게임이 이미 시작되었습니다. | 현재 턴: " + str(self.schedule.now_turn)
+        
+        match self.schedule.state:
             
-        else:
-            if self.schedule.state == ScheduleState.WAITING:
+            case ScheduleState.ONGOING:
+                
+                print(f'{get_date()} 게임 시작 요청(이미 게임 시작됨)')
+                return "게임이 이미 시작되었습니다. | 현재 턴: " + str(self.schedule.now_turn)
+            
+            case ScheduleState.WAITING:
                 # 시작 대기 중일 때 (0)
                 self.sched_add_job()
                 self.schedule.dump()
@@ -59,21 +66,47 @@ class ScheduleManager:
                 print(f'{get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 게임 시작 예정')
                 return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 시작 예정'
             
-            elif self.schedule.state == ScheduleState.PAUSED:
+            case ScheduleState.PAUSED:
                 # 중단 중일 때 (2)
+                self.scheduler.resume_job(ARISLENA_JOB_ID)
+                
                 self.schedule.state = ScheduleState.ONGOING
                 self.schedule.dump()
-
-                self.sched.resume_job(ARISLENA_JOB_ID)
                 
                 message = f'{get_date()} 게임 재개 되었습니다.'
                 print(message)
                 return message
-
-            elif self.schedule.state == ScheduleState.ENDED:
+            
+            case ScheduleState.ENDED:
                 return "종료된 게임은 재개할 수 없습니다."
+
+        # if self.schedule.state == ScheduleState.ONGOING:
+        #     print(f'{get_date()} 게임 시작 요청(이미 게임 시작됨)')
+        #     return "게임이 이미 시작되었습니다. | 현재 턴: " + str(self.schedule.now_turn)
+            
+        # elif self.schedule.state == ScheduleState.WAITING:
+        #     # 시작 대기 중일 때 (0)
+        #     self.sched_add_job()
+        #     self.schedule.dump()
+            
+        #     print(f'{get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 게임 시작 예정')
+        #     return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 시작 예정'
+        
+        # elif self.schedule.state == ScheduleState.PAUSED:
+        #     # 중단 중일 때 (2)
+        #     self.schedule.state = ScheduleState.ONGOING
+        #     self.schedule.dump()
+
+        #     self.scheduler.resume_job(ARISLENA_JOB_ID)
+            
+        #     message = f'{get_date()} 게임 재개 되었습니다.'
+        #     print(message)
+        #     return message
+
+        # elif self.schedule.state == ScheduleState.ENDED:
+        #     return "종료된 게임은 재개할 수 없습니다."
     
-    def end_turn(self):
+    async def end_turn(self):
         '''
         게임 진행 함수(매일 21시 실행)
         ------------------------------
@@ -90,13 +123,13 @@ class ScheduleManager:
             self.end_game()
             return
         
-        self.execute_before_turn_end()
+        await self.execute_before_turn_end()
         
         print(self.schedule.now_turn.__str__() + f'일차 종료 {get_date(DATE_EXPRESSION_FULL)}')
 
         self.schedule.now_turn += 1
         
-        self.execute_after_turn_end()
+        await self.execute_after_turn_end()
         
         print(self.schedule.now_turn.__str__() + f'일차 시작 {get_date(DATE_EXPRESSION_FULL)}')
                 
@@ -113,7 +146,7 @@ class ScheduleManager:
         self.schedule.state = ScheduleState.PAUSED
         self.schedule.dump()
 
-        self.sched.pause_job(ARISLENA_JOB_ID)
+        self.scheduler.pause_job(ARISLENA_JOB_ID)
 
         print(f"게임 중단 됨 | {self.schedule.now_turn}일 차")
         return f"게임이 중단 되었습니다. | {self.schedule.now_turn}일 차"
@@ -126,37 +159,75 @@ class ScheduleManager:
         self.schedule.state = ScheduleState.ENDED
         self.schedule.end_date = get_date()
 
-        self.sched.remove_job(ARISLENA_JOB_ID)
+        self.scheduler.remove_job(ARISLENA_JOB_ID)
 
         self.schedule.dump()
 
         print("게임 종료 됨")
         # 게임 종료 메시지 추가 예정
         return "게임이 종료 되었습니다."
-
-    def execute_before_turn_end(self):
-        '''
-        턴 종료 전 실행 함수
-        '''
-        pass
     
-    def execute_after_turn_end(self):
-        '''
-        턴 종료 후 실행 함수
-        '''
-        
-        # 대원 업데이트: availablity가 UNAVAILABLE인 대원은 AVAILABLE로 변경
-        # for population_row in self.main_db.fetch_many(tableobj.Population.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
-        #     population = tableobj.Population.from_data(population_row)
-        #     population.availability = ari_enum.Availability.AVAILABLE
-        #     population.push()
-        
-        # for livestock_row in self.main_db.fetch_many(tableobj.Livestock.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
-        #     livestock = tableobj.Livestock.from_data(livestock_row)
-        #     livestock.availability = ari_enum.Availability.AVAILABLE
-        #     livestock.push()
+    async def building_produce(self):
+        # 모든 건물이 생산을 실행
+        # TODO 코드 작성
+        for building_row in self.main_db.fetch_all(tableobj.Building.__name__):
+            building = tableobj.Building.from_data(building_row)
+            deployed_crews = building.get_deployed_crews()
+            # 건물에 배치된 대원이 없으면 건너뛰기
+            if len(deployed_crews) == 0: continue
             
-        # 위의 작업 리팩토링
+            sys_building = systemobj.BuildingBase.from_building(building)
+            production_recipe = sys_building.produce()
+            result_embed = discord.Embed(
+                title = f"{building.name} 생산 결과"
+            )
+            # 자원 소모
+            for consume_resource in production_recipe.consume:
+                
+                resource_from_table = tableobj.Resource.from_database(self.main_db, faction_id=building.faction_id, category=consume_resource.category)
+                if resource_from_table < consume_resource:
+                    result_embed.add_field(
+                        name=f"자원 부족: {consume_resource.category.emoji} {consume_resource.category.local_name}",
+                        value="자원이 부족하여 생산을 진행할 수 없습니다."
+                    )
+                    continue
+                
+                else:
+                    resource_from_table.amount -= consume_resource.amount
+                    resource_from_table.push()
+            
+            # 자원 생산
+            for produce_resource in production_recipe.produce:
+                
+                resource_from_table = tableobj.Resource.from_database(self.main_db, faction_id=building.faction_id, category=produce_resource.category)
+                dice = Nonahedron()
+                dice.roll()
+                resource_from_table.amount += produce_resource * dice
+                
+                result_embed.add_field(
+                    name="자원 생산 성공",
+                    value=f"{produce_resource.category.express()} {produce_resource.amount}개 생산"
+                )
+                
+                resource_from_table.push()
+        
+            # 알림
+            await self.bot.announce_with_embed(result_embed, building.faction_id)
+            # 데이터베이스에 반영
+            self.main_db.connection.commit()
+
+    async def execute_before_turn_end(self):
+        '''
+        턴 종료 시 실행 함수
+        '''
+        await self.building_produce()
+    
+    async def execute_after_turn_end(self):
+        '''
+        턴 시작 시 실행 함수
+        '''
+        
+        # availablity가 STANDBY인 모든 Crew, Livestock을 IDLE로 변경
         make_available_list:list[tableobj.Crew | tableobj.Livestock] = [tableobj.Crew, tableobj.Livestock]
         for table in make_available_list:
             for row in self.main_db.fetch_many(table.__name__, availability=ari_enum.Availability.STANDBY.value):
@@ -164,6 +235,8 @@ class ScheduleManager:
                 obj.set_database(self.main_db)
                 obj.availability = ari_enum.Availability.IDLE
                 obj.push()
+        
+        await self.bot.announce(f"{ari_enum.Availability.STANDBY.express()} 상태인 모든 대원과 가축이 {ari_enum.Availability.IDLE.express()} 상태로 변경되었습니다.")
 
         # 모든 CommandCounter 0으로 설정
         cc_list = [tableobj.CommandCounter.from_data(cc) for cc in self.main_db.fetch_all(tableobj.CommandCounter.__name__)]

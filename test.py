@@ -1,28 +1,50 @@
-# from py_base.ari_enum import TerritorySafety, get_enum
-# from enum import Enum
-import unittest
-from pathlib import Path
 
-from py_base.dbmanager import DatabaseManager
-from py_system.tableobj import form_database_from_tableobjects
+from dataclasses import dataclass
+from typing import ClassVar
 
+# @dataclass(slots=True)
+# class Foo:
+#     mutual: ClassVar[int] = 100
+#     id: int
+#     name: str
+#     amount: int
+#     ratio: float
 
-class TableTest(unittest.TestCase):
+#     def some_method(self):
+#         # self.some_instance_var = 100
+#         pass
 
-    def test_creation(self):
+# @dataclass(slots=True)
+# class SubFoo(Foo):
+#     id: int
+#     name: str
+#     amount: int
+#     ratio: float
+#     additional: str
+    
+#     @property
+#     def slots(self):
+#         return list(super(Foo).__slots__) + list(self.__slots__)
 
-        self.test_database = DatabaseManager("unittest")
-        
-        form_database_from_tableobjects(self.test_database)
+# if __name__ == "__main__":
+#     foo = Foo(1, 'foo', 100, 0.5)
+#     subfoo = SubFoo(1, 'foo', 100, 0.5, "some_text")
 
-        self.test_database.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = self.test_database.cursor.fetchall()
+#     print(foo.__slots__, subfoo.__slots__, subfoo.slots)
+    # assert subfoo.__slots__ == ('id', 'name', 'amount', 'ratio', 'additional') # assertion error. why?
 
-        self.assertEqual(len(tables), 9)
-
-
+@dataclass
+class Bar:
+    mutual: ClassVar[int] = 100
+    id: int
+    name: str
+    amount: int
+    ratio: float
+    
+    @property
+    def some_property(self):
+        return self.id * self.amount
 
 if __name__ == "__main__":
-    unittest.main()
-
-    # (Path.cwd() / "data/unittest.db").unlink()
+    bar = Bar(1, 'bar', 100, 0.5)
+    print(bar.some_property, bar.__dict__)

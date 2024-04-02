@@ -42,11 +42,11 @@ class BuildingCommand(GroupCog, name="건물"):
             f"{objective(building_category.name)} 선택하셨습니다. 건설할 영토를 선택해주세요.", 
             view=views.TableObjectView(
                 [Territory.from_data(data) for data in territory_list],
-                button_class=views.BuildButton,
-                bot=self.bot,
-                prev_interaction=interaction,
-                building_category=building_category,
-                building_name=building_name
+                button = views.BuildButton(
+                    prev_interaction=interaction,
+                    building_category=building_category,
+                    building_name=building_name
+                )
             )
         )
 

@@ -74,6 +74,13 @@ class TableObject(metaclass=ABCMeta):
         rtn.pop(0) # ID 제거
         return iter(rtn)
     
+    @abstractmethod
+    def display(self) -> str:
+        """
+        이 클래스의 지정된 column 값을 반환
+        """
+        pass
+    
     def _set_attributes_from_sqlite_row(self, row:Row):
         """
         Sets the attributes of the table object from the sqlite3.Row object.
@@ -84,6 +91,8 @@ class TableObject(metaclass=ABCMeta):
             annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
             ref_instance = annotation[0].strip()
             class_name = annotation[1].strip()
+            
+            if row[key] is None: continue # None 값은 무시 (기본값으로 설정됨)
 
             match (class_name, ref_instance):
 
@@ -133,11 +142,6 @@ class TableObject(metaclass=ABCMeta):
     @property
     def table_name(self):
         return self.__class__.__name__
-    
-    @property
-    def kr_dict(self) -> dict[str]:
-        # 한국어 : 대응되는 attribute 값
-        return dict(zip(self.en_kr_map.values(), self.__dict__.values()))
     
     @property
     def database(self) -> MainDB:
@@ -310,41 +314,6 @@ class ResourceBase(metaclass=ABCMeta):
     def __ge__(self, other:"ResourceBase"):
         return self.category == other.category and self.amount >= other.amount
         
-
-@dataclass
-class BuildingBase(metaclass=ABCMeta):
-    """
-    시설 클래스들의 부모 클래스
-    """
-    category: int = None
-    dice_cost: int = 0
-    level: int = 0
-    
-    @abstractmethod
-    def produce(self) -> Any:
-        raise NotImplementedError("produce 메소드가 구현되지 않았습니다.")
-    
-@dataclass
-class BasicBuilding(BuildingBase, metaclass=ABCMeta):
-    """
-    기초 건물 클래스들의 부모 클래스
-    """
-    category: BuildingCategory
-
-    @abstractmethod
-    def produce(self) -> Any:
-        super().produce()
-
-@dataclass
-class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
-    """
-    고급 건물 클래스들의 부모 클래스
-    """
-    category: BuildingCategory
-
-    @abstractmethod
-    def produce(self) -> Any:
-        super().produce()
 
 # deprecated
 # @dataclass
