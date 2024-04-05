@@ -2,12 +2,13 @@ import re
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Any, ClassVar
 from sqlite3 import Row
 
 from py_base.ari_enum import get_enum, ResourceCategory, BuildingCategory
 from py_base.utility import sql_type
 from py_base.dbmanager import MainDB
+from py_base.abstract import ArislenaEnum
+from py_base.jsonobj import Translate
 
 @dataclass
 class TableObject(metaclass=ABCMeta):
@@ -64,50 +65,19 @@ class TableObject(metaclass=ABCMeta):
     ```
     """
     id: int = 0
-
-    _database: ClassVar[MainDB] = None
-    display_column: ClassVar[str] = None
-    en_kr_map: ClassVar[dict[str, str]] = None
-
-    def __iter__(self):
-        rtn = list(self.__dict__.values())
-        rtn.pop(0) # ID 제거
-        return iter(rtn)
+    
+    def __post_init__(self):
+        self._database = None
     
     @abstractmethod
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         """
         이 클래스의 지정된 column 값을 반환
         """
         pass
     
-    def _set_attributes_from_sqlite_row(self, row:Row):
-        """
-        Sets the attributes of the table object from the sqlite3.Row object.
-        """
-
-        for key in row.keys():
-
-            annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
-            ref_instance = annotation[0].strip()
-            class_name = annotation[1].strip()
-            
-            if row[key] is None: continue # None 값은 무시 (기본값으로 설정됨)
-
-            match (class_name, ref_instance):
-
-                case ("int", _) | ("str", _) | ("float", _):
-                    setattr(self, key, row[key])
-                case ("ExtInt", _):
-                    setattr(self, key, self.__getattribute__(key) + row[key])
-                case (_, "enum"):
-                    setattr(self, key, get_enum(class_name, row[key]))
-                case _:
-                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
-    
-    @classmethod
-    def set_database(cls, database:MainDB):
-        cls._database = database
+    def set_database(self, database:MainDB):
+        self._database = database
     
     @classmethod
     def from_database(cls, database:MainDB, *raw_statements, **statements):
@@ -132,7 +102,7 @@ class TableObject(metaclass=ABCMeta):
 
         new_obj = cls()
 
-        if not set(sqlite_row.keys()).issubset(set(cls.__annotations__.keys())):
+        if not set(sqlite_row.keys()).issubset(cls.__annotations__.keys()):
             raise ValueError(f"데이터베이스의 컬럼과 클래스의 어노테이션에 불일치가 있습니다: {set(sqlite_row.keys()) - set(cls.__annotations__.keys())}")
 
         new_obj._set_attributes_from_sqlite_row(sqlite_row)
@@ -148,18 +118,45 @@ class TableObject(metaclass=ABCMeta):
         return self._database
     
     def _check_database(self):
-        if not self._database:
+        if self._database is None:
             raise Exception("Database is not set.")
     
-    def get_column_names(self) -> list[str]:
-        columns = list(self.__dict__.keys())
-        columns.remove("id")
-        return columns
-    
-    def get_data_tuple(self) -> tuple:
-        datas = list(self.__dict__.values())
-        datas.pop(0)
-        return tuple(datas)
+        
+    def _set_attributes_from_sqlite_row(self, row:Row):
+        """
+        Sets the attributes of the table object from the sqlite3.Row object.
+        """
+
+        for key in row.keys():
+
+            annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+            ref_instance = annotation[0].strip()
+            class_name = annotation[1].strip()
+            
+            if row[key] is None: continue # None 값은 무시 (기본값으로 설정됨)
+
+            match (class_name, ref_instance):
+
+                case ("int", _) | ("str", _) | ("float", _):
+                    setattr(self, key, row[key])
+                case ("ExtInt", _):
+                    setattr(self, key, self.__getattribute__(key) + row[key])
+                case (_, "enum"):
+                    setattr(self, key, get_enum(class_name, row[key]))
+                case _:
+                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
+        
+    def get_dict(self) -> dict:
+        """
+        self.__dict__를 호출하나 key가 '_'로 시작하는 것은 제외
+        """
+        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+
+    def get_dict_without_id(self) -> dict:
+        """
+        self.__dict__를 호출하나 key가 '_'로 시작하는 것은 제외
+        """
+        return {k: v for k, v in self.__dict__.items() if not k.startswith('_') and k != "id"}
     
     def get_wildcard_string(self) -> str:
         """
@@ -167,7 +164,7 @@ class TableObject(metaclass=ABCMeta):
 
         id를 제외한 모든 attribute 값을 ?로 반환
         """
-        return ", ".join(["?" for _ in range(len(self.__dict__.keys()) - 1)])
+        return ", ".join(["?" for _ in range(len(self.get_dict_without_id()))])
     
     def get_column_type(self, column_name: str) -> str:
         """
@@ -193,10 +190,11 @@ class TableObject(metaclass=ABCMeta):
         Returns:
             str: The SQL string for creating the table.
         """
-        foreign_keys:list[str] = [key for key in self.__dict__.keys() if re.match(r"\w+_id", key)]
+        keys = self.get_dict().keys()
+        foreign_keys:list[str] = [key for key in keys if re.match(r"\w+_id", key)]
         sub_queries = []
 
-        for key in self.__dict__.keys():
+        for key in keys:
             if key == "id":
                 sub_queries.append(f"{key} INTEGER PRIMARY KEY AUTOINCREMENT")
             else:
@@ -245,9 +243,10 @@ class TableObject(metaclass=ABCMeta):
         """
         self._check_database()
         if self._database.is_exist(self.table_name, f"id = {self.id}"):
-            self._database.update_with_id(self.table_name, self.id, **self.__dict__)
+            self._database.update_with_id(self.table_name, self.id, **self.get_dict_without_id())
         else:
-            self._database.insert(self.table_name, self.get_column_names(), self.get_data_tuple())
+            data = self.get_dict_without_id()
+            self._database.insert(self.table_name, data.keys(), data.values())
     
     def delete(self):
         """
@@ -258,6 +257,24 @@ class TableObject(metaclass=ABCMeta):
         """
         self._check_database()
         self._database.delete_with_id(self.table_name, self.id)
+        
+    def to_discord_text(self, translate:Translate) -> str:
+        """
+        Returns the text for the discord message.
+
+        Returns:
+            str: The text for the discord message.
+        """
+
+        texts = []
+        for key, value in self.get_dict().items():
+            key = translate.get_from_map('table_object', key, self.table_name, key)
+            if isinstance(value, ArislenaEnum):
+                value = f"{value.emoji} **{value.local_name}**"
+            else:
+                value = f"**{value}**"
+            texts.append(f"- {key} : {value}")
+        return "\n".join(texts)
 
 class ResourceBase(metaclass=ABCMeta):
     

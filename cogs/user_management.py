@@ -64,7 +64,7 @@ class UserManagement(GroupCog, name="유저"):
                 "유저 정보 열람", 
                 view=views.TableObjectView(
                     user_list,
-                    button=views.UserLookupButton(interaction)
+                    sample_button=views.UserLookupButton(interaction)
                 )
             )
         
@@ -74,7 +74,7 @@ class UserManagement(GroupCog, name="유저"):
             user = User.from_database(main_db, discord_id=interaction.user.id)
         
             await interaction.response.send_message(
-                embed=embeds.table_info(
+                embed=embeds.add_basic_table_info(
                     discord.Embed(title=f"{interaction.user.display_name}님의 정보", color=Colour.green()), 
                     user
                 )
@@ -97,7 +97,7 @@ class UserManagement(GroupCog, name="유저"):
         # 동기화 완료 엠베드 출력
         await interaction.response.send_message(
             f"{interaction.user.mention}님의 정보를 동기화했습니다.",
-            embed=embeds.table_info(
+            embed=embeds.add_basic_table_info(
                 discord.Embed(title=f"{interaction.user.display_name}님의 정보", color=Colour.green()),
                 user
             )

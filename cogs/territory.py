@@ -4,7 +4,7 @@ from discord import app_commands
 
 from py_base.ari_enum import TerritorySafety
 from py_system._global import main_db
-from py_system.tableobj import Territory
+from py_system.tableobj import Territory, Faction
 from py_discord import warnings, views
 from py_discord.bot_base import BotBase
 from py_discord.modals import NewTerritoryModal
@@ -17,12 +17,12 @@ class TerritoryCommand(GroupCog, name="영토"):
 
     @app_commands.command(
         name = "열람", 
-        description = "영토의 정보를 열람할 수 있는 버튼 ui를 출력합니다. 버튼 ui는 180초 후 비활성화됩니다."
+        description = "자신 소유 영토의 정보를 열람할 수 있는 버튼 ui를 출력합니다. 버튼 ui는 180초 후 비활성화됩니다."
     )
     async def lookup(self, interaction: discord.Interaction):
-        
+        faction = Faction.from_database(main_db, user_id=interaction.user.id)
         # 모든 영토 정보 가져오기
-        territory_data_list = main_db.fetch_all("territory")
+        territory_data_list = main_db.fetch_many(Territory.__name__, faction_id=faction.id)
         territory_list = [Territory.from_data(data) for data in territory_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
@@ -30,7 +30,7 @@ class TerritoryCommand(GroupCog, name="영토"):
             "영토 정보 열람", 
             view=views.TableObjectView(
                 territory_list,
-                button=views.TerritoryLookupButton()
+                sample_button=views.TerritoryLookupButton(faction)
             )
         )
 
@@ -54,18 +54,17 @@ class TerritoryCommand(GroupCog, name="영토"):
     )
     async def purify(self, interaction: discord.Interaction):
         
-        if not main_db.is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
+        if (faction_data := main_db.fetch(Faction.__name__, user_id=interaction.user.id)) is None: raise warnings.NoFaction()
+        faction = Faction.from_data(faction_data)
         
-        territory_list = main_db.fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
-        
-        if len(territory_list) == 0:
-            await interaction.response.send_message("정화할 영토가 없습니다.", ephemeral=True)
+        territory_list = main_db.fetch_many(Territory.__name__, faction_id=faction.id)
 
         await interaction.response.send_message(
             "정화할 영토를 선택해주세요.",
             view=views.TableObjectView(
                 [Territory.from_data(data) for data in territory_list],
-                button=views.PurifyButton(interaction)
+                sample_button=views.PurifyButton(faction)\
+                    .set_previous_interaction(interaction)
             )
         )
     

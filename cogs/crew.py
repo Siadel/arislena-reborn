@@ -73,7 +73,7 @@ class CrewCommand(GroupCog, name="대원"):
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                button=views.CrewLookupButton()
+                sample_button=views.CrewLookupButton()
             )
         )
     
@@ -92,7 +92,9 @@ class CrewCommand(GroupCog, name="대원"):
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                button=views.CrewNameButton(self.bot)
+                sample_button=views.CrewNameButton()\
+                    .set_bot(self.bot)\
+                    .set_previous_interaction(interaction)
             )
         )
     
@@ -111,7 +113,8 @@ class CrewCommand(GroupCog, name="대원"):
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                button=views.CrewDeployButton()
+                sample_button=views.SelectCrewToDeployButton(faction)\
+                    .set_previous_interaction(interaction)
             )
         )
 

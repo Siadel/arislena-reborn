@@ -17,8 +17,8 @@ def form_database_from_tableobjects(main_db:MainDB):
     """
     for subclass_type in TableObject.__subclasses__():
         # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
-        subclass_type.set_database(main_db)
         subclass = subclass_type()
+        subclass.set_database(main_db)
         main_db.cursor.execute(subclass.get_create_table_string())
 
         table_name = subclass.table_name
@@ -27,7 +27,7 @@ def form_database_from_tableobjects(main_db:MainDB):
         sql_table_column_set = main_db.table_column_set(table_name)
 
         # TableObject를 상속하는 객체의 데이터 형식을 불러옴
-        tableobj_column_set = set(subclass.__dict__.keys())
+        tableobj_column_set = set(subclass.get_dict().keys())
 
         # 데이터베이스 테이블의 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
         # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, main_db에서 해당 데이터 형식을 삭제함
@@ -92,10 +92,8 @@ class User(TableObject):
     discord_id:int = 0
     discord_name:str = ""
     register_date:str = ""
-
-    _database: ClassVar[MainDB] = None
     
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return str(self.discord_name)
 
 @dataclass
@@ -105,10 +103,8 @@ class Resource(TableObject, ResourceBase):
     faction_id: int = 0
     category: ResourceCategory = ResourceCategory.UNSET
     amount: ExtInt = ExtInt(0, min_value=0)
-
-    _database: ClassVar[MainDB] = None
     
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.category.local_name
 
 @dataclass
@@ -120,12 +116,13 @@ class Crew(TableObject):
     labor:int = 1
     food_consumption:int = 1
     water_consumption:int = 1
-    availability: Availability = Availability.STANDBY
-
-    _database: ClassVar[MainDB] = None
+    availability: Availability = Availability.UNAVAILABLE
     
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.name
+    
+    def is_available(self) -> bool:
+        return self.availability.is_available()
     
 @dataclass
 class Livestock(TableObject):
@@ -134,11 +131,9 @@ class Livestock(TableObject):
     faction_id:int = 0
     labor:int = 1
     feed_consumption:int = 1
-    availability: Availability = Availability.STANDBY
-
-    _database: ClassVar[MainDB] = None
+    availability: Availability = Availability.UNAVAILABLE
     
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return f"가축 {self.id}"
 
 @dataclass
@@ -147,10 +142,8 @@ class FactionHierarchyNode(TableObject):
     id: int = 0
     higher:int = 0
     lower:int = 0
-
-    _database: ClassVar[MainDB] = None
     
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return f"{self.higher} -> {self.lower}"
     
     def push(self, lower_fation:"Faction", higher_faction:"Faction"):
@@ -174,9 +167,7 @@ class Territory(TableObject):
     space_limit: int = 1
     safety: TerritorySafety = TerritorySafety.UNKNOWN
 
-    _database: ClassVar[MainDB] = None
-    
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.name
 
     def explicit_post_init(self):
@@ -202,9 +193,7 @@ class Deployment(TableObject):
     territory_id: int = None
     building_id: int = None
     
-    _database: ClassVar[MainDB] = None
-    
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return f"배치 현황 {self.id}"
 
 @dataclass
@@ -218,32 +207,31 @@ class Building(TableObject):
     remaining_dice_cost: int = 0
     level: int = 0
 
-    _database: ClassVar[MainDB] = None
-    
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.name
     
     @property
     def deploy_limit(self) -> int:
         return self.level + 2
     
-    def deploy(self, crew: Crew, deployed_crew_ids:list[int] = None):
-        """
-        건물에 인원 배치
-        """
-        if not self.is_built():
-            raise ValueError("건물이 완공되지 않았습니다.")
+    def is_deployable(self, deployed_crew_ids: list[int] = None) -> bool:
+        if not self.is_built(): return True
         
         if deployed_crew_ids is None:
             deployed_crew_ids = self.get_deployed_crew_ids()
-            
-        if len(deployed_crew_ids) >= self.deploy_limit:
-            raise ValueError("건물에 배치할 수 있는 인원이 꽉 찼습니다.")
         
-        if crew.id in deployed_crew_ids:
-            raise ValueError("이미 배치된 인원입니다.")
+        if len(deployed_crew_ids) >= self.deploy_limit: return False
+        return True
+    
+    def deploy(self, crew: Crew):
+        """
+        건물에 인원 배치
         
-        deployment = Deployment(crew_id=crew.id, building_id=self.id)
+        건물 완공 여부, 건물 배치 인원 제한 여부, 이미 배치된 인원 여부를 확인함
+        """
+        self._check_database()
+        
+        deployment = Deployment(crew_id=crew.id, territory_id=self.territory_id, building_id=self.id)
         deployment.set_database(self._database)
         deployment.push()
         
@@ -262,6 +250,7 @@ class Building(TableObject):
         """
         건물에 배치된 인원의 ID를 가져옴
         """
+        self._check_database()
         ids:list[Row] = self._database.cursor.execute("SELECT crew_id FROM deployment WHERE building_id = ?", (self.id,)).fetchall()
         return [id[0] for id in ids]
     
@@ -269,6 +258,7 @@ class Building(TableObject):
         """
         건물에 배치된 인원을 가져옴
         """
+        self._check_database()
         deployments = list[Deployment] = [Deployment.from_data(data) for data in self._database.fetch_many("deployment", building_id=self.id)]
         return [Crew.from_data(self._database.fetch("crew", id=deployment.crew_id)) for deployment in deployments]
 
@@ -280,9 +270,7 @@ class CommandCounter(TableObject):
     category: CommandCountCategory = CommandCountCategory.UNSET
     amount: int = 0
     
-    _database: ClassVar[MainDB] = None
-    
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.category.local_name
     
     def reset(self):
@@ -305,9 +293,7 @@ class Faction(TableObject):
     name: str = ""
     level: int = 0
 
-    _database: ClassVar[MainDB] = None
-    
-    def display(self) -> str:
+    def get_display_string(self) -> str:
         return self.name
     
     def fetch_all_high_hierarchy(self) -> list[FactionHierarchyNode]:

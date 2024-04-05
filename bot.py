@@ -90,8 +90,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 async def on_app_command_completion(interaction: discord.Interaction, command: Union[app_commands.Command, app_commands.ContextMenu]) -> None:
     # 사용 시간, 명령어 사용자, 닉네임, 명령어 이름, 명령어 인자
     # tab을 기준으로 정렬
+    line = f"{utility.get_date(utility.DATE_EXPRESSION_FULL)}\t{interaction.user.id}\t{interaction.user.name}\t{interaction.user.nick}\t{interaction.data['name']}\t{command.name}"
+    print(line)
     log_file = open("command_log.txt", "a", encoding="utf-8")
-    log_file.write(f"{utility.get_date(utility.DATE_EXPRESSION_FULL)}\t{interaction.user.id}\t{interaction.user.name}\t{interaction.user.nick}\t{interaction.data['name']}\t{command.name}\n{interaction.data}\n")
+    log_file.write(line + utility.ENTER)
     log_file.close()
 
 @aribot.tree.command(
@@ -103,6 +105,16 @@ async def exit_bot(interaction: discord.Interaction):
     if not is_admin(interaction): raise warnings.NotAdmin()
     await interaction.response.send_message("봇을 종료합니다.", ephemeral=True)
     await aribot.close()
+
+@aribot.tree.command(
+    name = "턴넘기기",
+    description = "턴을 넘깁니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다."
+)
+async def elapse_turn(interaction: discord.Interaction):
+    if not is_admin(interaction): raise warnings.NotAdmin()
+    schedule_manager.end_turn()
+    await interaction.response.send_message(f"턴이 넘어갔습니다. (현재 턴: {schedule_manager.schedule.now_turn})")
+
 
 if __name__ == "__main__":
     # 봇 실행

@@ -21,7 +21,9 @@
             "space_limit": "공간 제한",
             "safety": "안정도",
             "discriminator": "구분",
-            "availability": "상태"
+            "availability": "상태",
+            "remaining_dice_cost": "남은 주사위 총량",
+            "level": "레벨"
         },
         "Faction" : {
             "name" : "세력명"

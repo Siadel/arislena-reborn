@@ -3,6 +3,7 @@
 """
 import sqlite3
 from typing import Iterable, Any
+
 from py_base.utility import DATA_DIR, sql_value
 
 def print_query(query:str):
@@ -85,7 +86,15 @@ class DatabaseManager:
             print(db.is_exist("users", username="john_doe"))
             ```
         """
-        return self.fetch(table, *raw_statements, **statements) is not None
+        if not (raw_statements or statements): raise ValueError("At least one statement is required.")
+
+        s = [f"{key} = {sql_value(value)}" for key, value in statements.items()]
+        s += list(raw_statements)
+        
+        sql = f"SELECT id FROM {table} WHERE {' AND '.join(s)}"
+        self.cursor.execute(sql)
+        return self.cursor.fetchone() is not None
+
     
     def fetch_many(self, table:str, *raw_statements, **statements) -> list[sqlite3.Row]:
         """
@@ -188,7 +197,7 @@ class DatabaseManager:
         name만 뽑아서 집합으로 저장
         """
         self.cursor.execute(f"PRAGMA table_info({table_name})")
-        return set(d[1] for d in self.cursor.fetchall())
+        return set(table_info["name"] for table_info in self.cursor.fetchall())
 
     def has_row(self, table_name:str) -> bool:
         """

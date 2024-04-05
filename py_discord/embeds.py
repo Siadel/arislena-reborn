@@ -51,32 +51,13 @@ def register(user:User):
     embed.add_field(name="등록일", value=user.register_date)
     return embed
 
-def table_info_text_list(table_obj:TableObject) -> list[str]:
+def add_basic_table_info(embed:Embed, table_obj:TableObject):
     """
-    테이블 객체의 정보를 텍스트로 반환합니다.
+    열람 계열 명령어 실행 시 사용자에게 출력할 TableObject의 기본 정보를 embed에 추가합니다.
     """
-    texts = []
-    for key, value in table_obj.__dict__.items():
-        key = translate.get_from_map('table_object', key, table_obj.table_name, key)
-        if isinstance(value, ArislenaEnum):
-            value = f"{value.emoji} **{value.local_name}** ({value.value})"
-        else:
-            value = f"**{value}**"
-        texts.append(f"- {key} : {value}")
-    return texts
 
-# 각종 정보 열람 시 테이블에 있는 데이터를 자동으로 반환하는 함수
-def table_info(embed:Embed, table_obj:TableObject):
-
-    embed.add_field(name="기본 정보", value="\n".join(table_info_text_list(table_obj)))
+    embed.add_field(name="기본 정보", value=table_obj.to_discord_text(translate))
     
     return embed
 
-# 자신이 세운 세력 정보 열람
-def faction_info(title, color, ):
-    """
-    엠베드 제목 : (세력명) 정보\n
-    엠베드 색깔 : 세력 데이터의 main_color\n
-    """
-    embed = Embed(title=title, color=color)
 

@@ -71,7 +71,7 @@ class BuildingBase(Building, metaclass=ABCMeta):
     @classmethod
     def from_building(cls, building:Building) -> "BuildingBase":
         t = cls.get_building_type_by_category(building.category)
-        return t(**building.__dict__)
+        return t(**building.get_dict())
     
     @classmethod
     def get_building_type_by_category(cls, category:BuildingCategory):
@@ -108,7 +108,7 @@ class FreshWaterSource(BasicBuilding):
     
     @classmethod
     def from_building(cls, building:Building) -> "FreshWaterSource":
-        return cls(**building.__dict__)
+        return cls(**building.get_dict())
     
     def produce(self):
         return ProductionRecipe(

@@ -230,13 +230,13 @@ class ScheduleManager:
         # availablity가 STANDBY인 모든 Crew, Livestock을 IDLE로 변경
         make_available_list:list[tableobj.Crew | tableobj.Livestock] = [tableobj.Crew, tableobj.Livestock]
         for table in make_available_list:
-            for row in self.main_db.fetch_many(table.__name__, availability=ari_enum.Availability.STANDBY.value):
+            for row in self.main_db.fetch_many(table.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
                 obj = table.from_data(row)
                 obj.set_database(self.main_db)
-                obj.availability = ari_enum.Availability.IDLE
+                obj.availability = ari_enum.Availability.STANDBY
                 obj.push()
         
-        await self.bot.announce(f"{ari_enum.Availability.STANDBY.express()} 상태인 모든 대원과 가축이 {ari_enum.Availability.IDLE.express()} 상태로 변경되었습니다.")
+        await self.bot.announce(f"{ari_enum.Availability.UNAVAILABLE.express()} 상태인 모든 대원과 가축이 {ari_enum.Availability.STANDBY.express()} 상태로 변경되었습니다.")
 
         # 모든 CommandCounter 0으로 설정
         cc_list = [tableobj.CommandCounter.from_data(cc) for cc in self.main_db.fetch_all(tableobj.CommandCounter.__name__)]

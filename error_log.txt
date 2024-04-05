@@ -1250,3 +1250,233 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: AttributeError: 'sqlite3.Row' object has no attribute 'display_column'
 
+2024-04-04 10:16:45 : Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\territory.py", line 29, in lookup
+    await interaction.response.send_message(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 220, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+
+2024-04-04 10:20:42 : Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\territory.py", line 29, in lookup
+    await interaction.response.send_message(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 220, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+
+2024-04-04 10:27:56 : Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+In data.components.0.components.2.custom_id: Component custom id cannot be duplicated
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\crew.py", line 72, in lookup
+    await interaction.response.send_message(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 220, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+In data.components.0.components.2.custom_id: Component custom id cannot be duplicated
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.1.custom_id: Component custom id cannot be duplicated
+In data.components.0.components.2.custom_id: Component custom id cannot be duplicated
+
+2024-04-04 10:41:16 : Command '열람' raised an exception: NotFound: 404 Not Found (error code: 10062): Unknown interaction
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 63, in info
+    await interaction.response.send_message(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 218, in request
+    raise NotFound(response, data)
+discord.errors.NotFound: 404 Not Found (error code: 10062): Unknown interaction
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: NotFound: 404 Not Found (error code: 10062): Unknown interaction
+
+2024-04-04 12:01:02 : Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.label: This field is required
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\user_management.py", line 63, in info
+    await interaction.response.send_message(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\interactions.py", line 769, in send_message
+    await adapter.create_interaction_response(
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\webhook\async_.py", line 220, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.label: This field is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
+In data.components.0.components.0.label: This field is required
+
+2024-04-04 16:19:09 : Command '배치' raised an exception: AttributeError: 'NoneType' object has no attribute 'id'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\crew.py", line 116, in deploy
+    sample_button=views.SelectCrewToDeployButton(faction)\
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 290, in __init__
+    if self.already_deployed(): self.disabled = True
+       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 297, in already_deployed
+    return main_db.is_exist(Deployment.__name__, crew_id = self.crew.id)
+                                                           ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '배치' raised an exception: AttributeError: 'NoneType' object has no attribute 'id'
+
+2024-04-04 18:04:17 : Command '열람' raised an exception: TypeError: TerritoryLookupButton.__init__() missing 1 required positional argument: 'faction'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\territory.py", line 31, in lookup
+    view=views.TableObjectView(
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 469, in __init__
+    item = sample_button.clone()\
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 204, in clone
+    return TerritoryLookupButton()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TerritoryLookupButton.__init__() missing 1 required positional argument: 'faction'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: TypeError: TerritoryLookupButton.__init__() missing 1 required positional argument: 'faction'
+
+2024-04-05 11:47:15 : Command '열람' raised an exception: TypeError: Territory 클래스는 Building 클래스의 객체와만 호환됩니다.
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\building.py", line 73, in view
+    view=views.TableObjectView(
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 490, in __init__
+    .set_table_object(tableobj)\
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 297, in set_table_object
+    return super().set_table_object(building)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 123, in set_table_object
+    self.check_type(table_object)
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 289, in check_type
+    super().check_type(building, Building)
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\views.py", line 117, in check_type
+    raise TypeError(f"{object.__class__.__name__} 클래스는 {intended_type.__name__} 클래스의 객체와만 호환됩니다.")
+TypeError: Territory 클래스는 Building 클래스의 객체와만 호환됩니다.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: TypeError: Territory 클래스는 Building 클래스의 객체와만 호환됩니다.
+

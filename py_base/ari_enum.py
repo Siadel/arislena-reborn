@@ -36,17 +36,17 @@ class HumanSex(ArislenaEnum):
     FEMALE = "여성", "♀"
 
 class Availability(ArislenaEnum):
-    STANDBY = "배치 대기 중", "❌"
-    LABORING = "노동 중", "🛠️"
+    UNAVAILABLE = "배치 불가", "❌"
+    LABORING = "노동 중 (배치됨)", "🛠️"
     HEALING = "치료 중", "🩹"
-    IDLE = "작업 대기", "✅"
+    STANDBY = "대기 중", "✅"
     
     @classmethod
-    def get_available(cls):
-        return cls.IDLE
+    def get_availables(cls):
+        return cls.STANDBY or cls.LABORING
     
     def is_available(self) -> bool:
-        return self == self.__class__.get_available()
+        return self == self.__class__.get_availables()
 
 class TerritorySafety(ArislenaEnum):
     # 회색, 흑색, 적색, 황색, 녹색

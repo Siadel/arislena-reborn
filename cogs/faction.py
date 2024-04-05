@@ -43,7 +43,7 @@ class FactionCommand(GroupCog, name="세력"):
             "세력 정보 열람", 
             view=views.TableObjectView(
                 faction_list,
-                button=views.FactionLookupButton(interaction)
+                sample_button=views.FactionLookupButton(interaction)
             )
         )
     
@@ -71,7 +71,8 @@ class FactionCommand(GroupCog, name="세력"):
             "세력 해산", 
             view=views.TableObjectView(
                 faction_list,
-                button=views.FactionDeleteButton(self.bot)
+                sample_button=views.FactionDeleteButton(interaction)\
+                    .set_bot(self.bot)
             ),
             ephemeral=True
         )
