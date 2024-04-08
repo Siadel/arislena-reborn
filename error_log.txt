@@ -1480,3 +1480,232 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '열람' raised an exception: TypeError: Territory 클래스는 Building 클래스의 객체와만 호환됩니다.
 
+2024-04-05 18:37:05 : Command '턴넘기기' raised an exception: Exception: Database is not set.
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 126, in end_turn
+    await self.execute_before_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 223, in execute_before_turn_end
+    await self.building_produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 175, in building_produce
+    deployed_crews = building.get_deployed_crews()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 261, in get_deployed_crews
+    self._check_database()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\abstract.py", line 122, in _check_database
+    raise Exception("Database is not set.")
+Exception: Database is not set.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: Exception: Database is not set.
+
+2024-04-05 18:39:30 : Command '턴넘기기' raised an exception: TypeError: 'type' object does not support item assignment
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 126, in end_turn
+    await self.execute_before_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 224, in execute_before_turn_end
+    await self.building_produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 176, in building_produce
+    deployed_crews = building.get_deployed_crews()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\tableobj.py", line 266, in get_deployed_crews
+    deployments = list[Deployment] = [Deployment.from_data(data) for data in self._database.fetch_many("deployment", building_id=self.id)]
+                  ~~~~^^^^^^^^^^^^
+TypeError: 'type' object does not support item assignment
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: TypeError: 'type' object does not support item assignment
+
+2024-04-05 18:40:17 : Command '턴넘기기' raised an exception: TypeError: BasicBuilding.__init__() got an unexpected keyword argument 'category'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 126, in end_turn
+    await self.execute_before_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 224, in execute_before_turn_end
+    await self.building_produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 180, in building_produce
+    sys_building = systemobj.BuildingBase.from_building(building)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\systemobj.py", line 74, in from_building
+    return t(**building.get_dict())
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: BasicBuilding.__init__() got an unexpected keyword argument 'category'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: TypeError: BasicBuilding.__init__() got an unexpected keyword argument 'category'
+
+2024-04-05 23:17:51 : Command '턴넘기기' raised an exception: TypeError: exceptions must derive from BaseException
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 126, in end_turn
+    await self.execute_before_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 224, in execute_before_turn_end
+    await self.building_produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 181, in building_produce
+    production_recipe = sys_building.produce()
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\systemobj.py", line 93, in produce
+    super().produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_system\systemobj.py", line 69, in produce
+    raise ProductionRecipe()
+TypeError: exceptions must derive from BaseException
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: TypeError: exceptions must derive from BaseException
+
+2024-04-05 23:19:39 : Command '턴넘기기' raised an exception: AttributeError: 'NoneType' object has no attribute 'consume'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 126, in end_turn
+    await self.execute_before_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 224, in execute_before_turn_end
+    await self.building_produce()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 186, in building_produce
+    for consume_resource in production_recipe.consume:
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'consume'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: AttributeError: 'NoneType' object has no attribute 'consume'
+
+2024-04-05 23:23:40 : Command '턴넘기기' raised an exception: TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 132, in end_turn
+    await self.execute_after_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 240, in execute_after_turn_end
+    await self.bot.announce(f"{ari_enum.Availability.UNAVAILABLE.express()} 상태인 모든 대원과 가축이 {ari_enum.Availability.STANDBY.express()} 상태로 변경되었습니다.")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+
+2024-04-05 23:54:23 : Command '턴넘기기' raised an exception: TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 116, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 118, in end_turn
+    self.bot.announce(
+TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: TypeError: BotBase.announce() missing 1 required positional argument: 'guild_id'
+
+2024-04-08 16:59:38 : Command '턴넘기기' raised an exception: AttributeError: 'list' object has no attribute '__name__'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 862, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\bot.py", line 118, in elapse_turn
+    await schedule_manager.end_turn()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 140, in end_turn
+    await self.execute_after_turn_end()
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\py_discord\schedule_manager.py", line 282, in execute_after_turn_end
+    for row in self.main_db.fetch_many(table.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
+                                       ^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute '__name__'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: AttributeError: 'list' object has no attribute '__name__'
+

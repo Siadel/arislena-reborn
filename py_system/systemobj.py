@@ -3,7 +3,7 @@ table object와 연계되는 데이터 클래스, 하지만 db에 직접 저장�
 """
 from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Type, TypeVar
 
 from py_base.ari_enum import ResourceCategory, BuildingCategory
 from py_base.arislena_dice import Dice
@@ -55,31 +55,32 @@ class ProductionRecipe:
         self.produce = produce
 
 # 건물
- 
+
+
 @dataclass
 class BuildingBase(Building, metaclass=ABCMeta):
     """
     시설 클래스들의 부모 클래스
     """
-    category: ClassVar[BuildingCategory] = BuildingCategory.UNSET
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.UNSET
     required_dice_cost: ClassVar[int] = 0
     
     @abstractmethod
-    def produce(self) -> ProductionRecipe:
-        raise ProductionRecipe()
+    def get_production_recipe(self) -> ProductionRecipe:
+        return ProductionRecipe()
     
     @classmethod
-    def from_building(cls, building:Building) -> "BuildingBase":
+    def from_building(cls, building:Building):
         t = cls.get_building_type_by_category(building.category)
         return t(**building.get_dict())
     
     @classmethod
-    def get_building_type_by_category(cls, category:BuildingCategory):
+    def get_building_type_by_category(cls, category:BuildingCategory) -> Type["BuildingBase"]:
         """
         BuildingBase를 상속받은 클래스들 중에서 category에 해당하는 클래스를 반환
         """
         for sub_cls_type in cls.__subclasses__():
-            if sub_cls_type.category == category:
+            if sub_cls_type.corr_category == category:
                 return sub_cls_type
         raise ValueError(f"해당 카테고리({category})의 건물이 없습니다.")
 
@@ -89,8 +90,9 @@ class BasicBuilding(BuildingBase, metaclass=ABCMeta):
     기초 건물 클래스들의 부모 클래스
     """
 
-    def produce(self) -> ProductionRecipe:
-        super().produce()
+    def get_production_recipe(self) -> ProductionRecipe:
+        return super().get_production_recipe()
+
 
 @dataclass
 class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
@@ -98,29 +100,29 @@ class AdvancedBuilding(BuildingBase, metaclass=ABCMeta):
     고급 건물 클래스들의 부모 클래스
     """
 
-    def produce(self) -> ProductionRecipe:
-        super().produce()
+    def get_production_recipe(self) -> ProductionRecipe:
+        return super().get_production_recipe()
 
 @dataclass
 class FreshWaterSource(BasicBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.FRESH_WATER_SOURCE
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.FRESH_WATER_SOURCE
     required_dice_cost: ClassVar[int] = 0
     
     @classmethod
     def from_building(cls, building:Building) -> "FreshWaterSource":
         return cls(**building.get_dict())
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             produce=[ProductionResource(ResourceCategory.WATER, dice_ratio=3)]
         )
 
 @dataclass
 class HuntingGround(BasicBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.HUNTING_GROUND
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.HUNTING_GROUND
     required_dice_cost: ClassVar[int] = 0
     
-    def produce(self):
+    def get_production_recipe(self):
         """
         사냥
         """
@@ -130,10 +132,10 @@ class HuntingGround(BasicBuilding):
 
 @dataclass
 class GatheringPost(BasicBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.GATHERING_POST
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.GATHERING_POST
     required_dice_cost: ClassVar[int] = 0
     
-    def produce(self):
+    def get_production_recipe(self):
         """
         채집
         """
@@ -143,20 +145,20 @@ class GatheringPost(BasicBuilding):
 
 @dataclass
 class Pastureland(BasicBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.PASTURELAND
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.PASTURELAND
     required_dice_cost: ClassVar[int] = 0
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             produce=[ProductionResource(ResourceCategory.LIVESTOCK, dice_ratio=9)]
         )
 
 @dataclass
 class Farmland(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.FARMLAND
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.FARMLAND
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             consume=[GeneralResource(ResourceCategory.WATER)],
             produce=[ProductionResource(ResourceCategory.FOOD, dice_ratio=2)]
@@ -164,20 +166,20 @@ class Farmland(AdvancedBuilding):
 
 @dataclass
 class WoodGatheringPost(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.WOOD_GATHERING_POST
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.WOOD_GATHERING_POST
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             produce=[ProductionResource(ResourceCategory.WOOD, dice_ratio=3)]
         )
 
 @dataclass
 class EarthGatheringPost(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.EARTH_GATHERING_POST
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.EARTH_GATHERING_POST
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             produce=[
                 ProductionResource(ResourceCategory.SOIL, dice_ratio=3),
@@ -187,10 +189,10 @@ class EarthGatheringPost(AdvancedBuilding):
 
 @dataclass
 class BuildingMaterialFactory(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.BUILDING_MATERIAL_FACTORY
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.BUILDING_MATERIAL_FACTORY
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         return ProductionRecipe(
             consume=[
                 GeneralResource(ResourceCategory.SOIL), 
@@ -202,10 +204,10 @@ class BuildingMaterialFactory(AdvancedBuilding):
 
 @dataclass
 class RecruitingCamp(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.RECRUITING_CAMP
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.RECRUITING_CAMP
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         """
         이 건물은 아무것도 생산하지 않는다.
         """
@@ -213,11 +215,20 @@ class RecruitingCamp(AdvancedBuilding):
 
 @dataclass
 class AutomatedGatheringFacility(AdvancedBuilding):
-    category: ClassVar[BuildingCategory] = BuildingCategory.AUTOMATED_GATHERING_FACILITY
+    corr_category: ClassVar[BuildingCategory] = BuildingCategory.AUTOMATED_GATHERING_FACILITY
     required_dice_cost: ClassVar[int] = 30
     
-    def produce(self):
+    def get_production_recipe(self):
         raise NotImplementedError("자동 채집 시설은 아직 구현되지 않았습니다.")
+
+def get_sys_building_from_building(building: Building) -> BuildingBase:
+    """
+    Building 객체를 BuildingBase 하위 객체로 변환한다.
+    """
+    for sub_cls_type in BasicBuilding.__subclasses__() + AdvancedBuilding.__subclasses__():
+        if sub_cls_type.corr_category.value == building.category.value:
+            return sub_cls_type(**building.get_dict())
+    raise ValueError(f"해당 카테고리({building.category})의 건물이 없습니다.")
 
 
 # @dataclass()

@@ -96,6 +96,8 @@ async def on_app_command_completion(interaction: discord.Interaction, command: U
     log_file.write(line + utility.ENTER)
     log_file.close()
 
+# 기타 명령어
+
 @aribot.tree.command(
     name = "종료",
     description = "봇을 공식적으로 종료합니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다.",
@@ -108,11 +110,12 @@ async def exit_bot(interaction: discord.Interaction):
 
 @aribot.tree.command(
     name = "턴넘기기",
-    description = "턴을 넘깁니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다."
+    description = "턴을 넘깁니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다.",
+    guilds=aribot.objectified_guilds
 )
 async def elapse_turn(interaction: discord.Interaction):
     if not is_admin(interaction): raise warnings.NotAdmin()
-    schedule_manager.end_turn()
+    await schedule_manager.end_turn()
     await interaction.response.send_message(f"턴이 넘어갔습니다. (현재 턴: {schedule_manager.schedule.now_turn})")
 
 

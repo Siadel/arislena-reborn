@@ -9,43 +9,58 @@ max_value와 min_value는 None으로 지정 가능
 class ExtInt(int):
     def __new__(cls, value: int, *, min_value: int = None, max_value: int = None):
         obj = super().__new__(cls, value)
-        obj.__setattr__("max_value", max_value)
-        obj.__setattr__("min_value", min_value)
+        obj.max_value = max_value
+        obj.min_value = min_value
         return obj
     
     def adjust_limitations(self, result: int):
-        if self.max_value is not None:
+        if self.max_value is not None and result > self.max_value:
             result = min(result, self.max_value)
-        if self.min_value is not None:
+        if self.min_value is not None and result < self.min_value:
             result = max(result, self.min_value)
-        return self.__class__(result, self.max_value, self.min_value)
+        return self.__class__(result, min_value=self.min_value, max_value=self.max_value)
 
     def __add__(self, other):
-        result = super().__add__(other)
-        return self.adjust_limitations(result)
+        if isinstance(other, (int, ExtInt)):
+            result = super().__add__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __sub__(self, other):
-        result = super().__sub__(other)
-        return self.adjust_limitations(result)
+        if isinstance(other, (int, ExtInt)):
+            result = super().__sub__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __mul__(self, other):
-        result = super().__mul__(other)
-        return self.adjust_limitations(result)
+        if isinstance(other, (int, ExtInt)):
+            result = super().__mul__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __truediv__(self, other):
-        result = super().__truediv__(other)
-        return self.adjust_limitations(result)
-    
+        if isinstance(other, (int, ExtInt)):
+            result = super().__truediv__(int(other))
+            return self.adjust_limitations(int(result))  # 정수 나눗셈 결과를 처리
+        return NotImplemented
+
     def __floordiv__(self, other):
-        result = super().__floordiv__(other)
-        return self.adjust_limitations(result)
+        if isinstance(other, (int, ExtInt)):
+            result = super().__floordiv__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __mod__(self, other):
-        result = super().__mod__(other)
-        return self.adjust_limitations(result)
+        if isinstance(other, (int, ExtInt)):
+            result = super().__mod__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __pow__(self, other):
-        return self.adjust_limitations(super().__pow__(other))
+        if isinstance(other, (int, ExtInt)):
+            result = super().__pow__(int(other))
+            return self.adjust_limitations(result)
+        return NotImplemented
 
     def __str__(self):
         return "%d" % int(self)

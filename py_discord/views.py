@@ -77,6 +77,15 @@ class NoDataButton(Button):
     async def callback(self, interaction:discord.Interaction):
         await interaction.response.send_message("데이터 없음", ephemeral = True)
 
+# 범용 취소 버튼
+class CancelButton(Button):
+    
+    def __init__(self, *, style = discord.ButtonStyle.danger):
+        super().__init__(label = "취소", style = style)
+        
+    async def callback(self, interaction:discord.Interaction):
+        await interaction.response.edit_message(content = "작업이 취소되었습니다.", view = None)
+
 # 범용 열람 버튼
 # 인자로 table 이름을 받아서 해당 테이블의 name column과 ID column을 출력
 # 출력 양식은 "이름 (ID : %d)" 형태
@@ -345,13 +354,15 @@ class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable):
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)
         # deployment 가져오기
+        view = TableObjectView(
+            fetch_list = [Building.from_data(data) for data in main_db.fetch_many("building", faction_id = self.faction.id)],
+            sample_button = DeployToBuildingButton(self.crew, self.faction)\
+                .set_previous_interaction(interaction)
+        )
+        view.add_item(CancelButton())
         await interaction.response.send_message(
             f"**{self.crew.name}** 대원을 배치할 건물을 선택하세요.",
-            view = TableObjectView(
-                fetch_list = [Building.from_data(data) for data in main_db.fetch_many("building", faction_id = self.faction.id)],
-                sample_button = DeployToBuildingButton(self.crew, self.faction)\
-                    .set_previous_interaction(interaction)
-            )
+            view = view
         )
 
 class DeployToBuildingButton(BuildingLookupButton, Uninterruptable):
@@ -371,7 +382,10 @@ class DeployToBuildingButton(BuildingLookupButton, Uninterruptable):
     
     async def callback(self, interaction: discord.Interaction):
         self.check_interruption(interaction)
-
+        # 이전 배치 정보가 존재하는 경우 삭제
+        main_db.connection.execute(
+            f"DELETE FROM Deployment WHERE crew_id = {self.crew.id}"
+        )
         self.building.set_database(main_db)
         self.building.deploy(self.crew)
         

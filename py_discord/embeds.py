@@ -1,9 +1,10 @@
 from discord import Embed, Colour, utils
 from enum import Enum
 
-from py_base.abstract import ArislenaEnum
+from py_base.ari_enum import ResourceCategory
 from py_system.abstract import TableObject
-from py_system.tableobj import User
+from py_system.tableobj import User, Crew
+from py_system.systemobj import GeneralResource, ProductionResource
 from py_system._global import translate
 
 def embed_for_user(*messages) -> Embed:
@@ -60,4 +61,40 @@ def add_basic_table_info(embed:Embed, table_obj:TableObject):
     
     return embed
 
+def add_resource_insufficient_field(embed: Embed, consume_resource_category:ResourceCategory) -> Embed:
+    embed.add_field(
+        name=f"자원 부족: {consume_resource_category.express()}",
+        value="자원이 부족하여 생산을 진행할 수 없습니다."
+    )
+    return embed
 
+class ArislenaEmbed(Embed):
+    
+    def __init__(self, title: str, description: str, colour: Colour = Colour.blue()):
+        super().__init__(title=title, description=description, colour=colour)
+        
+    
+
+class TableObjectEmbed(ArislenaEmbed):
+    
+    def __init__(self, title: str, description: str):
+        super().__init__(title, description, Colour.green())
+    
+    def add_basic_info(self, table_obj: TableObject):
+        """
+        TableObject의 기본 정보를 embed에 추가합니다.
+        """
+        self.add_field(name="기본 정보", value=table_obj.to_discord_text(translate))
+        return self
+    
+
+class ResourceConsumeEmbed(ArislenaEmbed):
+    
+    def __init__(self, title: str, description: str, crew_list: list[Crew], consume_resource_list: list[GeneralResource]):
+        super().__init__(title, description, Colour.yellow())
+        self.crew_list = crew_list
+    
+    
+    
+    def add_resource_insufficient_field(self):
+        pass

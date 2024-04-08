@@ -147,6 +147,9 @@ class Dice:
         if type(other) != type(self): raise TypeError("비교 대상이 주사위가 아닙니다!")
         return self.last_roll != other.last_roll
     
+    def __mul__(self, other: int):
+        return sum(self.roll_multiple_times(other))
+    
     @classmethod
     def from_dice_data(cls, dice_data:dict):
         """
@@ -200,25 +203,36 @@ class Dice:
         if len(self.judge_table) == 0: return False
         else: return True
     
-    def adjust(self, value, min_value, max_value):
+    def adjust(self, value, min_value, max_value) -> int:
         """
         value가 min_value보다 작으면 min_value로, max_value보다 크면 max_value로 보정\n
         """
         value = max(value, min_value)
         value = min(value, max_value)
         return value
+    
+    def _roll_core(self):
+        return random.randint(self.dice_min, self.dice_max) + self.dice_mod
 
     def roll(self):
         """
         주사위를 굴리고, 그 숫자를 반환\n
         보정값이 적용된 주사위 눈은 정해진 범위를 벗어나지 않음\n
         last_roll last_grade, last_judge가 갱신됨\n
-        return: **주사위 눈**(+ 보정값)*(+ 즉시 보정값)*\n
+        
+        return: 주사위 눈\n
         """
-        self.last_roll = random.randint(self.dice_min, self.dice_max) + self.dice_mod
+        self.last_roll = self._roll_core()
         self.last_roll = self.adjust(self.last_roll, self.dice_min, self.dice_max)
         self.last_grade = self.grade
         self.last_judge = self.judge
+        return self.last_roll
+    
+    def roll_multiple_times(self, times: int) -> tuple[int]:
+        """
+        주사위를 여러 번 굴리고, 그 숫자들을 튜플로 반환\n
+        """
+        return (self._roll_core() for _ in range(times))
     
     @property
     def grade(self) -> int:

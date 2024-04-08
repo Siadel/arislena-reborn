@@ -130,19 +130,19 @@ class TableObject(metaclass=ABCMeta):
         for key in row.keys():
 
             annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
-            ref_instance = annotation[0].strip()
+            ref_class = annotation[0].strip()
             class_name = annotation[1].strip()
             
             if row[key] is None: continue # None 값은 무시 (기본값으로 설정됨)
-
-            match (class_name, ref_instance):
-
-                case ("int", _) | ("str", _) | ("float", _):
+            
+            match (ref_class, class_name):
+                
+                case (_, "int") | (_, "str") | (_, "float"):
                     setattr(self, key, row[key])
-                case ("ExtInt", _):
+                case (_, "py_base.datatype.ExtInt"):
                     setattr(self, key, self.__getattribute__(key) + row[key])
-                case (_, "enum"):
-                    setattr(self, key, get_enum(class_name, row[key]))
+                case ("enum", _):
+                    setattr(self, key, get_enum(class_name, int(row[key])))
                 case _:
                     raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
         

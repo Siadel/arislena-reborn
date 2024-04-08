@@ -23,7 +23,9 @@
             "discriminator": "구분",
             "availability": "상태",
             "remaining_dice_cost": "남은 주사위 총량",
-            "level": "레벨"
+            "level": "레벨",
+            "experience": "경험치",
+            "labor_dice": "노동력"
         },
         "Faction" : {
             "name" : "세력명"
