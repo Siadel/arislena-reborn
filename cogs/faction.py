@@ -2,14 +2,13 @@ import discord
 from discord.ext.commands import GroupCog
 from discord import app_commands
 
-from py_discord.bot_base import BotBase
+from py_discord.bot_base import AriBot
 from py_discord import checks, views, warnings, modals
 from py_system.tableobj import Faction
-from py_system._global import main_db
 
 class FactionCommand(GroupCog, name="세력"):
 
-    def __init__(self, bot: BotBase):
+    def __init__(self, bot: AriBot):
         super().__init__()
         self.bot = bot
     
@@ -19,11 +18,11 @@ class FactionCommand(GroupCog, name="세력"):
     )
     async def create(self, interaction: discord.Interaction):
 
-        if not main_db.is_exist("user", f"discord_id = {interaction.user.id}"):
+        if not self.bot.guild_database[str(interaction.guild_id)].is_exist("user", f"discord_id = {interaction.user.id}"):
             raise warnings.NotRegistered(interaction.user.display_name)
 
         # 이미 세력을 가지고 있는지 확인 (관리자는 예외)
-        if main_db.is_exist("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+        if self.bot.guild_database[str(interaction.guild_id)].is_exist("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
             raise warnings.AlreadyExist("창설한 세력")
         
         await interaction.response.send_modal(modals.FactionCreateModal(bot=self.bot))
@@ -35,7 +34,7 @@ class FactionCommand(GroupCog, name="세력"):
     async def lookup(self, interaction: discord.Interaction):
         
         # 모든 세력 정보 가져오기
-        faction_data_list = main_db.fetch_all("faction")
+        faction_data_list = self.bot.guild_database[str(interaction.guild_id)].fetch_all("faction")
         faction_list = [Faction.from_data(data) for data in faction_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
@@ -43,7 +42,8 @@ class FactionCommand(GroupCog, name="세력"):
             "세력 정보 열람", 
             view=views.TableObjectView(
                 faction_list,
-                sample_button=views.FactionLookupButton(interaction)
+                sample_button=views.FactionLookupButton(interaction)\
+                    .set_database(self.bot.guild_database[str(interaction.guild_id)])
             )
         )
     
@@ -63,15 +63,16 @@ class FactionCommand(GroupCog, name="세력"):
     async def delete(self, interaction: discord.Interaction):
 
         # 모든 세력 정보 가져오기
-        faction_data_list = main_db.fetch_all("faction")
+        faction_data_list = self.bot.guild_database[str(interaction.guild_id)].fetch_all("faction")
         faction_list = [Faction.from_data(data) for data in faction_data_list]
-        for faction in faction_list: faction.set_database(main_db)
+        for faction in faction_list: faction.set_database(self.bot.guild_database[str(interaction.guild_id)])
         
         await interaction.response.send_message(
             "세력 해산", 
             view=views.TableObjectView(
                 faction_list,
                 sample_button=views.FactionDeleteButton(interaction)\
+                    .set_database(self.bot.guild_database[str(interaction.guild_id)])\
                     .set_bot(self.bot)
             ),
             ephemeral=True
@@ -87,5 +88,5 @@ class FactionCommand(GroupCog, name="세력"):
 
     
 
-async def setup(bot: BotBase):
-    await bot.add_cog(FactionCommand(bot), guilds=bot.objectified_guilds)
+async def setup(bot: AriBot):
+    await bot.add_cog(FactionCommand(bot), guilds=bot._guild_list)

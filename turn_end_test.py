@@ -1,10 +1,10 @@
 import asyncio
-from py_discord.schedule_manager import ScheduleManager
+from py_discord.bot_base import ScheduleManager
 from bot import aribot
-from py_system._global import main_db, bot_setting, schedule, game_setting, job_setting
+from py_system._global import self.bot.guild_database[str(interaction.guild_id)], bot_setting
 
 schedule_manager = ScheduleManager(
-    aribot, bot_setting, main_db, schedule, game_setting, job_setting
+    aribot, bot_setting, self.bot.guild_database[str(interaction.guild_id)], bot_setting.main_guild_id
 )
 
 def main():

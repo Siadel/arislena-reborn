@@ -4,13 +4,13 @@ from discord import app_commands, Colour
 from datetime import datetime
 
 from py_base import utility
-from py_system._global import main_db, setting_by_guild
+from py_system._global import setting_by_guild
 from py_system.tableobj import User
 from py_discord import checks, embeds, views, warnings
-from py_discord.bot_base import BotBase
+from py_discord.bot_base import AriBot
 
 class UserManagement(GroupCog, name="유저"):
-    def __init__(self, bot: BotBase):
+    def __init__(self, bot: AriBot):
         self.bot = bot
         super().__init__()
 
@@ -27,7 +27,7 @@ class UserManagement(GroupCog, name="유저"):
             discord_id=interaction.user.id, 
             discord_name=interaction.user.name, 
             register_date=datetime.now().strftime(utility.DATE_EXPRESSION))
-        user.set_database(main_db)
+        user.set_database(self.bot.guild_database[str(interaction.guild_id)])
         user.push()
 
         # 유저에게 "주인"이라는 이름의 역할 부여
@@ -57,21 +57,22 @@ class UserManagement(GroupCog, name="유저"):
         if view_other_member:
 
             # 유저 정보 가져오기
-            user_data_list = main_db.fetch_all("user")
+            user_data_list = self.bot.guild_database[str(interaction.guild_id)].fetch_all("user")
             user_list = [User.from_data(data) for data in user_data_list]
             
             await interaction.response.send_message(
                 "유저 정보 열람", 
                 view=views.TableObjectView(
                     user_list,
-                    sample_button=views.UserLookupButton(interaction)
+                    sample_button=views.UserLookupButton(interaction)\
+                    .set_database(self.bot.guild_database[str(interaction.guild_id)])
                 )
             )
         
         else:
 
             if not checks.user_exists(interaction): raise warnings.NotRegistered(interaction.user.name)
-            user = User.from_database(main_db, discord_id=interaction.user.id)
+            user = User.from_database(self.bot.guild_database[str(interaction.guild_id)], discord_id=interaction.user.id)
         
             await interaction.response.send_message(
                 embed=embeds.add_basic_table_info(
@@ -87,7 +88,7 @@ class UserManagement(GroupCog, name="유저"):
     @app_commands.check(checks.user_exists)
     async def sync(self, interaction: discord.Interaction):
         # 유저 정보 가져오기
-        user = User.from_database(main_db, discord_id=interaction.user.id)
+        user = User.from_database(self.bot.guild_database[str(interaction.guild_id)], discord_id=interaction.user.id)
         
         # 닉네임 동기화
         if user.discord_name != interaction.user.name:
@@ -114,10 +115,10 @@ class UserManagement(GroupCog, name="유저"):
     async def unregister(self, interaction: discord.Interaction, target_member:discord.Member):
         # if not check.is_admin(interaction.user):
         #     raise warning.NotAdmin()
-        target_user = User.from_database(main_db, discord_id=target_member.id)
+        target_user = User.from_database(self.bot.guild_database[str(interaction.guild_id)], discord_id=target_member.id)
         if not target_user: raise warnings.NotRegistered(target_member.name)
         # 데이터에서 유저 삭제
-        main_db.delete_with_id("user", target_user.id)
+        self.bot.guild_database[str(interaction.guild_id)].delete_with_id("user", target_user.id)
         # 유저에게 "주인"이라는 이름의 역할 삭제
         await target_member.remove_roles(
             discord.utils.get(interaction.guild.roles, id=setting_by_guild.user_role_id[str(interaction.guild.id)])
@@ -127,5 +128,5 @@ class UserManagement(GroupCog, name="유저"):
         await self.bot.announce(f"**{target_member.display_name}**님이 아리슬레나에서 등록 해제되었습니다.", interaction.guild.id)
         
 
-async def setup(bot: BotBase):
-    await bot.add_cog(UserManagement(bot), guilds=bot.objectified_guilds)
+async def setup(bot: AriBot):
+    await bot.add_cog(UserManagement(bot), guilds=bot._guild_list)

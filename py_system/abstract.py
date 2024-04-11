@@ -1,28 +1,23 @@
 import re
 
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
 from sqlite3 import Row
 
 from py_base.ari_enum import get_enum, ResourceCategory, BuildingCategory
 from py_base.utility import sql_type
-from py_base.dbmanager import MainDB
+from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum
 from py_base.jsonobj import Translate
 
-@dataclass
 class TableObject(metaclass=ABCMeta):
     """
     Initialize the table object.
 
     Args:
         `id (int, optional)`: The ID of the table object. Defaults to 0.
-
-    Class Attributes:
-        `__columns__ (tuple)`: A tuple containing the names of all attributes in the table object. It must be defined manually in the child class.
     
     Private Attributes:
-        `_database (MainDB)`: The main database, which is the only database that the table object and its children can access.
+        `_database (DatabaseManager)`: The main database, which is the only database that the table object and its children can access.
     
     Properties:
         `kr_list (list[str])`: A list of Korean names of the attributes.
@@ -32,42 +27,18 @@ class TableObject(metaclass=ABCMeta):
         `en_kr_dict (dict[str, str])`: A dictionary that maps the attribute names to their Korean names.
         `kr_dict (dict[str, str])`: A dictionary that maps the Korean names to the attribute values.
         `kr_dict_without_id (dict[str, str])`: A dictionary that maps the Korean names to the attribute values, excluding the 'id' attribute.
-        `database (MainDB)`: The main database, which is the only database that the table object and its children can access.
-    
-    Examples:
-        Option 1: set the database attribute after creating the object + call the pull method
-    ```python
-    # External database connection is required.
-    from py_system.global_ import main_db
-    faction = Faction()
-    faction.set_database(main_db)
-    faction.pull("id = 1")
-    print(faction)
-    # modify the attributes
-    faction.name = "Survivors"
-    # push the data to the database
-    faction.push()
-    ```
-        Option 2: use kwargs to set the attributes, without setting the database attribute and calling the pull method
-    ```python
-    # External database connection is required.
-    from py_system.global_ import main_db
-    faction = Faction.from_data(main_db.fetch("faction", "id = 1"))
-    # also:
-    faction = Faction.from_database(main_db, id=1)
-    print(faction)
-    # set database
-    faction.set_database(main_db)
-    # modify the attributes
-    faction.name = "Survivors"
-    # push the data to the database
-    faction.push()
-    ```
+        `database (DatabaseManager)`: The main database, which is the only database that the table object and its children can access.
     """
-    id: int = 0
     
-    def __post_init__(self):
-        self._database = None
+    abstract = True # TableObject 클래스를 상속하지만 추상 클래스로 사용할 경우 True로 설정
+    
+    def __init__(
+        self,
+        id:int = 0
+    ):
+        self.id: int = id
+        
+        self._database: DatabaseManager = None
     
     @abstractmethod
     def get_display_string(self) -> str:
@@ -76,11 +47,12 @@ class TableObject(metaclass=ABCMeta):
         """
         pass
     
-    def set_database(self, database:MainDB):
+    def set_database(self, database:DatabaseManager):
         self._database = database
+        return self
     
     @classmethod
-    def from_database(cls, database:MainDB, *raw_statements, **statements):
+    def from_database(cls, database:DatabaseManager, *raw_statements, **statements):
         """
         Creates a table object from the database.
 
@@ -114,7 +86,7 @@ class TableObject(metaclass=ABCMeta):
         return self.__class__.__name__
     
     @property
-    def database(self) -> MainDB:
+    def database(self) -> DatabaseManager:
         return self._database
     
     def _check_database(self):
@@ -129,7 +101,7 @@ class TableObject(metaclass=ABCMeta):
 
         for key in row.keys():
 
-            annotation = str(self.__class__.__annotations__[key]).removeprefix("<").removesuffix(">").split("'")
+            annotation = str(type(getattr(self, key))).removeprefix("<").removesuffix(">").split("'")
             ref_class = annotation[0].strip()
             class_name = annotation[1].strip()
             
@@ -140,7 +112,7 @@ class TableObject(metaclass=ABCMeta):
                 case (_, "int") | (_, "str") | (_, "float"):
                     setattr(self, key, row[key])
                 case (_, "py_base.datatype.ExtInt"):
-                    setattr(self, key, self.__getattribute__(key) + row[key])
+                    setattr(self, key, getattr(self, key) + row[key])
                 case ("enum", _):
                     setattr(self, key, get_enum(class_name, int(row[key])))
                 case _:
@@ -190,7 +162,7 @@ class TableObject(metaclass=ABCMeta):
         Returns:
             str: The SQL string for creating the table.
         """
-        keys = self.get_dict().keys()
+        keys = self.__annotations__.keys()
         foreign_keys:list[str] = [key for key in keys if re.match(r"\w+_id", key)]
         sub_queries = []
 
@@ -276,7 +248,7 @@ class TableObject(metaclass=ABCMeta):
             texts.append(f"- {key} : {value}")
         return "\n".join(texts)
 
-class ResourceBase(metaclass=ABCMeta):
+class ResourceAbst(metaclass=ABCMeta):
     
     def __init__(self, category:ResourceCategory, amount:int):
         self.category = category
@@ -288,14 +260,14 @@ class ResourceBase(metaclass=ABCMeta):
     def __int__(self):
         return int(self.amount)
     
-    def _check_category(self, other:"ResourceBase"):
+    def _check_category(self, other:"ResourceAbst"):
         """
         같은 카테고리인지 확인
         """
-        if not isinstance(other, ResourceBase): raise TypeError("ResourceBase 객체가 아닙니다.")
+        if not isinstance(other, ResourceAbst): raise TypeError(f"{ResourceAbst.__name__} 객체가 아닙니다.")
         if self.category != other.category: raise ValueError("카테고리가 다릅니다.")
 
-    def move(self, other:"ResourceBase", *, amount:int = None):
+    def move(self, other:"ResourceAbst", *, amount:int = None):
         """
         다른 자원 객체로 자원을 이동
         """
@@ -305,32 +277,42 @@ class ResourceBase(metaclass=ABCMeta):
         other.amount += amount
         self.amount -= amount
         
-    def __add__(self, other:"ResourceBase"):
+    def __add__(self, other:"ResourceAbst"):
         self._check_category(other)
-        return ResourceBase(self.category, self.amount + other.amount)
+        return ResourceAbst(self.category, self.amount + other.amount)
     
-    def __sub__(self, other:"ResourceBase"):
+    def __sub__(self, other:"ResourceAbst"):
         self._check_category(other)
-        return ResourceBase(self.category, self.amount - other.amount)
+        return ResourceAbst(self.category, self.amount - other.amount)
     
-    def __lt__(self, other:"ResourceBase"):
+    def __lt__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount < other.amount
     
-    def __le__(self, other:"ResourceBase"):
+    def __le__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount <= other.amount
     
-    def __eq__(self, other:"ResourceBase"):
+    def __eq__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount == other.amount
     
-    def __ne__(self, other:"ResourceBase"):
+    def __ne__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount != other.amount
     
-    def __gt__(self, other:"ResourceBase"):
+    def __gt__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount > other.amount
     
-    def __ge__(self, other:"ResourceBase"):
+    def __ge__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount >= other.amount
         
+
+class BuildingAbst(metaclass=ABCMeta):
+    
+    def __init__(
+        self, 
+        category:BuildingCategory, 
+        level:int
+    ):
+        self.category = category
+        self.level = level
 
 # deprecated
 # @dataclass

@@ -4,25 +4,8 @@ json 파일을 불러오고, 저장하고, 수정하는 기능을 제공함
 """
 from typing import ClassVar
 from dataclasses import dataclass
-import datetime
 
 from py_base.abstract import JsonObject, FluidJsonObject
-from py_base.utility import DATE_EXPRESSION
-
-# schedule
-@dataclass
-class Schedule(JsonObject):
-    '''
-    - start_date : 시작 날짜
-    - now_turn : 게임 진행 턴 수
-    - state : 현재 상태(0: 시작 대기, 1: 게임 중, 2: 중단, 3: 종료)
-    '''
-    start_date: str = (datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)
-    end_date: str = ""
-    now_turn: int = 0
-    state: int = 0
-
-    file_name: ClassVar[str] = "schedule.json"
 
 @dataclass
 class SettingByGuild(JsonObject):

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from py_base.jsonwork import dump_json
 
-from py_discord.bot_base import BotBase
+from py_discord.bot_base import AriBot
 from py_discord import warnings
 from py_base import arislena_dice, arislena_dice_extension
 from py_system._global import dice_memory
@@ -52,7 +52,7 @@ def create_dice_embed(dice:arislena_dice.Dice, more_information:bool):
     return embed
 
 class dice_package(commands.GroupCog, name="주사위"):
-    def __init__(self, bot: BotBase):
+    def __init__(self, bot: AriBot):
         self.bot = bot
         super().__init__()
 
@@ -289,5 +289,5 @@ class dice_package(commands.GroupCog, name="주사위"):
             await interaction.response.send_message(embeds=embeds, ephemeral=embed_ephemeral)
 
     
-async def setup(bot: BotBase):
-    await bot.add_cog(dice_package(bot), guilds=bot.objectified_guilds)
+async def setup(bot: AriBot):
+    await bot.add_cog(dice_package(bot), guilds=bot._guild_list)

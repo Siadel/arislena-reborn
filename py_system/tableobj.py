@@ -1,24 +1,28 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
+import random
+import datetime
 from sqlite3 import Row
-from typing import ClassVar
-from dataclasses import dataclass
 from math import sqrt
+from abc import ABCMeta, abstractmethod
 
-from py_base.utility import sql_value
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability
+from py_base.utility import sql_value, DATE_EXPRESSION
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState
 from py_base.datatype import ExtInt
-from py_base.dbmanager import MainDB
+from py_base.dbmanager import DatabaseManager
 from py_base.arislena_dice import Nonahedron
-from py_system.abstract import TableObject, ResourceBase
+from py_system.abstract import TableObject, ResourceAbst
 
-def form_database_from_tableobjects(main_db:MainDB):
+def form_database_from_tableobjects(main_db:DatabaseManager):
     """
     TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
     만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가
     """
+    
     for subclass_type in TableObject.__subclasses__():
+        # TableObject를 상속하는 추상 클래스는 무시함
+        if not subclass_type.abstract: continue
         # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
         subclass = subclass_type()
         subclass.set_database(main_db)
@@ -42,35 +46,6 @@ def form_database_from_tableobjects(main_db:MainDB):
             main_db.cursor.execute(
                 f"ALTER TABLE {table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)} DEFAULT {sql_value(getattr(subclass, column_name))}"
             )
-        
-        
-        # # 데이터베이스 테이블의 데이터 형식을 다시 불러옴
-        # sql_table_column_set = main_db.table_column_set(table_name)
-        
-        # # 이 아래의 코드가 실행되나? -> 실행되지 않음
-        
-        # # 새로 불러온 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
-        # if set(sql_table_column_set) != set(tableobj_column_set):
-        #     has_row = main_db.has_row(table_name)
-        #     if has_row:
-        #         # 테이블 데이터 임시 저장
-        #         # 테이블에 데이터가 없는 경우 임시 저장할 필요 없음
-        #         main_db.cursor.execute(f"CREATE TABLE {table_name}_temp AS SELECT * FROM {table_name}")
-        #     # 테이블 삭제
-        #     main_db.cursor.execute(f"DROP TABLE {table_name}")
-        #     # 테이블 재생성
-        #     main_db.cursor.execute(subclass.get_create_table_string())
-        #     if has_row:
-        #         # 임시 저장 테이블의 column마다 작업하여 테이블 데이터 복원
-        #         # 임시 저장 테이블의 데이터를 {key:value} 형식으로 변환함
-        #         main_db.cursor.execute(f"SELECT * FROM {table_name}_temp")
-        #         backup_data = [subclass_type.from_data(row) for row in main_db.cursor.fetchall()]
-                
-        #         # 임시 저장 테이블의 데이터를 새로운 테이블에 삽입함
-        #         for data in backup_data:
-        #             data.push()
-        #         # 임시 저장 테이블 삭제
-        #         main_db.cursor.execute(f"DROP TABLE {table_name}_temp")
     
     # 데이터베이스의 테이블 목록 불러오기
     main_db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -82,15 +57,33 @@ def form_database_from_tableobjects(main_db:MainDB):
     # 데이터베이스에 존재하지 않는 테이블을 삭제함
     for table in (tables - tableobj_tables):
         main_db.cursor.execute(f"DROP TABLE {table}")
+        
+    # Schedule 테이블에 요소가 없을 경우, 새 요소를 추가함
+    if not main_db.fetch(Chalkboard.__name__, id=1):
+        Chalkboard()\
+            .set_database(main_db)\
+            .push()
     
     main_db.connection.commit()
     
     print("Database initialized")
 
-class Laborable:
+class Laborable(metaclass=ABCMeta):
     """
     노동력을 가지는 객체
     """
+    def __init__(
+        self,
+        experience: int,
+        labor: int,
+        availability: Availability
+    ):
+        self.experience = experience
+        self.labor = labor
+        self.availability = availability
+        
+        self._labor_dice: Nonahedron = None
+    
     @property
     def labor_time(self) -> int:
         """
@@ -98,6 +91,7 @@ class Laborable:
         """
         return 1
     
+    @abstractmethod
     def set_labor_dice(self):
         """
         experience 수치에 따라 주사위의 modifier가 다르게 설정됨
@@ -108,33 +102,126 @@ class Laborable:
     def labor_dice(self):
         return self._labor_dice
 
+class SingleComponentTable(TableObject, metaclass=ABCMeta):
+    abstract = True
+    
+    def __init__(self, id: int):
+        super().__init__(id)
+    
+    @classmethod
+    def from_database(cls, database: DatabaseManager):
+        return super().from_database(database, id=1)
+    
+    def get_display_string(self) -> str:
+        return ""
+
 """
 액티브 데이터
 """
-@dataclass
-class User(TableObject):
 
-    id: int = 0
-    discord_id:int = 0
-    discord_name:str = ""
-    register_date:str = ""
+class Chalkboard(SingleComponentTable, TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 1,
+        start_date: str = (datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION),
+        end_date: str = "",
+        now_turn: int = 0,
+        state: ScheduleState = ScheduleState.WAITING
+    ):
+        super().__init__(id)
+        self.start_date = start_date
+        self.end_date = end_date
+        self.now_turn = now_turn
+        self.state = state
+
+class GameSetting(SingleComponentTable, TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 1,
+        test_mode: bool = True,
+        admin_mode: bool = False,
+        turn_limit: int = 9999,
+        name_length_limit: int = 30
+    ):
+        super().__init__(id)
+        self.test_mode = test_mode
+        self.admin_mode = admin_mode
+        self.turn_limit = turn_limit
+        self.name_length_limit = name_length_limit
+
+class JobSetting(SingleComponentTable, TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 1,
+        trigger: str = "cron",
+        day_of_week: str = "mon, tue, wed, thu, fri, sat, sun",
+        hour: str = "21",
+        minute: str = "00"
+    ):
+        super().__init__(id)
+        self.trigger = trigger
+        self.day_of_week = day_of_week
+        self.hour = hour
+        self.minute = minute
+
+class User(TableObject):
+    abstract = False
+    def __init__(
+        self, 
+        id: int = 0,
+        discord_id: int = 0, 
+        discord_name: str = "", 
+        register_date: str = ""
+    ):
+        super().__init__(id)
+        self.discord_id = discord_id
+        self.discord_name = discord_name
+        self.register_date = register_date
     
     def get_display_string(self) -> str:
         return str(self.discord_name)
 
-@dataclass
-class Resource(TableObject, ResourceBase):
 
-    id: int = 0
-    faction_id: int = 0
-    category: ResourceCategory = ResourceCategory.UNSET
-    amount: ExtInt = ExtInt(0, min_value=0)
+class Resource(TableObject, ResourceAbst):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        category: ResourceCategory = ResourceCategory.UNSET,
+        amount: ExtInt = ExtInt(0, min_value=0)
+    ):
+        TableObject.__init__(self, id)
+        ResourceAbst.__init__(self, category, amount)
+        self.faction_id = faction_id
     
     def get_display_string(self) -> str:
         return self.category.local_name
 
-@dataclass
+
 class Crew(TableObject, Laborable):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        name: str = "",
+        experience: int = 0,
+        labor: int = 0,
+        availability: Availability = Availability.UNAVAILABLE
+    ):
+        TableObject.__init__(self, id)
+        Laborable.__init__(
+            self,
+            experience,
+            labor,
+            availability
+        )
+        self.faction_id = faction_id
+        self.name = name
 
     id: int = 0
     faction_id: int = 0
@@ -142,6 +229,16 @@ class Crew(TableObject, Laborable):
     experience: int = 0
     labor: int = 0
     availability: Availability = Availability.UNAVAILABLE
+    
+    @staticmethod
+    def new(faction_id: int):
+        """
+        faction_id에 해당하는 세력에 새로운 대원을 생성함
+        
+        대원의 이름은 "대원 {random_number}"로 설정됨
+        """
+        random_number = str(random.random()).split(".")[1]
+        return Crew(faction_id=faction_id, name=f"대원 {random_number}")
     
     @property
     def food_consumption(self) -> int:
@@ -183,15 +280,26 @@ class Crew(TableObject, Laborable):
 
 
 
-@dataclass
 class Livestock(TableObject, Laborable):
-
-    id: int = 0
-    faction_id: int = 0
-    name: str = ""
-    experience: int = 0
-    labor: int = 0
-    availability: Availability = Availability.UNAVAILABLE
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        name: str = "",
+        experience: int = 0,
+        labor: int = 0,
+        availability: Availability = Availability.UNAVAILABLE
+    ):
+        TableObject.__init__(self, id)
+        Laborable.__init__(
+            self,
+            experience,
+            labor,
+            availability
+        )
+        self.faction_id = faction_id
+        self.name = name
     
     def get_display_string(self) -> str:
         if self.name:
@@ -212,14 +320,20 @@ class Livestock(TableObject, Laborable):
         
         경험 수치가 400 오를 때마다 주사위 결과에 추가로 1씩 더해짐
         """
-        return Nonahedron(dice_mod=2 + self.experience // 400)
+        self._labor_dice = Nonahedron(dice_mod=self.experience // 400)
 
-@dataclass
+
 class FactionHierarchyNode(TableObject):
-
-    id: int = 0
-    higher:int = 0
-    lower:int = 0
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        higher: int = 0,
+        lower: int = 0
+    ):
+        super().__init__(id)
+        self.higher = higher
+        self.lower = lower
     
     def get_display_string(self) -> str:
         return f"{self.higher} -> {self.lower}"
@@ -236,14 +350,22 @@ class FactionHierarchyNode(TableObject):
 
 
 
-@dataclass
-class Territory(TableObject):
 
-    id: int = 0
-    faction_id: int = 0
-    name: str = ""
-    space_limit: int = 1
-    safety: TerritorySafety = TerritorySafety.UNKNOWN
+class Territory(TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        name: str = "",
+        space_limit: int = 1,
+        safety: TerritorySafety = TerritorySafety.UNKNOWN
+    ):
+        super().__init__(id)
+        self.faction_id = faction_id
+        self.name = name
+        self.space_limit = space_limit
+        self.safety = safety
 
     def get_display_string(self) -> str:
         return self.name
@@ -262,14 +384,22 @@ class Territory(TableObject):
         """
         return self.space_limit - len(self._database.fetch_many("building", territory_id=self.id))
 
-@dataclass
+
 class Deployment(TableObject):
-    
-    id: int = 0
-    crew_id: int = None
-    livestock_id: int = None
-    territory_id: int = None
-    building_id: int = None
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        crew_id: int = None,
+        livestock_id: int = None,
+        territory_id: int = None,
+        building_id: int = None
+    ):
+        super().__init__(id)
+        self.crew_id = crew_id
+        self.livestock_id = livestock_id
+        self.territory_id = territory_id
+        self.building_id = building_id
     
     def get_display_string(self) -> str:
         return f"배치 현황 {self.id}"
@@ -292,23 +422,33 @@ class Deployment(TableObject):
         """
         return Building.from_data(self._database.fetch(Building.__name__, id=self.building_id))
 
-@dataclass
+
 class Building(TableObject):
-
-    id: int = 0
-    faction_id: int = 0
-    territory_id: int = 0
-    category: BuildingCategory = BuildingCategory.UNSET
-    name: str = ""
-    remaining_dice_cost: int = 0
-    level: int = 0
-
-    def get_display_string(self) -> str:
-        return self.name
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        territory_id: int = 0,
+        category: BuildingCategory = BuildingCategory.UNSET,
+        name: str = "",
+        remaining_dice_cost: int = 0,
+        level: int = 0
+    ):
+        super().__init__(id)
+        self.faction_id = faction_id
+        self.territory_id = territory_id
+        self.category = category
+        self.name = name
+        self.remaining_dice_cost = remaining_dice_cost
+        self.level = level
     
     @property
     def deploy_limit(self) -> int:
         return self.level + 2
+
+    def get_display_string(self) -> str:
+        return self.name
     
     def is_deployable(self, deployed_crew_ids: list[int] = None) -> bool:
         if not self.is_built(): return True
@@ -324,9 +464,13 @@ class Building(TableObject):
         건물에 인원 배치
         
         건물 완공 여부, 건물 배치 인원 제한 여부, 이미 배치된 인원 여부를 확인함
+        
+        이전 배치 정보가 존재하는 경우 삭제
         """
         self._check_database()
-        
+        self._database.connection.execute(
+            f"DELETE FROM Deployment WHERE crew_id = {crew.id}"
+        )
         deployment = Deployment(crew_id=crew.id, territory_id=self.territory_id, building_id=self.id)
         deployment.set_database(self._database)
         deployment.push()
@@ -370,13 +514,20 @@ class Building(TableObject):
         self._check_database()
         return [Livestock.from_data(self._database.fetch("livestock", id=deployment.livestock_id)) for deployment in deployment_list if deployment.livestock_id is not None]
 
-@dataclass
+
 class CommandCounter(TableObject):
-    
-    id: int = 0
-    faction_id: int = 0
-    category: CommandCountCategory = CommandCountCategory.UNSET
-    amount: int = 0
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        category: CommandCountCategory = CommandCountCategory.UNSET,
+        amount: int = 0
+    ):
+        super().__init__(id)
+        self.faction_id = faction_id
+        self.category = category
+        self.amount = amount
     
     def get_display_string(self) -> str:
         return self.category.local_name
@@ -393,13 +544,20 @@ class CommandCounter(TableObject):
         """
         self.amount += 1
 
-@dataclass
+
 class Faction(TableObject):
-    
-    id: int = 0
-    user_id: int = 0
-    name: str = ""
-    level: int = 0
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        user_id: int = 0,
+        name: str = "",
+        level: int = 0
+    ):
+        super().__init__(id)
+        self.user_id = user_id
+        self.name = name
+        self.level = level
 
     def get_display_string(self) -> str:
         return self.name

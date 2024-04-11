@@ -5,7 +5,7 @@
 
 import discord
 
-from py_system._global import setting_by_guild, main_db
+from py_system._global import setting_by_guild
 
 def is_admin(interaction:discord.Interaction) -> bool:
     """
@@ -36,7 +36,8 @@ def user_exists(interaction:discord.Interaction) -> bool:
     """
     interaction.user가 아리슬레나에 등록되어 있는지 확인합니다.
     """
-    if main_db.is_exist("user", discord_ID = interaction.user.id):
+    
+    if interaction.client.guild_database[str(interaction.guild_id)].is_exist("user", discord_ID = interaction.user.id):
         return True
     return False
 

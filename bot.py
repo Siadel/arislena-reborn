@@ -1,50 +1,16 @@
-import traceback, os, discord
+import traceback, discord
 from typing import Union
 from discord import app_commands
 
 from py_base import utility 
 
-from py_system._global import main_db, bot_setting, game_setting, job_setting, schedule
+from py_system._global import bot_setting
 from py_discord import warnings
-from py_discord.bot_base import BotBase
+from py_discord.bot_base import AriBot
 from py_discord.checks import is_admin
-from py_discord.schedule_manager import ScheduleManager
-
-# 봇 객체 선언
-class AriBot(BotBase):
-
-    def __init__(self):
-
-        super().__init__()
-        self.ready_flag = False
-
-    async def setup_hook(self):
-        for file in os.listdir(utility.current_path + "cogs"):
-            if file.endswith(".py"):
-                await self.load_extension(f"cogs.{file[:-3]}")
-        await aribot.tree.sync(guild=discord.Object(id=bot_setting.main_guild_id))
-
-    async def on_ready(self):
-        await self.wait_until_ready()
-        await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
-        if not self.ready_flag and not "test" in main_db.filename: # 테스트용 데이터베이스가 아닐 경우에만 봇 입장 메시지 출력
-            for guild in self.guilds:
-                await self.announce(f"아리가 {guild.name}에 들어왔어요!", guild.id)
-            self.ready_flag = True
-
-        # 정보 출력
-        print(f"discord.py version: {discord.__version__}")
-        print(f'We have logged in as {self.user}')
-
-    async def close(self):
-        for guild in self.guilds:
-            await self.announce(f"아리가 {guild.name}에서 나가요!", guild.id)
-        await super().close()
 
 # 봇 객체 생성
-aribot = AriBot()
-
-schedule_manager = ScheduleManager(aribot, bot_setting, main_db, schedule, game_setting, job_setting)
+aribot = AriBot(bot_setting)
 
 # 명령어 오류 핸들링
 @aribot.tree.error
@@ -101,7 +67,7 @@ async def on_app_command_completion(interaction: discord.Interaction, command: U
 @aribot.tree.command(
     name = "종료",
     description = "봇을 공식적으로 종료합니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다.",
-    guilds=aribot.objectified_guilds
+    guilds=aribot._guild_list
 )
 async def exit_bot(interaction: discord.Interaction):
     if not is_admin(interaction): raise warnings.NotAdmin()
@@ -111,12 +77,12 @@ async def exit_bot(interaction: discord.Interaction):
 @aribot.tree.command(
     name = "턴넘기기",
     description = "턴을 넘깁니다. ⚠ 프리시즌 테스트 기간이거나, 기능 테스트 목적이 아니면 비상 시에만 사용해야 합니다.",
-    guilds=aribot.objectified_guilds
+    guilds=aribot._guild_list
 )
 async def elapse_turn(interaction: discord.Interaction):
     if not is_admin(interaction): raise warnings.NotAdmin()
-    await schedule_manager.end_turn()
-    await interaction.response.send_message(f"턴이 넘어갔습니다. (현재 턴: {schedule_manager.schedule.now_turn})")
+    await aribot.guild_schedule[interaction.guild_id].end_turn()
+    await interaction.response.send_message(f"턴이 넘어갔습니다. (현재 턴: {aribot.guild_schedule[interaction.guild_id].chalkboard.now_turn})")
 
 
 if __name__ == "__main__":

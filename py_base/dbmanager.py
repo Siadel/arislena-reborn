@@ -2,6 +2,7 @@
 .db 파일과 sqlite3으로서 상호작용하는 클래스들
 """
 import sqlite3
+from pathlib import Path
 from typing import Iterable, Any
 
 from py_base.utility import DATA_DIR, sql_value
@@ -11,17 +12,13 @@ def print_query(query:str):
 
 class DatabaseManager:
 
-    def __init__(self, db_name: str, test_mode = False):
+    def __init__(self, db_stem: str):
         """
-        db_name: 확장자를 포함하지 않은 파일 이름\n
-        test_mode: 테스트 모드일 경우, 파일 이름에 _test를 붙여서 생성
+        db_name: 확장자를 포함하지 않은 파일 이름
         """
-        db_name += "_test" if test_mode else ""
-        self.test_mode = test_mode
-        self.filename = db_name + ".db"
-        self.path = DATA_DIR + self.filename
+        self.file_path = Path(DATA_DIR, db_stem + ".db")
         self.connection = sqlite3.connect(
-            self.path, 
+            self.file_path, 
             check_same_thread=False 
             # isolation_level=None
         )
@@ -208,9 +205,7 @@ class DatabaseManager:
 
 class MainDB(DatabaseManager):
 
-    __lock__ = False
-
-    def __init__(self, test_mode = False):
+    def __init__(self):
         """
         Initializes the DBManager object.
 
@@ -221,10 +216,6 @@ class MainDB(DatabaseManager):
         - Exception: If the DBManager is already instantiated.
 
         """
-        if self.__lock__:
-            raise Exception("MainDB는 싱글톤입니다.")
         
-        super().__init__("main", test_mode)
-
-        self.__lock__ = True
+        super().__init__("main")
 
