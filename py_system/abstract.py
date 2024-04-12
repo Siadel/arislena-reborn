@@ -111,6 +111,8 @@ class TableObject(metaclass=ABCMeta):
                 
                 case (_, "int") | (_, "str") | (_, "float"):
                     setattr(self, key, row[key])
+                case (_, "bool"):
+                    setattr(self, key, bool(row[key]))
                 case (_, "py_base.datatype.ExtInt"):
                     setattr(self, key, getattr(self, key) + row[key])
                 case ("enum", _):
@@ -126,7 +128,7 @@ class TableObject(metaclass=ABCMeta):
 
     def get_dict_without_id(self) -> dict:
         """
-        self.__dict__를 호출하나 key가 '_'로 시작하는 것은 제외
+        self.__dict__를 호출하나 key가 '_'로 시작하는 것과 id는 제외
         """
         return {k: v for k, v in self.__dict__.items() if not k.startswith('_') and k != "id"}
     
@@ -162,7 +164,7 @@ class TableObject(metaclass=ABCMeta):
         Returns:
             str: The SQL string for creating the table.
         """
-        keys = self.__annotations__.keys()
+        keys = self.get_dict().keys()
         foreign_keys:list[str] = [key for key in keys if re.match(r"\w+_id", key)]
         sub_queries = []
 

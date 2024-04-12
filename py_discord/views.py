@@ -11,7 +11,7 @@ from py_system.tableobj import TableObject, User, Faction, Territory, Building, 
 from py_system.systemobj import SystemBuilding
 from py_discord import warnings, modals
 from py_discord.embeds import add_basic_table_info
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -64,7 +64,7 @@ class Uninterruptable(metaclass=ABCMeta):
 
 class Announceable(metaclass=ABCMeta):
     
-    def set_bot(self, bot:AriBot):
+    def set_bot(self, bot:BotBase):
         self.bot = bot
         return self
 
@@ -330,7 +330,7 @@ class CrewNameButton(CrewLookupButton, Uninterruptable, Announceable):
     
     def __init__(self):
         CrewLookupButton.__init__(self)
-        self.bot:AriBot = None
+        self.bot:BotBase = None
         self.prev_interaction:discord.Interaction = None
         
     def clone(self):
@@ -347,7 +347,7 @@ class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable, Announceable):
     def __init__(self, faction:Faction):
         CrewLookupButton.__init__(self)
         self.faction = faction
-        self.bot:AriBot = None
+        self.bot:BotBase = None
         self.prev_interaction:discord.Interaction = None
         
     def clone(self):
@@ -470,7 +470,7 @@ class FactionDeleteButton(FactionLookupButton, Announceable):
 
     def __init__(self, prev_interaction:discord.Interaction):
         FactionLookupButton.__init__(self, prev_interaction)
-        self.bot:AriBot = None
+        self.bot:BotBase = None
         self.style = discord.ButtonStyle.danger
         
     def clone(self):

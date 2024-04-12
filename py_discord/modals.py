@@ -4,9 +4,9 @@ from discord.ui import Modal, TextInput
 from py_base.koreanstring import objective, instrumental
 from py_base.ari_enum import BuildingCategory, ResourceCategory
 from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building, Crew, Resource
-from py_system._global import self.bot.guild_database[str(interaction.guild_id)], name_regex, game_setting, translate
-from py_discord import warnings, func
-from py_discord.bot_base import AriBot
+from py_system._global import game_setting
+from py_discord import func
+from py_discord.bot_base import BotBase
 
 def get_basic_text_input(label:str):
     return TextInput(
@@ -47,7 +47,7 @@ class FactionCreateModal(ArislenaGeneralModal):
 
     faction_name = get_basic_text_input("세력 이름")
     
-    def __init__(self, *, bot:AriBot = None):
+    def __init__(self, *, bot:BotBase = None):
         super().__init__(title="세력 창설")
         self.bot = bot
 
@@ -89,7 +89,7 @@ class NewTerritoryModal(ArislenaGeneralModal):
 
     territory_name = get_basic_text_input("영토 이름")
 
-    def __init__(self, *, bot:AriBot = None):
+    def __init__(self, *, bot:BotBase = None):
         super().__init__(title="새 영토예요!")
         self.bot = bot
 
@@ -129,7 +129,7 @@ class NewBuildingModal(ArislenaGeneralModal):
     
     building_name = get_basic_text_input("건물 이름")
     
-    def __init__(self, *, bot:AriBot = None):
+    def __init__(self, *, bot:BotBase = None):
         super().__init__(title="새 건물이예요!")
         self.bot = bot
         
@@ -140,7 +140,7 @@ class NameCrew(ArislenaGeneralModal):
     
     new_crew_name = get_basic_text_input("대원 이름")
     
-    def __init__(self, *, bot:AriBot = None, previous_crew_name:str = None):
+    def __init__(self, *, bot:BotBase = None, previous_crew_name:str = None):
         super().__init__(title="대원 이름 정하기")
         self.bot = bot
         self.previous_crew_name = previous_crew_name

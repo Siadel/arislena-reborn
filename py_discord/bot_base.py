@@ -1,8 +1,9 @@
-import discord, logging, json, os, shutil, datetime
+import discord, logging, json, os, shutil, datetime, asyncio
 from discord.ext import commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from typing import Iterator
 from copy import deepcopy
+from threading import Thread
 
 from py_base import utility
 from py_base.dbmanager import DatabaseManager
@@ -11,7 +12,8 @@ from py_base.ari_enum import ScheduleState
 from py_base.utility import get_date, DATE_EXPRESSION, BACKUP_DIR, DATE_EXPRESSION_FULL_2, DATE_EXPRESSION_FULL
 from py_base.jsonobj import GameSetting, JobSetting, BotSetting
 from py_system._global import setting_by_guild, bot_setting
-from py_system.tableobj import form_database_from_tableobjects, Chalkboard, Deployment, Building, Resource, Crew, Livestock, CommandCounter, Laborable, GameSetting, JobSetting
+from py_system.tableobj import Chalkboard, Deployment, Building, Resource, Crew, Livestock, CommandCounter, Laborable, GameSetting, JobSetting
+from py_system.tableobj import form_database_from_tableobjects
 from py_system.systemobj import SystemBuilding
 
 
@@ -25,10 +27,7 @@ def exit_bot():
     print("봇을 종료합니다.")
     exit(1)
 
-class AriBot(commands.Bot):
-    
-    __guild_database: dict[str, DatabaseManager] = {}
-    __guild_schedule: dict[str, "ScheduleManager"] = {}
+class BotBase(commands.Bot):
 
     def __init__(
         self,
@@ -41,44 +40,33 @@ class AriBot(commands.Bot):
             application_id=bot_setting.application_id)
         
         self.bot_setting = bot_setting
+        self.guild_list: list[discord.Guild] = [discord.Object(id=guild_id) for guild_id in bot_setting.guild_ids]
         
-        self._guild_list = [guild for guild in self.guilds]
         self._token = self._get_token_or_exit(os.environ.get("ARISLENA_BOT_TOKEN"))
         self._log_handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
         
-        self._ready_flag = False
-        
+        self._guild_database: dict[str, DatabaseManager] = {}
+        self._guild_schedule: dict[str, "ScheduleManager"] = {}
 
-        for guild in self.guilds:
-            self._add_database(guild.id)
-            self._add_schdule(guild.id)
-        
-        for db in self.__guild_database.values():
-            form_database_from_tableobjects(db)
-        
     @property
     def guild_database(self) -> dict[str, DatabaseManager]:
-        return self.__guild_database
+        return self._guild_database
     
     @property
     def guild_schedule(self) -> dict[str, "ScheduleManager"]:
-        return self.__guild_schedule
+        return self._guild_schedule
         
-    def _add_database(self, guild_id: int | str):
+    def _add_database_and_scheduler(self, guild_id: int | str):
         """
         길드 id별로 데이터베이스를 추가함.
         
         데이터베이스는 최종적으로 ./data/{guild_id}.db 위치에 생성됨
         """
         if isinstance(guild_id, int): guild_id = str(guild_id)
-        self.__guild_database[guild_id] = DatabaseManager(guild_id)
-        
-    def _add_schdule(self, guild_id: int | str):
-        """
-        길드 id별로 스케줄러를 추가함.
-        """
-        if isinstance(guild_id, int): guild_id = str(guild_id)
-        self.__guild_schedule[guild_id] = ScheduleManager(self, deepcopy(self.bot_setting), self.__guild_database[guild_id], guild_id)
+        db = DatabaseManager(guild_id)
+        form_database_from_tableobjects(db)
+        self._guild_database[guild_id] = db
+        self._guild_schedule[guild_id] = ScheduleManager(self, deepcopy(self.bot_setting), db, guild_id)
     
     def _get_token_or_exit(self, environ_get_result: str | None) -> str:
         """
@@ -119,38 +107,14 @@ class AriBot(commands.Bot):
             
             channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
             await channel.send(embed=embed)
-            
-    async def setup_hook(self):
-        for file in os.listdir(utility.current_path + "cogs"):
-            if file.endswith(".py"):
-                await self.load_extension(f"cogs.{file[:-3]}")
-        await self.tree.sync(guild=discord.Object(id=bot_setting.main_guild_id))
 
-    async def on_ready(self):
-        await self.wait_until_ready()
-        await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
-        if not self._ready_flag: # 테스트용 데이터베이스가 아닐 경우에만 봇 입장 메시지 출력
-            for guild in self.guilds:
-                if self.__guild_schedule[str(guild.id)].game_setting.test_mode: continue
-                await self.announce(f"아리가 {guild.name}에 들어왔어요!", guild.id)
-            self._ready_flag = True
-
-        # 정보 출력
-        print(f"discord.py version: {discord.__version__}")
-        print(f'We have logged in as {self.user}')
-
-    async def close(self):
-        for guild in self.guilds:
-            await self.announce(f"아리가 {guild.name}에서 나가요!", guild.id)
-        await super().close()
-    
     def run(self):
         super().run(self._token, log_handler=self._log_handler, log_level=logging.INFO)
 
 
 class ScheduleManager:
     
-    def __init__(self, bot:AriBot, bot_setting:BotSetting, database:DatabaseManager, guild_id: int):
+    def __init__(self, bot:BotBase, bot_setting:BotSetting, database:DatabaseManager, guild_id: int):
         """
         main_db: 게임의 메인 데이터베이스\n
         schedule: 스케줄 json 데이터\n
@@ -159,29 +123,42 @@ class ScheduleManager:
         self.bot_setting = bot_setting
         self.database = database
         self.guild_id = guild_id
-
-        self.scheduler = AsyncIOScheduler(timezone='Asia/Seoul')
-        self.scheduler.start()
-        self.sched_add_job()
         
         self.game_setting = GameSetting.from_database(self.database)
         self.job_setting = JobSetting.from_database(self.database)
         self.chalkboard = Chalkboard.from_database(self.database)
         self.chalkboard.state = ScheduleState.ONGOING
+
+        # 스케줄러 생성
+        self.event_loop = asyncio.new_event_loop()
+        self.scheduler = AsyncIOScheduler(timezone='Asia/Seoul', event_loop=self.event_loop)
+        self.scheduler_add_job()
+        self.event_loop.create_task(self.scheduler_run())
         
-        self.schedule_id = f"arislena-{guild_id}"
+        self.execute_thread = Thread(target=self.run_loop_forever)
+        self.execute_thread.start()
         
         print(f"길드 {guild_id}의 스케줄러가 생성되었습니다.")
+        
+    def form_schedule_id(self) -> str:
+        return f"arislena-{self.guild_id}"
 
     def __del__(self):
         self.scheduler.shutdown()
 
-    def sched_add_job(self):
+    def scheduler_add_job(self):
         self.scheduler.add_job(
             self.end_turn, 
-            **self.job_setting.__dict__,
-            id=f"arislena-{self.schedule_id}"
+            **self.job_setting.get_dict_without_id(),
+            id=self.form_schedule_id()
         )
+    
+    async def scheduler_run(self):
+        asyncio.set_event_loop(self.event_loop)
+        self.scheduler.start()
+        
+    def run_loop_forever(self):
+        self.event_loop.run_forever()
     
     def start_game(self):
         '''
@@ -201,7 +178,7 @@ class ScheduleManager:
             
             case ScheduleState.WAITING:
                 # 시작 대기 중일 때 (0)
-                self.sched_add_job()
+                self.scheduler_add_job()
                 self.chalkboard.push()
                 
                 print(f'{get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 게임 시작 예정')
@@ -209,7 +186,7 @@ class ScheduleManager:
             
             case ScheduleState.PAUSED:
                 # 중단 중일 때 (2)
-                self.scheduler.resume_job(self.schedule_id)
+                self.scheduler.resume_job(self.form_schedule_id())
                 
                 self.chalkboard.state = ScheduleState.ONGOING
                 self.chalkboard.push()
@@ -268,7 +245,7 @@ class ScheduleManager:
         self.chalkboard.state = ScheduleState.PAUSED
         self.chalkboard.push()
 
-        self.scheduler.pause_job(self.schedule_id)
+        self.scheduler.pause_job(self.form_schedule_id())
 
         print(f"게임 중단 됨 | 현재 {self.chalkboard.now_turn}턴")
         
@@ -283,7 +260,7 @@ class ScheduleManager:
         self.chalkboard.state = ScheduleState.ENDED
         self.chalkboard.end_date = get_date()
 
-        self.scheduler.remove_job(self.schedule_id)
+        self.scheduler.remove_job(self.form_schedule_id())
 
         self.chalkboard.push()
 

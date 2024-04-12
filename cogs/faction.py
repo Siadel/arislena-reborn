@@ -2,13 +2,13 @@ import discord
 from discord.ext.commands import GroupCog
 from discord import app_commands
 
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
 from py_system.tableobj import Faction
 
 class FactionCommand(GroupCog, name="세력"):
 
-    def __init__(self, bot: AriBot):
+    def __init__(self, bot: BotBase):
         super().__init__()
         self.bot = bot
     
@@ -88,5 +88,5 @@ class FactionCommand(GroupCog, name="세력"):
 
     
 
-async def setup(bot: AriBot):
-    await bot.add_cog(FactionCommand(bot), guilds=bot._guild_list)
+async def setup(bot: BotBase):
+    await bot.add_cog(FactionCommand(bot), guilds=bot.guild_list)

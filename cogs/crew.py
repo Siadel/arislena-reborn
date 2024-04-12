@@ -5,13 +5,13 @@ from sqlite3 import Row
 import random
 
 from py_base.ari_enum import BuildingCategory, CommandCountCategory
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 from py_discord import checks, views, warnings, modals
 from py_system.tableobj import Faction, CommandCounter, Crew
 
 class CrewCommand(GroupCog, name="대원"):
     
-    def __init__(self, bot: AriBot):
+    def __init__(self, bot: BotBase):
         super().__init__()
         self.bot = bot
     
@@ -120,5 +120,5 @@ class CrewCommand(GroupCog, name="대원"):
             )
         )
 
-async def setup(bot: AriBot):
-    await bot.add_cog(CrewCommand(bot), guilds=bot._guild_list)
+async def setup(bot: BotBase):
+    await bot.add_cog(CrewCommand(bot), guilds=bot.guild_list)

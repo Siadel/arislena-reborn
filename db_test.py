@@ -1,0 +1,4 @@
+from py_base.dbmanager import DatabaseManager
+from py_system.tableobj import form_database_from_tableobjects
+
+form_database_from_tableobjects(DatabaseManager("main_test"))

@@ -33,7 +33,8 @@ PYTHON_SQL_DTYPE_MAP = {
     "float": "REAL",
     "none": "NULL",
     "extint": "INTEGER",
-    "enum": "INTEGER"
+    "enum": "INTEGER",
+    "bool": "INTEGER"
 }
 
 def get_date(date_expression="%Y-%m-%d"):
@@ -55,7 +56,7 @@ def sql_type(value: Any) -> str:
     for k, v in PYTHON_SQL_DTYPE_MAP.items():
         if k in str(type(value)).lower():
             return v
-    raise Exception(f"Type {type(value)} is not supported in SQL. Please use 'str', 'int', or 'float'.")
+    raise Exception(f"Type {type(value)} is not supported in Arislena's SQL.")
 
 def sql_value(value: str | Enum | None | int | float) -> str:
     """

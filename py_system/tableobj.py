@@ -22,7 +22,7 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
     
     for subclass_type in TableObject.__subclasses__():
         # TableObject를 상속하는 추상 클래스는 무시함
-        if not subclass_type.abstract: continue
+        if subclass_type.abstract: continue
         # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
         subclass = subclass_type()
         subclass.set_database(main_db)
@@ -59,10 +59,9 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
         main_db.cursor.execute(f"DROP TABLE {table}")
         
     # Schedule 테이블에 요소가 없을 경우, 새 요소를 추가함
-    if not main_db.fetch(Chalkboard.__name__, id=1):
-        Chalkboard()\
-            .set_database(main_db)\
-            .push()
+    for single_component_table in SingleComponentTable.__subclasses__():
+        if not main_db.fetch(single_component_table.__name__, id=1):
+            single_component_table().set_database(main_db).push()
     
     main_db.connection.commit()
     
@@ -105,7 +104,7 @@ class Laborable(metaclass=ABCMeta):
 class SingleComponentTable(TableObject, metaclass=ABCMeta):
     abstract = True
     
-    def __init__(self, id: int):
+    def __init__(self, id: int = 1):
         super().__init__(id)
     
     @classmethod
@@ -390,10 +389,10 @@ class Deployment(TableObject):
     def __init__(
         self,
         id: int = 0,
-        crew_id: int = None,
-        livestock_id: int = None,
-        territory_id: int = None,
-        building_id: int = None
+        crew_id: int = -1,
+        livestock_id: int = -1,
+        territory_id: int = -1,
+        building_id: int = -1
     ):
         super().__init__(id)
         self.crew_id = crew_id

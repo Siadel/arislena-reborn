@@ -5,12 +5,12 @@ from discord import app_commands
 from py_base.koreanstring import objective
 from py_system.tableobj import Faction, Territory, Building
 from py_discord import warnings, views
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 from py_discord.func import get_building_category_choices
 
 class BuildingCommand(GroupCog, name="건물"):
     
-    def __init__(self, bot: AriBot):
+    def __init__(self, bot: BotBase):
         self.bot = bot
         super().__init__()
         
@@ -77,5 +77,5 @@ class BuildingCommand(GroupCog, name="건물"):
             )
         )
 
-async def setup(bot: AriBot):
-    await bot.add_cog(BuildingCommand(bot), guilds=bot._guild_list)
+async def setup(bot: BotBase):
+    await bot.add_cog(BuildingCommand(bot), guilds=bot.guild_list)

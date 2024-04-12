@@ -1709,3 +1709,47 @@ Traceback (most recent call last):
     raise CommandInvokeError(self, e) from e
 discord.app_commands.errors.CommandInvokeError: Command '턴넘기기' raised an exception: AttributeError: 'list' object has no attribute '__name__'
 
+2024-04-12 10:53:40 : Command '목록' raised an exception: AttributeError: 'list' object has no attribute 'keys'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\dice_package.py", line 125, in show_dice_list
+    for number, dice_name in enumerate(registered_dice_list.keys(), start=1):
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'keys'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '목록' raised an exception: AttributeError: 'list' object has no attribute 'keys'
+
+2024-04-12 11:06:36 : Command '목록' raised an exception: AttributeError: 'list' object has no attribute 'keys'
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 861, in _do_call
+    return await self._callback(self.binding, interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\Documents\GitHub\arislena-reborn\cogs\dice_package.py", line 125, in show_dice_list
+    for number, dice_name in enumerate(registered_dice_list.keys(), start=1):
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'keys'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\tree.py", line 1242, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 887, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Roaming\Python\Python311\site-packages\discord\app_commands\commands.py", line 880, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command '목록' raised an exception: AttributeError: 'list' object has no attribute 'keys'
+

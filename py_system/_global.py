@@ -8,7 +8,6 @@ from py_base import jsonobj
 
 bot_setting = jsonobj.BotSetting.from_json_file()
 game_setting = jsonobj.GameSetting.from_json_file()
-job_setting = jsonobj.JobSetting.from_json_file()
 setting_by_guild = jsonobj.SettingByGuild.from_json_file()
 dice_memory = jsonobj.DiceMemory.from_json_file()
 translate = jsonobj.Translate.from_json_file()

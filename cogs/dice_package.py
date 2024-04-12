@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from py_base.jsonwork import dump_json
 
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 from py_discord import warnings
 from py_base import arislena_dice, arislena_dice_extension
 from py_system._global import dice_memory
@@ -52,7 +52,7 @@ def create_dice_embed(dice:arislena_dice.Dice, more_information:bool):
     return embed
 
 class dice_package(commands.GroupCog, name="주사위"):
-    def __init__(self, bot: AriBot):
+    def __init__(self, bot: BotBase):
         self.bot = bot
         super().__init__()
 
@@ -122,7 +122,7 @@ class dice_package(commands.GroupCog, name="주사위"):
         if len(registered_dice_list) == 0:
             embed.add_field(name="주사위 목록", value="등록된 주사위가 없습니다.", inline=False)
         else:
-            for number, dice_name in enumerate(registered_dice_list.keys(), start=1):
+            for number, dice_name in enumerate(registered_dice_list, start=1):
                 embed.add_field(name=f"{number}. {dice_name}", value=registered_dice_list[dice_name]["category"], inline=False)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -289,5 +289,5 @@ class dice_package(commands.GroupCog, name="주사위"):
             await interaction.response.send_message(embeds=embeds, ephemeral=embed_ephemeral)
 
     
-async def setup(bot: AriBot):
-    await bot.add_cog(dice_package(bot), guilds=bot._guild_list)
+async def setup(bot: BotBase):
+    await bot.add_cog(dice_package(bot), guilds=bot.guild_list)

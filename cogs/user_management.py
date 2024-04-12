@@ -7,10 +7,10 @@ from py_base import utility
 from py_system._global import setting_by_guild
 from py_system.tableobj import User
 from py_discord import checks, embeds, views, warnings
-from py_discord.bot_base import AriBot
+from py_discord.bot_base import BotBase
 
 class UserManagement(GroupCog, name="유저"):
-    def __init__(self, bot: AriBot):
+    def __init__(self, bot: BotBase):
         self.bot = bot
         super().__init__()
 
@@ -128,5 +128,5 @@ class UserManagement(GroupCog, name="유저"):
         await self.bot.announce(f"**{target_member.display_name}**님이 아리슬레나에서 등록 해제되었습니다.", interaction.guild.id)
         
 
-async def setup(bot: AriBot):
-    await bot.add_cog(UserManagement(bot), guilds=bot._guild_list)
+async def setup(bot: BotBase):
+    await bot.add_cog(UserManagement(bot), guilds=bot.guild_list)
