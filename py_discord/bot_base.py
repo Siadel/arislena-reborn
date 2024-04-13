@@ -1,21 +1,20 @@
 import discord, logging, json, os, shutil, datetime, asyncio
 from discord.ext import commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from typing import Iterator
 from copy import deepcopy
 from threading import Thread
+from pathlib import Path
 
-from py_base import utility
-from py_base.dbmanager import DatabaseManager
 from py_base import ari_enum
+from py_base.ari_logger import ari_logger
+from py_base.dbmanager import DatabaseManager
 from py_base.ari_enum import ScheduleState
-from py_base.utility import get_date, DATE_EXPRESSION, BACKUP_DIR, DATE_EXPRESSION_FULL_2, DATE_EXPRESSION_FULL
-from py_base.jsonobj import GameSetting, JobSetting, BotSetting
-from py_system._global import setting_by_guild, bot_setting
-from py_system.tableobj import Chalkboard, Deployment, Building, Resource, Crew, Livestock, CommandCounter, Laborable, GameSetting, JobSetting
+from py_base.utility import get_date, DATE_EXPR, BACKUP_DIR, FULL_DATE_EXPR_2
+from py_base.jsonobj import BotSetting
+from py_system.tableobj import Chalkboard, Deployment, Building, Resource, Crew, Livestock, CommandCounter, Laborable, JobSetting, GuildSetting
 from py_system.tableobj import form_database_from_tableobjects
 from py_system.systemobj import SystemBuilding
-
+from py_discord import warnings
 
 # 봇 권한 설정
 intents = discord.Intents.default()
@@ -24,7 +23,7 @@ intents.message_content = True
 intents.members = True
 
 def exit_bot():
-    print("봇을 종료합니다.")
+    ari_logger.critical("봇을 종료합니다.")
     exit(1)
 
 class BotBase(commands.Bot):
@@ -37,26 +36,38 @@ class BotBase(commands.Bot):
         super().__init__(
             command_prefix="/",
             intents=intents,
-            application_id=bot_setting.application_id)
+            application_id=bot_setting.application_id
+        )
         
         self.bot_setting = bot_setting
-        self.guild_list: list[discord.Guild] = [discord.Object(id=guild_id) for guild_id in bot_setting.guild_ids]
+        self.main_guild: discord.Guild = discord.Object(id=bot_setting.main_guild_id)
+        self.test_guild: discord.Guild = discord.Object(id=bot_setting.test_guild_id)
+        self.guild_list: list[discord.Guild] = [discord.Object(id=guild_id) for guild_id in bot_setting.whitelist]
         
         self._token = self._get_token_or_exit(os.environ.get("ARISLENA_BOT_TOKEN"))
         self._log_handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
         
-        self._guild_database: dict[str, DatabaseManager] = {}
-        self._guild_schedule: dict[str, "ScheduleManager"] = {}
-
-    @property
-    def guild_database(self) -> dict[str, DatabaseManager]:
-        return self._guild_database
+        self._guild_server_manager: dict[str, "ServerManager"] = {}
     
-    @property
-    def guild_schedule(self) -> dict[str, "ScheduleManager"]:
-        return self._guild_schedule
+    def get_database(self, guild_id: int | str) -> DatabaseManager:
+        """
+        usage example:
+        ```
+        bot.get_database(interaction.guild_id)
+        ```
+        """
+        return self._guild_server_manager[str(guild_id)].database
+    
+    def get_server_manager(self, guild_id: int | str) -> "ServerManager":
+        """
+        usage example:
+        ```
+        bot.get_server_manager(interaction.guild_id)
+        ```
+        """
+        return self._guild_server_manager[str(guild_id)]
         
-    def _add_database_and_scheduler(self, guild_id: int | str):
+    def _add_server_manager(self, guild_id: int | str):
         """
         길드 id별로 데이터베이스를 추가함.
         
@@ -65,8 +76,7 @@ class BotBase(commands.Bot):
         if isinstance(guild_id, int): guild_id = str(guild_id)
         db = DatabaseManager(guild_id)
         form_database_from_tableobjects(db)
-        self._guild_database[guild_id] = db
-        self._guild_schedule[guild_id] = ScheduleManager(self, deepcopy(self.bot_setting), db, guild_id)
+        self._guild_server_manager[guild_id] = ServerManager(self, deepcopy(self.bot_setting), db, guild_id)
     
     def _get_token_or_exit(self, environ_get_result: str | None) -> str:
         """
@@ -75,44 +85,96 @@ class BotBase(commands.Bot):
         if environ_get_result is None: 
             
             token_return: str = None
-            print("환경 변수에 ARISLENA_BOT_TOKEN이 없습니다. json/token.json 파일을 확인합니다.")
+            ari_logger.critical("환경 변수에 ARISLENA_BOT_TOKEN이 없습니다. json/token.json 파일을 확인합니다.")
             
             if not os.path.exists("json/token.json"):
-                print("json/token.json 파일이 없습니다.")
+                ari_logger.critical("json/token.json 파일이 없습니다.")
                 exit_bot()
             
             with open("json/token.json", "r", encoding="utf-8") as f:
                 if (token_return := json.load(f).get("ARISLENA_BOT_TOKEN")) is None:
-                    print("json/token.json 파일에 ARISLENA_BOT_TOKEN이 없습니다.")
+                    ari_logger.critical("json/token.json 파일에 ARISLENA_BOT_TOKEN이 없습니다.")
                     exit_bot()
                     
             return token_return
         
         else: return environ_get_result
-
-    async def announce(self, message:str, guild_id:int):
+    
+    async def announce_channel(self, message:str, channel_id:int):
         """
-        지정된 봇 전용 공지 채널에 메세지를 보냄. 지정 채널이 없으면 아무것도 하지 않음.
+        지정된 채널에 메세지를 보냄.
         """
-        if (guild_id_key := str(guild_id)) in setting_by_guild.announce_location:
-            
-            channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
-            await channel.send(message)
-            
-    async def announce_with_embed(self, embed:discord.Embed, guild_id:int):
+        if (channel := self.get_channel(channel_id)) is None: raise ValueError("채널을 찾을 수 없습니다.")
+        await channel.send(message)
+    
+    async def announce_channel_with_embed(self, embed:discord.Embed, channel_id:int):
         """
-        지정된 봇 전용 공지 채널에 embed를 보냄. 지정 채널이 없으면 아무것도 하지 않음.
+        지정된 채널에 embed를 보냄.
         """
-        if (guild_id_key := str(guild_id)) in setting_by_guild.announce_location:
-            
-            channel = self.get_channel(setting_by_guild.announce_location[guild_id_key])
-            await channel.send(embed=embed)
+        if (channel := self.get_channel(channel_id)) is None: raise ValueError("채널을 찾을 수 없습니다.")
+        await channel.send(embed=embed)
 
     def run(self):
         super().run(self._token, log_handler=self._log_handler, log_level=logging.INFO)
 
+    def check_admin_or_raise(self, interaction: discord.Interaction):
+        """
+        서버에서 봇에게 정한 관리자 역할을 가지고 있는지 확인하는 함수
+        
+        관리자 역할이 없으면 warnings.NotAdmin 예외 발생
+        """
+        if not self.check_admin(interaction):
+            raise warnings.NotAdmin()
+        
+    def check_admin(self, interaction: discord.Interaction) -> bool:
+        """
+        서버에서 봇에게 정한 관리자 역할을 가지고 있는지 확인하는 함수
+        
+        관리자 역할이 없으면 False 반환
+        """
+        if discord.utils.get(
+            interaction.user.roles,
+            id=self.get_server_manager(interaction.guild_id).guild_setting.admin_role_id
+        ) is None:
+            return False
+        return True
+    
+    def check_user_or_raise(self, interaction: discord.Interaction):
+        """
+        서버에서 봇에게 정한 유저 역할을 가지고 있는지 확인하는 함수
+        
+        유저 역할이 없으면 warnings.NotUser 예외 발생
+        """
+        if discord.utils.get(
+            interaction.user.roles,
+            id=self.get_server_manager(interaction.guild_id).guild_setting.user_role_id
+        ):
+            return True
+        return False
+    
+    def check_user_exists_or_raise(self, interaction: discord.Interaction):
+        """
+        아리슬레나에 등록되어 있지 않으면 warnings.NotRegistered 예외 발생
+        """
+        if not self.check_user_exists(interaction):
+            raise warnings.NotRegistered(interaction.user.name)
+        
+    def check_user_not_exists_or_raise(self, interaction: discord.Interaction):
+        """
+        아리슬레나에 등록되어 있으면 warnings.AlreadyRegistered 예외 발생
+        """
+        if self.check_user_exists(interaction):
+            raise warnings.AlreadyRegistered(interaction.user.name)
+        
+    def check_user_exists(self, interaction: discord.Interaction) -> bool:
+        """
+        아리슬레나에 등록되어 있는지 확인하는 함수
+        """
+        if self.get_database(interaction.guild_id).is_exist("user", discord_id=interaction.user.id) is None:
+            return False
+        return True
 
-class ScheduleManager:
+class ServerManager:
     
     def __init__(self, bot:BotBase, bot_setting:BotSetting, database:DatabaseManager, guild_id: int):
         """
@@ -123,9 +185,9 @@ class ScheduleManager:
         self.bot_setting = bot_setting
         self.database = database
         self.guild_id = guild_id
-        
-        self.game_setting = GameSetting.from_database(self.database)
+
         self.job_setting = JobSetting.from_database(self.database)
+        self.guild_setting = GuildSetting.from_database(self.database)
         self.chalkboard = Chalkboard.from_database(self.database)
         self.chalkboard.state = ScheduleState.ONGOING
 
@@ -138,7 +200,7 @@ class ScheduleManager:
         self.execute_thread = Thread(target=self.run_loop_forever)
         self.execute_thread.start()
         
-        print(f"길드 {guild_id}의 스케줄러가 생성되었습니다.")
+        ari_logger.info(f"길드 {guild_id}의 스케줄러가 생성되었습니다.")
         
     def form_schedule_id(self) -> str:
         return f"arislena-{self.guild_id}"
@@ -172,8 +234,7 @@ class ScheduleManager:
         match self.chalkboard.state:
             
             case ScheduleState.ONGOING:
-                
-                print(f'{get_date()} 게임 시작 요청(이미 게임 시작됨)')
+                ari_logger.info(f"길드 {self.guild_id}의 게임 시작 요청(이미 게임 시작됨)")
                 return "게임이 이미 시작되었습니다. | 현재 턴: " + str(self.chalkboard.now_turn)
             
             case ScheduleState.WAITING:
@@ -181,8 +242,8 @@ class ScheduleManager:
                 self.scheduler_add_job()
                 self.chalkboard.push()
                 
-                print(f'{get_date()} 게임 시작 요청 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 게임 시작 예정')
-                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION)} 시작 예정'
+                ari_logger.info(f"길드 {self.guild_id}의 게임 시작 요청({(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPR)} 게임 시작 예정)")
+                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPR)} 시작 예정'
             
             case ScheduleState.PAUSED:
                 # 중단 중일 때 (2)
@@ -190,10 +251,9 @@ class ScheduleManager:
                 
                 self.chalkboard.state = ScheduleState.ONGOING
                 self.chalkboard.push()
-                
-                message = f'{get_date()} 게임 재개 되었습니다.'
-                print(message)
-                return message
+
+                ari_logger.info(f"길드 {self.guild_id}의 게임 재개 요청")
+                return f'{get_date()} 게임 재개 되었습니다.'
             
             case ScheduleState.ENDED:
                 return "종료된 게임은 재개할 수 없습니다."
@@ -203,32 +263,32 @@ class ScheduleManager:
         게임 진행 함수(매일 21시 실행)
         '''
         
-        print(f"{get_date(DATE_EXPRESSION_FULL)}\t{self.chalkboard.now_turn}턴 진행")
+        ari_logger.info(f"길드 {self.guild_id}의 {self.chalkboard.now_turn}턴 종료 및 {self.chalkboard.now_turn+1}턴 시작 진행")
         
-        await self.bot.announce(
+        await self.bot.announce_channel(
             f"# {self.chalkboard.now_turn}턴 종료 및 {self.chalkboard.now_turn+1}턴 시작 진행 보고",
-            self.guild_id
+            self.guild_setting.announce_channel_id
         )
 
         # 진행 상황 백업
-        shutil.copy(self.database.file_path, BACKUP_DIR + f"{get_date(DATE_EXPRESSION_FULL_2)}_"+self.database.file_path)
+        shutil.copy(self.database.file_path, BACKUP_DIR / Path(f"{get_date(FULL_DATE_EXPR_2)}_" + str(self.database.file_path.name)))
 
         if self.chalkboard.state == ScheduleState.WAITING:
             self.chalkboard.state = ScheduleState.ONGOING
 
-        if self.chalkboard.now_turn >= self.game_setting.turn_limit:
+        if self.chalkboard.now_turn >= self.chalkboard.turn_limit:
             self.end_game()
             return
         
         await self.execute_before_turn_end()
         
-        print(f"{get_date(DATE_EXPRESSION_FULL)}\t{self.chalkboard.now_turn}턴 종료")
+        ari_logger.info(f"길드 {self.guild_id}의 {self.chalkboard.now_turn}턴 종료")
 
         self.chalkboard.now_turn += 1
         
         await self.execute_after_turn_end()
         
-        print(f"{get_date(DATE_EXPRESSION_FULL)}\t{self.chalkboard.now_turn}턴 시작")
+        ari_logger.info(f"길드 {self.guild_id}의 {self.chalkboard.now_turn}턴 시작")
                 
         self.chalkboard.push()
         
@@ -247,7 +307,7 @@ class ScheduleManager:
 
         self.scheduler.pause_job(self.form_schedule_id())
 
-        print(f"게임 중단 됨 | 현재 {self.chalkboard.now_turn}턴")
+        ari_logger.info(f"길드 {self.guild_id}의 게임 중단 요청 | 현재 {self.chalkboard.now_turn}턴")
         
         self.database.connection.commit()
         return f"게임이 중단 되었습니다. | 현재 {self.chalkboard.now_turn}턴"
@@ -264,7 +324,7 @@ class ScheduleManager:
 
         self.chalkboard.push()
 
-        print("게임 종료 됨")
+        ari_logger.info(f"길드 {self.guild_id}의 게임 종료 요청 | 현재 {self.chalkboard.now_turn}턴")
         
         self.database.connection.commit()
         # 게임 종료 메시지 추가 예정
@@ -370,7 +430,7 @@ class ScheduleManager:
         '''
         building_produce_embed_list = self.building_produce()
         for embed in building_produce_embed_list:
-            await self.bot.announce_with_embed(embed, self.guild_id)
+            await self.bot.announce_channel_with_embed(embed, self.guild_setting.announce_channel_id)
     
     async def execute_after_turn_end(self):
         '''
@@ -419,4 +479,4 @@ class ScheduleManager:
             f"- 모든 명령 카운터가 초기화 되었습니다."
         )
         
-        await self.bot.announce("\n".join(report_lines), self.guild_id)
+        await self.bot.announce_channel("\n".join(report_lines), self.guild_setting.announce_channel_id)

@@ -364,7 +364,7 @@ class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable, Announceable):
         view = TableObjectView(
             fetch_list = [Building.from_data(data) for data in self._database.fetch_many("building", faction_id = self.faction.id)],
             sample_button = DeployToBuildingButton(self.crew, self.faction)\
-                .set_database(self.bot.guild_database[str(interaction.guild_id)])\
+                .set_database(self.bot.get_database(interaction.guild_id))\
                 .set_previous_interaction(interaction)
         )
         view.add_item(CancelButton())
@@ -492,9 +492,9 @@ class FactionDeleteButton(FactionLookupButton, Announceable):
 
         await interaction.followup.send(f"{self.faction.name} 세력이 해산되었습니다.", ephemeral = True)
 
-        await self.bot.announce(
+        await self.bot.announce_channel(
             f"**{interaction.user.display_name}**님께서 **{self.faction.name}** 세력을 해산하셨습니다.",
-            interaction.guild.id
+            self.bot.get_server_manager(interaction.guild_id).guild_setting.announce_channel_id
         )
         self._database.connection.commit()
 

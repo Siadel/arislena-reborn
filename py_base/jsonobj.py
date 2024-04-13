@@ -16,27 +16,10 @@ class SettingByGuild(JsonObject):
     file_name: ClassVar[str] = "setting_by_guild.json"
 
 @dataclass
-class GameSetting(JsonObject):
-    test_mode: bool
-    admin_mode: bool
-    arislena_end_turn: int
-    name_length_limit: int
-
-    file_name: ClassVar[str] = "game_setting.json"
-
-@dataclass
-class JobSetting(JsonObject):
-    trigger: str
-    day_of_week: str
-    hour: str
-    minute: str
-    
-    file_name: ClassVar[str] = "job_setting.json"
-
-@dataclass
 class BotSetting(JsonObject):
     main_guild_id: int
-    guild_ids: list[int]
+    test_guild_id: int
+    whitelist: list[int]
     application_id: int
 
     file_name: ClassVar[str] = "bot_setting.json"

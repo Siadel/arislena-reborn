@@ -7,8 +7,9 @@ from sqlite3 import Row
 from math import sqrt
 from abc import ABCMeta, abstractmethod
 
-from py_base.utility import sql_value, DATE_EXPRESSION
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState
+from py_base.utility import sql_value, DATE_EXPR
+from py_base.ari_logger import ari_logger
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, Language
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
 from py_base.arislena_dice import Nonahedron
@@ -65,7 +66,7 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
     
     main_db.connection.commit()
     
-    print("Database initialized")
+    ari_logger.info("Database initialized")
 
 class Laborable(metaclass=ABCMeta):
     """
@@ -111,6 +112,10 @@ class SingleComponentTable(TableObject, metaclass=ABCMeta):
     def from_database(cls, database: DatabaseManager):
         return super().from_database(database, id=1)
     
+    @classmethod
+    def get_table_name(cls) -> str:
+        return "__" + super().get_table_name() + "__"
+    
     def get_display_string(self) -> str:
         return ""
 
@@ -123,32 +128,24 @@ class Chalkboard(SingleComponentTable, TableObject):
     def __init__(
         self,
         id: int = 1,
-        start_date: str = (datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPRESSION),
-        end_date: str = "",
-        now_turn: int = 0,
-        state: ScheduleState = ScheduleState.WAITING
-    ):
-        super().__init__(id)
-        self.start_date = start_date
-        self.end_date = end_date
-        self.now_turn = now_turn
-        self.state = state
-
-class GameSetting(SingleComponentTable, TableObject):
-    abstract = False
-    def __init__(
-        self,
-        id: int = 1,
         test_mode: bool = True,
         admin_mode: bool = False,
+        start_date: str = (datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPR),
+        end_date: str = "",
+        now_turn: int = 0,
         turn_limit: int = 9999,
-        name_length_limit: int = 30
+        state: ScheduleState = ScheduleState.WAITING,
+        language: Language = Language.KOREAN
     ):
         super().__init__(id)
         self.test_mode = test_mode
         self.admin_mode = admin_mode
+        self.start_date = start_date
+        self.end_date = end_date
+        self.now_turn = now_turn
         self.turn_limit = turn_limit
-        self.name_length_limit = name_length_limit
+        self.state = state
+        self.language = language
 
 class JobSetting(SingleComponentTable, TableObject):
     abstract = False
@@ -165,6 +162,20 @@ class JobSetting(SingleComponentTable, TableObject):
         self.day_of_week = day_of_week
         self.hour = hour
         self.minute = minute
+
+class GuildSetting(SingleComponentTable, TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 1,
+        announce_channel_id: int = 0,
+        user_role_id: int = 0,
+        admin_role_id: int = 0
+    ):
+        super().__init__(id)
+        self.announce_channel_id = announce_channel_id
+        self.user_role_id = user_role_id
+        self.admin_role_id = admin_role_id
 
 class User(TableObject):
     abstract = False

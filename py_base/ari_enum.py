@@ -1,18 +1,24 @@
 """
 상태를 나타내는 모듈 (모든 상태가 한데 모여있음)
 """
-from enum import IntEnum
+from enum import IntEnum, Enum
 import random
 
 from py_base.abstract import ArislenaEnum
 
-def get_enum(enum_class_name, value:int|None) -> IntEnum:
+def get_intenum(enum_class_name, value:int|None) -> IntEnum:
     """
     enum을 반환함
     """
     if value is None: raise ValueError("enum의 값이 None입니다. 데이터에서 값을 확인해주세요.")
     return globals()[enum_class_name](value)
 
+def get_enum(enum_class_name, value:str|None) -> Enum:
+    """
+    enum을 반환함
+    """
+    if value is None: raise ValueError("enum의 값이 None입니다. 데이터에서 값을 확인해주세요.")
+    return globals()[enum_class_name](value)
 
 # 스케줄 상태
 class ScheduleState(IntEnum):
@@ -21,6 +27,11 @@ class ScheduleState(IntEnum):
     ONGOING = 1
     PAUSED = 2
     ENDED = 3
+
+class Language(Enum):
+    # 0: 한국어, 1: 영어
+    KOREAN = "ko"
+    ENGLISH = "en"
 
 # 범용 예, 아니요
 class YesNo(IntEnum):

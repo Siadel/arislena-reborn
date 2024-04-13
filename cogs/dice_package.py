@@ -290,4 +290,4 @@ class dice_package(commands.GroupCog, name="주사위"):
 
     
 async def setup(bot: BotBase):
-    await bot.add_cog(dice_package(bot), guilds=bot.guild_list)
+    await bot.add_cog(dice_package(bot))

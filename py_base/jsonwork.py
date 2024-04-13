@@ -7,13 +7,13 @@ from py_base.utility import JSON_DIR, UTF8
 
 # json 데이터 저장하기
 def dump_json(data: dict, file_name: str) -> None:
-    file_path = Path(JSON_DIR + file_name)
+    file_path = Path(JSON_DIR, file_name)
     with open(file_path, "w", encoding=UTF8) as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
 
 # json 데이터 불러오기
 def load_json(file_name: str, **kwargs) -> dict|list:
-    file_path = Path(JSON_DIR + file_name)
+    file_path = Path(JSON_DIR, file_name)
     if file_path.exists() == False: return {}
     with open(file_path, "r", encoding=UTF8) as file:
         return json.load(file, **kwargs)

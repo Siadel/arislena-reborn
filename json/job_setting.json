@@ -1,6 +1,0 @@
-{
-    "trigger": "cron",
-    "day_of_week": "mon,tue,wed,thu,fri,sat,sun",
-    "hour": "21",
-    "minute": "00"
-}

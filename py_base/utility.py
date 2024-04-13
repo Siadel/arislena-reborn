@@ -1,9 +1,10 @@
 """
 파일 경로, 유틸리티 함수 모음 모듈
 """
-from typing import Any
 import datetime
 import os
+from pathlib import Path
+from typing import Any
 from enum import Enum
 
 UTF8 = "utf-8"
@@ -13,19 +14,21 @@ DOUBLE_QUOTE = '"'
 ENTER = "\n"
 DOUBLE_ASTERISK = "**"
 
-DATE_EXPRESSION = "%Y-%m-%d"
-DATE_EXPRESSION_FULL = "%Y-%m-%d %H:%M:%S"
-DATE_EXPRESSION_FULL_2 = "%Y-%m-%d_%H-%M-%S"
+DATE_EXPR = "%Y-%m-%d"
+FULL_DATE_EXPR = "%Y-%m-%d %H:%M:%S"
+FULL_DATE_EXPR_2 = "%Y-%m-%d_%H-%M-%S"
 
-current_path = os.getcwd().replace("\\", "/") + "/"
+# CWD = os.getcwd().replace("\\", "/") + "/"
+# refactoring
+CWD = Path(os.getcwd())
 current_dir = os.path.dirname(__file__).replace("\\", "/") + "/"
 #if "ghftr" in os.getcwd(): current_path = LOCAL_PATH
 #elif "workspace" in os.getcwd(): current_path = GROOM_PATH
 #else: raise ValueError("작업 환경을 다시 확인해주세요.")
 
-JSON_DIR = current_path + "json/"
-DATA_DIR = current_path + "data/"
-BACKUP_DIR = current_path + "backup/"
+JSON_DIR = Path(CWD, "json")
+DATA_DIR = Path(CWD, "data")
+BACKUP_DIR = Path(CWD, "backup")
 
 PYTHON_SQL_DTYPE_MAP = {
     "str": "TEXT",
@@ -93,10 +96,3 @@ def sql_value(value: str | Enum | None | int | float) -> str:
         return "NULL"
     else:
         return str(value)
-
-    # if isinstance(value, str):
-    #     return f"'{value}'"
-    # elif value is None:
-    #     return "NULL"
-    # else:
-    #     return str(value)

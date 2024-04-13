@@ -4,7 +4,6 @@ from discord import app_commands
 
 from py_discord.bot_base import BotBase
 from py_discord import views, modals
-from py_discord.checks import is_admin
 
 class CommandTest(GroupCog, name="테스트"):
     def __init__(self, bot: BotBase):
@@ -33,4 +32,4 @@ class CommandTest(GroupCog, name="테스트"):
         await interaction.response.send_modal(modals.ModalTest())
 
 async def setup(bot: BotBase):
-    await bot.add_cog(CommandTest(bot), guilds=bot.guild_list)
+    await bot.add_cog(CommandTest(bot))

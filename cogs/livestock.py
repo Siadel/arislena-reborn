@@ -12,4 +12,4 @@ class LivestockCommand(GroupCog, name="가축"):
 
 
 async def setup(bot: BotBase):
-    await bot.add_cog(LivestockCommand(bot), guilds=bot.guild_list)
+    await bot.add_cog(LivestockCommand(bot))

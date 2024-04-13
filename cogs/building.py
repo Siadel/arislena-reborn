@@ -11,8 +11,8 @@ from py_discord.func import get_building_category_choices
 class BuildingCommand(GroupCog, name="건물"):
     
     def __init__(self, bot: BotBase):
-        self.bot = bot
         super().__init__()
+        self.bot = bot
         
     @app_commands.command(
         name = "건설",
@@ -27,14 +27,14 @@ class BuildingCommand(GroupCog, name="건물"):
     )
     async def build(self, interaction: discord.Interaction, building_category: app_commands.Choice[int], building_name: str):
         
-        if not self.bot.guild_database[str(interaction.guild_id)].is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
+        if not self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
         
-        territory_list = self.bot.guild_database[str(interaction.guild_id)].fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
+        territory_list = self.bot.get_database(interaction.guild_id).fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
         
         if len(territory_list) == 0:
             await interaction.response.send_message("건설할 영토가 없습니다.", ephemeral=True)
             
-        building_name_list = self.bot.guild_database[str(interaction.guild_id)].cursor.execute("SELECT name FROM building").fetchall()
+        building_name_list = self.bot.get_database(interaction.guild_id).cursor.execute("SELECT name FROM building").fetchall()
         if building_name in building_name_list: raise warnings.AlreadyExist("그 이름의 건물")
         
         await interaction.response.send_message(
@@ -45,7 +45,7 @@ class BuildingCommand(GroupCog, name="건물"):
                     building_category=building_category,
                     building_name=building_name
                 )\
-                    .set_database(self.bot.guild_database[str(interaction.guild_id)])\
+                    .set_database(self.bot.get_database(interaction.guild_id))\
                     .set_previous_interaction(interaction)
             )
         )
@@ -61,21 +61,21 @@ class BuildingCommand(GroupCog, name="건물"):
         
         f_data = None
         
-        if not other_user and not (f_data := self.bot.guild_database[str(interaction.guild_id)].fetch(Faction.__name__, user_id = interaction.user.id)): raise warnings.NoFaction()
-        elif other_user and not (f_data := self.bot.guild_database[str(interaction.guild_id)].fetch(Faction.__name__, user_id = other_user.id)): raise warnings.NoFaction()
+        if not other_user and not (f_data := self.bot.get_database(interaction.guild_id).fetch(Faction.get_table_name(), user_id = interaction.user.id)): raise warnings.NoFaction()
+        elif other_user and not (f_data := self.bot.get_database(interaction.guild_id).fetch(Faction.get_table_name(), user_id = other_user.id)): raise warnings.NoFaction()
         
         f = Faction.from_data(f_data)
         
-        b_list = self.bot.guild_database[str(interaction.guild_id)].fetch_many(Building.__name__, faction_id = f.id)
+        b_list = self.bot.get_database(interaction.guild_id).fetch_many(Building.get_table_name(), faction_id = f.id)
         
         await interaction.response.send_message(
             "열람할 건물을 선택해주세요.",
             view=views.TableObjectView(
                 [Building.from_data(data) for data in b_list],
                 sample_button = views.BuildingLookupButton()\
-                    .set_database(self.bot.guild_database[str(interaction.guild_id)])
+                    .set_database(self.bot.get_database(interaction.guild_id))
             )
         )
 
 async def setup(bot: BotBase):
-    await bot.add_cog(BuildingCommand(bot), guilds=bot.guild_list)
+    await bot.add_cog(BuildingCommand(bot))

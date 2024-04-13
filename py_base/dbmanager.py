@@ -5,10 +5,11 @@ import sqlite3
 from pathlib import Path
 from typing import Iterable, Any
 
+from py_base.ari_logger import ari_logger
 from py_base.utility import DATA_DIR, sql_value
 
-def print_query(query:str):
-    print(f"[SQL]\t{query}")
+def log_query(query:str):
+    ari_logger.debug(f"[SQL]\t{query}")
 
 class DatabaseManager:
 
@@ -22,7 +23,7 @@ class DatabaseManager:
             check_same_thread=False 
             # isolation_level=None
         )
-        self.connection.set_trace_callback(print_query)
+        self.connection.set_trace_callback(log_query)
         self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
     

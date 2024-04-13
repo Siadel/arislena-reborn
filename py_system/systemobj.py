@@ -126,7 +126,7 @@ class FreshWaterSource(SystemBuilding, BasicBuilding):
     
     def get_production_recipe(self):
         return ProductionRecipe(
-            produce=[ProductionResource(ResourceCategory.WATER, dice_ratio=3)]
+            produce=[ProductionResource(ResourceCategory.WATER, dice_ratio=2)]
         )
 
 

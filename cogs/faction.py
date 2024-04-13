@@ -18,11 +18,11 @@ class FactionCommand(GroupCog, name="세력"):
     )
     async def create(self, interaction: discord.Interaction):
 
-        if not self.bot.guild_database[str(interaction.guild_id)].is_exist("user", f"discord_id = {interaction.user.id}"):
+        if not self.bot.get_database(interaction.guild_id).is_exist("user", f"discord_id = {interaction.user.id}"):
             raise warnings.NotRegistered(interaction.user.display_name)
 
         # 이미 세력을 가지고 있는지 확인 (관리자는 예외)
-        if self.bot.guild_database[str(interaction.guild_id)].is_exist("faction", f"user_id = {interaction.user.id}") and not checks.is_admin(interaction.user):
+        if self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}") and not self.bot.check_admin(interaction.user):
             raise warnings.AlreadyExist("창설한 세력")
         
         await interaction.response.send_modal(modals.FactionCreateModal(bot=self.bot))
@@ -34,7 +34,7 @@ class FactionCommand(GroupCog, name="세력"):
     async def lookup(self, interaction: discord.Interaction):
         
         # 모든 세력 정보 가져오기
-        faction_data_list = self.bot.guild_database[str(interaction.guild_id)].fetch_all("faction")
+        faction_data_list = self.bot.get_database(interaction.guild_id).fetch_all("faction")
         faction_list = [Faction.from_data(data) for data in faction_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
@@ -43,7 +43,7 @@ class FactionCommand(GroupCog, name="세력"):
             view=views.TableObjectView(
                 faction_list,
                 sample_button=views.FactionLookupButton(interaction)\
-                    .set_database(self.bot.guild_database[str(interaction.guild_id)])
+                    .set_database(self.bot.get_database(interaction.guild_id))
             )
         )
     
@@ -51,7 +51,6 @@ class FactionCommand(GroupCog, name="세력"):
         name = "수정",
         description = "창설한 세력의 정보를 수정합니다. 다른 세력의 정보를 수정하려면 관리자 권한이 필요합니다."
     )
-    @app_commands.check(checks.is_admin)
     async def edit(self, interaction: discord.Interaction, attribute:str, value:str = None, message_link:str = None, faction_id:int = None):
         pass
 
@@ -59,20 +58,19 @@ class FactionCommand(GroupCog, name="세력"):
         name = "해산",
         description = "[관리자 전용] 세력을 해산하여 데이터에서 삭제합니다."
     )
-    @app_commands.check(checks.is_admin)
     async def delete(self, interaction: discord.Interaction):
-
+        self.bot.check_admin_or_raise(interaction)
         # 모든 세력 정보 가져오기
-        faction_data_list = self.bot.guild_database[str(interaction.guild_id)].fetch_all("faction")
+        faction_data_list = self.bot.get_database(interaction.guild_id).fetch_all("faction")
         faction_list = [Faction.from_data(data) for data in faction_data_list]
-        for faction in faction_list: faction.set_database(self.bot.guild_database[str(interaction.guild_id)])
+        for faction in faction_list: faction.set_database(self.bot.get_database(interaction.guild_id))
         
         await interaction.response.send_message(
             "세력 해산", 
             view=views.TableObjectView(
                 faction_list,
                 sample_button=views.FactionDeleteButton(interaction)\
-                    .set_database(self.bot.guild_database[str(interaction.guild_id)])\
+                    .set_database(self.bot.get_database(interaction.guild_id))\
                     .set_bot(self.bot)
             ),
             ephemeral=True
@@ -82,11 +80,10 @@ class FactionCommand(GroupCog, name="세력"):
         name = "위계설정",
         description = "[관리자 전용] 세력의 위계를 설정합니다."
     )
-    @app_commands.check(checks.is_admin)
     async def set_hierarchy(self, interaction: discord.Interaction):
         pass
 
     
 
 async def setup(bot: BotBase):
-    await bot.add_cog(FactionCommand(bot), guilds=bot.guild_list)
+    await bot.add_cog(FactionCommand(bot))

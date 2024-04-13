@@ -3,7 +3,7 @@ import re
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
 
-from py_base.ari_enum import get_enum, ResourceCategory, BuildingCategory
+from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory
 from py_base.utility import sql_type
 from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum
@@ -52,6 +52,13 @@ class TableObject(metaclass=ABCMeta):
         return self
     
     @classmethod
+    def get_table_name(cls) -> str:
+        """
+        이 클래스의 테이블 이름을 반환
+        """
+        return cls.__name__
+    
+    @classmethod
     def from_database(cls, database:DatabaseManager, *raw_statements, **statements):
         """
         Creates a table object from the database.
@@ -83,7 +90,7 @@ class TableObject(metaclass=ABCMeta):
     
     @property
     def table_name(self):
-        return self.__class__.__name__
+        return self.__class__.get_table_name()
     
     @property
     def database(self) -> DatabaseManager:
@@ -115,8 +122,10 @@ class TableObject(metaclass=ABCMeta):
                     setattr(self, key, bool(row[key]))
                 case (_, "py_base.datatype.ExtInt"):
                     setattr(self, key, getattr(self, key) + row[key])
+                case (_, "enum.EnumType"):
+                    setattr(self, key, get_enum(class_name, row[key]))
                 case ("enum", _):
-                    setattr(self, key, get_enum(class_name, int(row[key])))
+                    setattr(self, key, get_intenum(class_name, int(row[key])))
                 case _:
                     raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
         
