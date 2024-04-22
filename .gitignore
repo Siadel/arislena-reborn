@@ -1,3 +1,6 @@
+# deprecated python files
+deprecated/
+
 # any file with sensitive data
 json/bot_setting.json
 json/token.json
@@ -7,6 +10,8 @@ json/token.json
 
 # user data file
 *.db
+data/
+
 
 # zip files
 *.zip

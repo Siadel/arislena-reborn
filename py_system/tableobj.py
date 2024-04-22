@@ -9,7 +9,7 @@ from abc import ABCMeta, abstractmethod
 
 from py_base.utility import sql_value, DATE_EXPR
 from py_base.ari_logger import ari_logger
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, Language
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, CrewLaborDetail
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
 from py_base.arislena_dice import Nonahedron
@@ -61,7 +61,7 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
         
     # Schedule 테이블에 요소가 없을 경우, 새 요소를 추가함
     for single_component_table in SingleComponentTable.__subclasses__():
-        if not main_db.fetch(single_component_table.__name__, id=1):
+        if not main_db.fetch(single_component_table.get_table_name(), id=1):
             single_component_table().set_database(main_db).push()
     
     main_db.connection.commit()
@@ -134,8 +134,7 @@ class Chalkboard(SingleComponentTable, TableObject):
         end_date: str = "",
         now_turn: int = 0,
         turn_limit: int = 9999,
-        state: ScheduleState = ScheduleState.WAITING,
-        language: Language = Language.KOREAN
+        state: ScheduleState = ScheduleState.WAITING
     ):
         super().__init__(id)
         self.test_mode = test_mode
@@ -145,7 +144,6 @@ class Chalkboard(SingleComponentTable, TableObject):
         self.now_turn = now_turn
         self.turn_limit = turn_limit
         self.state = state
-        self.language = language
 
 class JobSetting(SingleComponentTable, TableObject):
     abstract = False
@@ -221,7 +219,8 @@ class Crew(TableObject, Laborable):
         name: str = "",
         experience: int = 0,
         labor: int = 0,
-        availability: Availability = Availability.UNAVAILABLE
+        labor_detail_index: int = 0,
+        availability: Availability = Availability.UNAVAILABLE,
     ):
         TableObject.__init__(self, id)
         Laborable.__init__(
@@ -232,13 +231,7 @@ class Crew(TableObject, Laborable):
         )
         self.faction_id = faction_id
         self.name = name
-
-    id: int = 0
-    faction_id: int = 0
-    name: str = ""
-    experience: int = 0
-    labor: int = 0
-    availability: Availability = Availability.UNAVAILABLE
+        self.labor_detail_index = labor_detail_index
     
     @staticmethod
     def new(faction_id: int):
@@ -282,12 +275,19 @@ class Crew(TableObject, Laborable):
             dice_mod=int((-1 + sqrt(1 + 2/3 * self.experience)) // 2)
         )
     
+    def set_labor(self):
+        """
+        노동력 설정
+        """
+        if self._labor_dice is None: self.set_labor_dice()
+        self.labor = self._labor_dice.roll()
+        self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get_random_detail_index()
+    
     def get_display_string(self) -> str:
         return self.name
     
     def is_available(self) -> bool:
         return self.availability.is_available()
-
 
 
 class Livestock(TableObject, Laborable):

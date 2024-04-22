@@ -47,8 +47,8 @@ class ProductionResource(ResourceAbst):
         if isinstance(other, int):
             dice = other
         elif isinstance(other, Dice):
-            if other.last_roll is None: raise ValueError("주사위를 굴려주세요")
-            dice = other.last_roll
+            if other._last_roll is None: raise ValueError("주사위를 굴려주세요")
+            dice = other._last_roll
         else:
             raise TypeError(f"int 또는 Dice 타입만 가능합니다. (현재 타입: {type(other)})")
         

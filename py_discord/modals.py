@@ -81,6 +81,7 @@ class FactionCreateModal(ArislenaGeneralModal):
         for _ in range(2):
             new_crew = Crew.new(new_faction.id)\
                 .set_database(self.bot.get_database(interaction.guild_id))
+            new_crew.faction_id = new_faction.id
             new_crew.experience = 36
             new_crew.push()
         

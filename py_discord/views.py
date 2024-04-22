@@ -5,8 +5,9 @@ from typing import Type, TypeVar, Any
 from abc import ABCMeta, abstractmethod
 
 from py_base.koreanstring import nominative
-from py_base.ari_enum import BuildingCategory, TerritorySafety
+from py_base.ari_enum import BuildingCategory, TerritorySafety, CrewLaborDetail
 from py_base.dbmanager import DatabaseManager
+from py_base.arislena_dice import Nonahedron
 from py_system.tableobj import TableObject, User, Faction, Territory, Building, Crew, Deployment
 from py_system.systemobj import SystemBuilding
 from py_discord import warnings, modals
@@ -178,7 +179,8 @@ class UserLookupButton(TableObjectButton):
         self.user: User = None
         
     def clone(self):
-        return UserLookupButton(self.prev_interaction)
+        return UserLookupButton(self.prev_interaction)\
+            .set_database(self._database)
         
     def check_type(self, user: User | Any):
         super().check_type(user)
@@ -201,7 +203,8 @@ class FactionLookupButton(TableObjectButton):
         self.faction: Faction = None
         
     def clone(self):
-        return FactionLookupButton(self.prev_interaction)
+        return FactionLookupButton(self.prev_interaction)\
+            .set_database(self._database)
         
     def check_type(self, faction: Faction | Any):
         super().check_type(faction)
@@ -224,7 +227,8 @@ class TerritoryLookupButton(TableObjectButton):
         self.territory: Territory = None
         
     def clone(self):
-        return TerritoryLookupButton(self.faction)
+        return TerritoryLookupButton(self.faction)\
+            .set_database(self._database)
         
     def check_type(self, territory: Territory | Any):
         super().check_type(territory)
@@ -267,7 +271,8 @@ class CrewLookupButton(TableObjectButton):
         self.crew: Crew = None
         
     def clone(self):
-        return CrewLookupButton()
+        return CrewLookupButton()\
+            .set_database(self._database)
         
     def check_type(self, crew: Crew | Any):
         super().check_type(crew)
@@ -280,21 +285,36 @@ class CrewLookupButton(TableObjectButton):
         self.crew.set_database(self._database)
         return super().set_table_object(crew)
     
-    async def callback(self, interaction:discord.Interaction):
-        embed = self._get_basic_embed()
-        field_value = ""
-        # 위치 정보 추가
+    def _add_location_info(self, embed:discord.Embed):
         if (d_data := self._database.fetch(Deployment.__name__, crew_id = self.crew.id)):
             b_data = self._database.fetch(Building.__name__, id = d_data["building_id"])
             b_obj = Building.from_data(b_data)
-            field_value = f"{b_obj.name} ({b_obj.category.express()})"
+            embed.add_field(
+                name="위치 정보",
+                value=f"{b_obj.name} ({b_obj.category.express()})"
+            )
         else:
-            field_value = "배치되지 않음"
-        
+            embed.add_field(
+                name="위치 정보",
+                value="배치되지 않음"
+            )
+        return embed
+    
+    def _add_feeling_info(self, embed:discord.Embed):
         embed.add_field(
-            name="위치 정보",
-            value=field_value
+            name="상태",
+            value=CrewLaborDetail.get_from_corresponding(
+                Nonahedron().set_last_roll(self.crew.labor).last_judge
+            ).get_detail(
+                self.crew.labor_detail_index
+            )
         )
+        return embed
+    
+    async def callback(self, interaction:discord.Interaction):
+        embed = self._get_basic_embed()
+        embed = self._add_location_info(embed)
+        embed = self._add_feeling_info(embed)
         
         await interaction.response.send_message(
             embed = embed,
@@ -310,7 +330,8 @@ class BuildingLookupButton(TableObjectButton):
         self.building: Building = None
         
     def clone(self):
-        return BuildingLookupButton()
+        return BuildingLookupButton()\
+            .set_database(self._database)
         
     def check_type(self, building: Building | Any):
         super().check_type(building)
@@ -335,6 +356,7 @@ class CrewNameButton(CrewLookupButton, Uninterruptable, Announceable):
         
     def clone(self):
         return CrewNameButton()\
+            .set_database(self._database)\
             .set_bot(self.bot)\
             .set_previous_interaction(self.prev_interaction)
     
@@ -352,6 +374,7 @@ class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable, Announceable):
         
     def clone(self):
         return SelectCrewToDeployButton(self.faction)\
+            .set_database(self._database)\
             .set_bot(self.bot)\
             .set_previous_interaction(self.prev_interaction)
     
@@ -383,6 +406,7 @@ class DeployToBuildingButton(BuildingLookupButton, Uninterruptable):
         
     def clone(self):
         return DeployToBuildingButton(self.crew, self.faction)\
+            .set_database(self._database)\
             .set_previous_interaction(self.prev_interaction)
         
     def disable_or_not(self):
@@ -408,6 +432,7 @@ class PurifyButton(TerritoryLookupButton, Uninterruptable):
     
     def clone(self):
         return PurifyButton(self.faction)\
+            .set_database(self._database)\
             .set_previous_interaction(self.prev_interaction)
             
     def disable_or_not(self):
@@ -437,6 +462,7 @@ class BuildButton(TerritoryLookupButton, Uninterruptable):
         
     def clone(self):
         return BuildButton(self.building_category, self.building_name)\
+            .set_database(self._database)\
             .set_previous_interaction(self.prev_interaction)
         
     async def callback(self, interaction:discord.Interaction):
@@ -475,6 +501,7 @@ class FactionDeleteButton(FactionLookupButton, Announceable):
         
     def clone(self):
         return FactionDeleteButton(self.prev_interaction)\
+            .set_database(self._database)\
             .set_bot(self.bot)
     
     async def callback(self, interaction:discord.Interaction):

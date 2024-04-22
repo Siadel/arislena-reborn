@@ -6,7 +6,7 @@ from datetime import datetime
 from py_base import utility
 from py_system._global import setting_by_guild
 from py_system.tableobj import User
-from py_discord import checks, embeds, views, warnings
+from py_discord import embeds, views, warnings
 from py_discord.bot_base import BotBase
 
 class UserManagement(GroupCog, name="유저"):

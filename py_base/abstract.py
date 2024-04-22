@@ -1,3 +1,4 @@
+import random
 from typing import ClassVar
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ class ArislenaEnum(IntEnum):
         obj._value_ = len(cls.__members__)
         return obj
     
-    def __init__(self, local_name:str, emoji:str):
+    def __init__(self, local_name:str, emoji:str = ""):
         self.local_name:str = local_name
         self.emoji:str = emoji
     
@@ -36,6 +37,41 @@ class ArislenaEnum(IntEnum):
     @classmethod
     def from_int(cls, value:int) -> "ArislenaEnum":
         return cls(value)
+
+class DetailEnum(IntEnum):
+    """
+    메타적 디테일을 더해주는 Enum
+    """
+    
+    def __new__(cls, *args, **kwds):
+        obj = int.__new__(cls)
+        obj._value_ = len(cls.__members__)
+        return obj
+    
+    def __init__(self, corresponding, details:tuple[str]):
+        self.corresponding = corresponding
+        self.details = details
+        
+    @classmethod
+    def get_from_corresponding(cls, corresponding) -> "DetailEnum":
+        if corresponding is None: raise ValueError("None은 사용할 수 없습니다.")
+        for detail in cls:
+            if detail.corresponding == corresponding:
+                return detail
+        raise ValueError(f"해당하는 corresponding이 없습니다. {corresponding}")
+        
+    def get_random_detail_index(self) -> int:
+        return random.randint(0, len(self.details) - 1)
+        
+    def get_detail(self, index: int = None) -> str:
+        """
+        usage example:
+        ```
+        Details.COMPONENT.get_detail(random.randint(0, len(Details.<any>.details) - 1))
+        ```
+        """
+        if index is None: index = self.get_random_detail_index()
+        return self.details[index]
 
 @dataclass
 class JsonObject(metaclass=ABCMeta):

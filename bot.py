@@ -34,8 +34,8 @@ class AriBot(BotBase):
 
         # 슬래시 명령어 동기화
         main_sync_result = await aribot.tree.sync(guild=self.main_guild)
-        # test_sync_result = await aribot.tree.sync(guild=self.test_guild)
         ari_logger.info(f"Slash commands synced in main guild: {main_sync_result}")
+        # test_sync_result = await aribot.tree.sync(guild=self.test_guild)
         # ari_logger.info(f"Slash commands synced in test guild: {test_sync_result}")
         global_sync_result = await aribot.tree.sync()
         ari_logger.info(f"Slash commands synced globally: {global_sync_result}")

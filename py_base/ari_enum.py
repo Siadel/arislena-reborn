@@ -4,7 +4,7 @@
 from enum import IntEnum, Enum
 import random
 
-from py_base.abstract import ArislenaEnum
+from py_base.abstract import ArislenaEnum, DetailEnum
 
 def get_intenum(enum_class_name, value:int|None) -> IntEnum:
     """
@@ -28,18 +28,13 @@ class ScheduleState(IntEnum):
     PAUSED = 2
     ENDED = 3
 
-class Language(Enum):
-    # 0: 한국어, 1: 영어
-    KOREAN = "ko"
-    ENGLISH = "en"
-
-# 범용 예, 아니요
-class YesNo(IntEnum):
-    YES = 1
-    NO = 0
-
 # TODO : 이 밑으로는 모두 바뀐 ArislenaEnum에 맞게 수정 필요
 # local_name, emoji 추가
+
+class Language(ArislenaEnum):
+    # 0: 한국어, 1: 영어
+    KOREAN = "한국어", "🇰🇷"
+    ENGLISH = "English", "🇺🇸"
 
 class HumanSex(ArislenaEnum):
     # 0: 남성, 1: 여성
@@ -138,6 +133,52 @@ class CommandCountCategory(ArislenaEnum):
     UNSET = "미정", "❓"
     RECRUIT = "모병", "🛡️"
 
+class NonahedronJudge(ArislenaEnum):
+    TRAGIC = "처참함", "😭"
+    AVERAGE = "무난함", "😐"
+    SUCCESS = "성공", "✅"
+    GRATE_SUCCESS = "멋지게 성공!", "🎉"
+
+class CrewLaborDetail(DetailEnum):
+    UNSET = 0, ("미정",)
+    TRAGIC = NonahedronJudge.TRAGIC, (
+        "작업 중 중상", 
+        "심한 몸살", 
+        "현재 만취", 
+        "철야", 
+        "영양실조", 
+        "파업 시위 중", 
+        "잘못된 작업 내용"
+    )
+    AVERAGE = NonahedronJudge.AVERAGE, (
+        "작업 중 경상", 
+        "가벼운 몸살", 
+        "전날 과음함", 
+        "수면부족", 
+        "영양부족", 
+        "심한 근심걱정 중", 
+        "작업 내용 몰이해"
+    )
+    SUCCESS = NonahedronJudge.SUCCESS, (
+        "무사고", 
+        "건강함", 
+        "술을 절제함", 
+        "숙면을 취함", 
+        "좋은 식사", 
+        "근심이 없음", 
+        "작업 내용 숙지"
+    )
+    GRATE_SUCCESS = NonahedronJudge.GRATE_SUCCESS, (
+        "무사고", 
+        "특별한 보약을 먹음", 
+        "특별 휴가를 다녀옴", 
+        "최근에 소원을 이뤄서 행복함", 
+        "숙달된 분야에서 작업"
+    )
+    
+    @classmethod
+    def get_from_corresponding(cls, corresponding) -> "CrewLaborDetail":
+        return super().get_from_corresponding(corresponding)
 
 
 # # 부대 상태

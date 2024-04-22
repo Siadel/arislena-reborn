@@ -6,7 +6,7 @@ import random
 
 from py_base.ari_enum import BuildingCategory, CommandCountCategory
 from py_discord.bot_base import BotBase
-from py_discord import checks, views, warnings, modals
+from py_discord import views, warnings, modals
 from py_system.tableobj import Faction, CommandCounter, Crew
 
 class CrewCommand(GroupCog, name="대원"):

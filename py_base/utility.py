@@ -29,16 +29,7 @@ current_dir = os.path.dirname(__file__).replace("\\", "/") + "/"
 JSON_DIR = Path(CWD, "json")
 DATA_DIR = Path(CWD, "data")
 BACKUP_DIR = Path(CWD, "backup")
-
-PYTHON_SQL_DTYPE_MAP = {
-    "str": "TEXT",
-    "int": "INTEGER",
-    "float": "REAL",
-    "none": "NULL",
-    "extint": "INTEGER",
-    "enum": "INTEGER",
-    "bool": "INTEGER"
-}
+LOCALIZATION = Path(CWD, "localization")
 
 def get_date(date_expression="%Y-%m-%d"):
     timezone = datetime.timezone(datetime.timedelta(hours=9))
@@ -54,12 +45,27 @@ def wrap(word:str, wrapper:str=""):
     if wrapper == "": return word
     return wrapper + word + wrapper
 
-def sql_type(value: Any) -> str:
+def sql_type(dtype: type) -> str:
+    """
+    python dtype을 SQL dtype으로 변환
+    """
     
-    for k, v in PYTHON_SQL_DTYPE_MAP.items():
-        if k in str(type(value)).lower():
-            return v
-    raise Exception(f"Type {type(value)} is not supported in Arislena's SQL.")
+    annotation = str(dtype).removeprefix("<").removesuffix(">").split("'")
+    ref_class = annotation[0].strip()
+    class_name = annotation[1].strip()
+    
+    match (ref_class, class_name):
+        
+        case (_, "str"): return "TEXT"
+        case (_, "int"): return "INTEGER"
+        case (_, "float"): return "REAL"
+        case (_, "NoneType"): return "NULL"
+        case (_, "bool"): return "INTEGER"
+        case (_, "enum.EnumType"): return "TEXT"
+        case (_, "py_base.datatype.ExtInt"): return "INTEGER"
+        case ("enum", _): return "INTEGER"
+        
+        case _: Exception(f"Type {type(dtype)} is not supported in Arislena's SQL.")
 
 def sql_value(value: str | Enum | None | int | float) -> str:
     """

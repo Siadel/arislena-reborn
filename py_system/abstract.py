@@ -6,7 +6,7 @@ from sqlite3 import Row
 from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory
 from py_base.utility import sql_type
 from py_base.dbmanager import DatabaseManager
-from py_base.abstract import ArislenaEnum
+from py_base.abstract import ArislenaEnum, DetailEnum
 from py_base.jsonobj import Translate
 
 class TableObject(metaclass=ABCMeta):
@@ -81,8 +81,8 @@ class TableObject(metaclass=ABCMeta):
 
         new_obj = cls()
 
-        if not set(sqlite_row.keys()).issubset(cls.__annotations__.keys()):
-            raise ValueError(f"데이터베이스의 컬럼과 클래스의 어노테이션에 불일치가 있습니다: {set(sqlite_row.keys()) - set(cls.__annotations__.keys())}")
+        # if not set(sqlite_row.keys()).issubset(cls.__annotations__.keys()):
+        #     raise ValueError(f"데이터베이스의 컬럼과 클래스의 어노테이션에 불일치가 있습니다: {set(sqlite_row.keys()) - set(cls.__annotations__.keys())}")
 
         new_obj._set_attributes_from_sqlite_row(sqlite_row)
             
@@ -127,7 +127,7 @@ class TableObject(metaclass=ABCMeta):
                 case ("enum", _):
                     setattr(self, key, get_intenum(class_name, int(row[key])))
                 case _:
-                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {str(self.__annotations__[key])}, 값: {row[key]}")
+                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {type(row[key])}, 값: {row[key]}")
         
     def get_dict(self) -> dict:
         """
@@ -160,11 +160,11 @@ class TableObject(metaclass=ABCMeta):
             str: The data type of the column in SQL.
 
         Raises:
-            Exception: If the data type is not supported in SQL (only supports 'str', 'int', 'float').
+            Exception: If the data type is not supported in SQL.
 
         """
 
-        return sql_type(getattr(self, column_name))
+        return sql_type(type(getattr(self, column_name)))
     
     def get_create_table_string(self) -> str:
         """
@@ -254,6 +254,8 @@ class TableObject(metaclass=ABCMeta):
             key = translate.get_from_map('table_object', key, self.table_name, key)
             if isinstance(value, ArislenaEnum):
                 value = f"{value.emoji} **{value.local_name}**"
+            elif isinstance(value, DetailEnum):
+                continue
             else:
                 value = f"**{value}**"
             texts.append(f"- {key} : {value}")
