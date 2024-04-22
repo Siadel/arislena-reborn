@@ -1,5 +1,5 @@
-from py_base.ari_enum import CrewLaborDetail
+import yaml
+import pprint
 
-print(CrewLaborDetail.TRAGIC.get_detail(
-    CrewLaborDetail.TRAGIC.get_random_detail_index()
-))
+with open("yaml/detail.yaml", "r", encoding="utf-8") as stream:
+    print(type(yaml.safe_load(stream)))

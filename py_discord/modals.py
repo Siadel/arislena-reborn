@@ -65,35 +65,42 @@ class FactionCreateModal(ArislenaGeneralModal):
         faction_name = self.faction_name.value.strip()
         # 특수문자가 포함되어 있는지 확인
         func.check_special_character_and_raise(faction_name)
+        
+        database = self.bot.get_database(interaction.guild_id)
 
         # 세력 데이터베이스에 추가
         new_faction = Faction(user_id=interaction.user.id, name=faction_name)
-        new_faction.set_database(self.bot.get_database(interaction.guild_id))
+        new_faction.set_database(database)
         new_faction.push()
 
+        database.connection.commit()
+        
+        # 추가된 세력을 다시 가져옴
+        new_faction = Faction.from_database(database, user_id=interaction.user.id)
+
         # id가 가장 낮은 세력의 하위 세력으로 설정
-        optimal_faction = Faction.from_database(self.bot.get_database(interaction.guild_id), "id = (SELECT MIN(id) FROM faction)")
+        optimal_faction = Faction.from_database(database, "id = (SELECT MIN(id) FROM faction)")
         new_fhn = FactionHierarchyNode()
-        new_fhn.set_database(self.bot.get_database(interaction.guild_id))
+        new_fhn.set_database(database)
         new_fhn.push(new_faction, optimal_faction)
         
-        # 경험치가 36인 대원 2명 추가
+        # 경험치가 12인 대원 2명 추가
         for _ in range(2):
             new_crew = Crew.new(new_faction.id)\
-                .set_database(self.bot.get_database(interaction.guild_id))
+                .set_database(database)
             new_crew.faction_id = new_faction.id
-            new_crew.experience = 36
+            new_crew.experience = 12
             new_crew.push()
         
         # 자원 추가: 식량 6, 식수 6
         Resource(faction_id=new_faction.id, category=ResourceCategory.FOOD, amount=6)\
-            .set_database(self.bot.get_database(interaction.guild_id))\
+            .set_database(database)\
             .push()
         Resource(faction_id=new_faction.id, category=ResourceCategory.WATER, amount=6)\
-            .set_database(self.bot.get_database(interaction.guild_id))\
+            .set_database(database)\
             .push()
         
-        self.bot.get_database(interaction.guild_id).connection.commit()
+        database.connection.commit()
 
         await interaction.response.send_message(f"성공적으로 세력을 창설했습니다!", ephemeral=True)
         
@@ -112,16 +119,18 @@ class NewTerritoryModal(ArislenaGeneralModal):
         territory_name = self.territory_name.value.strip()
         # 특수문자가 포함되어 있는지 확인
         func.check_special_character_and_raise(territory_name)
+        
+        database = self.bot.get_database(interaction.guild_id)
 
         # 세력 데이터베이스에 추가
-        faction = Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)
+        faction = Faction.from_database(database, user_id=interaction.user.id)
         # 새 영토 생성
         t = Territory(faction_id=faction.id, name=territory_name)
         t.explicit_post_init()
-        t.set_database(self.bot.get_database(interaction.guild_id))
+        t.set_database(database)
         t.push()
         # 생성된 영토 데이터 가져오기
-        t = Territory.from_database(self.bot.get_database(interaction.guild_id), "id = (SELECT MAX(id) FROM territory)")
+        t = Territory.from_database(database, "id = (SELECT MAX(id) FROM territory)")
         # 기본 건물 중 하나를 생성
         b_cat = BuildingCategory.get_ramdom_base_building_category()
         b = Building(
@@ -130,14 +139,14 @@ class NewTerritoryModal(ArislenaGeneralModal):
             category=b_cat,
             name=b_cat.local_name
         )
-        b.set_database(self.bot.get_database(interaction.guild_id))
+        b.set_database(database)
         b.push()
 
         await interaction.response.send_message(f"성공적으로 **{territory_name}** 영토를 생성했습니다!", ephemeral=True)
 
         await self.bot.announce_channel(f"**{interaction.user.display_name}**님께서 새로운 영토, {objective(territory_name, '**')} 얻었어요!", self.bot.get_server_manager(interaction.guild_id).guild_setting.announce_channel_id)
 
-        self.bot.get_database(interaction.guild_id).connection.commit()
+        database.connection.commit()
 
 class NewBuildingModal(ArislenaGeneralModal):
     
@@ -154,18 +163,21 @@ class NameCrew(ArislenaGeneralModal):
     
     new_crew_name = ArislenaTextInput("대원 이름")
     
-    def __init__(self, *, bot:BotBase = None, previous_crew_name:str = None):
+    def __init__(self, *, bot:BotBase, previous_crew_name:str):
         super().__init__(title="대원 이름 정하기")
         self.bot = bot
         self.previous_crew_name = previous_crew_name
     
     async def on_submit(self, interaction: discord.Interaction) -> None:
         
-        faction = Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)
-        crew = Crew.from_database(self.bot.get_database(interaction.guild_id), faction_id=faction.id, name=self.previous_crew_name)
+        database = self.bot.get_database(interaction.guild_id)
+        
+        faction = Faction.from_database(database, user_id=interaction.user.id)
+        crew = Crew.from_database(database, faction_id=faction.id, name=self.previous_crew_name)
+        before_crew_name = crew.name
         crew.name = self.new_crew_name.value
         crew.push()
         
-        await interaction.response.send_message(f"대원 이름을 {instrumental(self.new_crew_name.value, '**')} 변경했습니다.", ephemeral=True)
+        await interaction.response.send_message(f"대원 이름을 **{before_crew_name}**에서 {instrumental(self.new_crew_name.value, '**')} 변경했습니다.", ephemeral=True)
         
-        self.bot.get_database(interaction.guild_id).connection.commit()
+        database.connection.commit()

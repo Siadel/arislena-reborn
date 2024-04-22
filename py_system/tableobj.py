@@ -102,6 +102,12 @@ class Laborable(metaclass=ABCMeta):
     def labor_dice(self):
         return self._labor_dice
 
+class Inventory(metaclass=ABCMeta):
+    """
+    인벤토리처럼 활용되는 객체
+    """
+    # TODO
+
 class SingleComponentTable(TableObject, metaclass=ABCMeta):
     abstract = True
     
@@ -209,6 +215,25 @@ class Resource(TableObject, ResourceAbst):
     def get_display_string(self) -> str:
         return self.category.local_name
 
+class CrewExperience(TableObject):
+    abstract = False
+    # TODO
+
+class CrewPersonality(TableObject):
+    abstract = False
+    def __init__(
+        self,
+        id: int = 0,
+        crew_id: int = 0,
+        raw_0: str = "",
+        raw_1: str = "",
+        raw_2: str = ""
+    ):
+        TableObject.__init__(self, id)
+        self.crew_id = crew_id
+        self.raw_0 = raw_0
+        self.raw_1 = raw_1
+        self.raw_2 = raw_2
 
 class Crew(TableObject, Laborable):
     abstract = False

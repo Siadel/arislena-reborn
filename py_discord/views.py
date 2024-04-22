@@ -362,7 +362,7 @@ class CrewNameButton(CrewLookupButton, Uninterruptable, Announceable):
     
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)
-        await interaction.response.send_modal(modals.NameCrew(bot = self.bot, previous_crew_name = self.crew.name))
+        await interaction.response.send_modal(modals.NameCrew(self.bot, self.crew.name))
 
 class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable, Announceable):
     

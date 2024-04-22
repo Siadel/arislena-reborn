@@ -21,8 +21,8 @@ class FactionCommand(GroupCog, name="세력"):
         if not self.bot.get_database(interaction.guild_id).is_exist("user", f"discord_id = {interaction.user.id}"):
             raise warnings.NotRegistered(interaction.user.display_name)
 
-        # 이미 세력을 가지고 있는지 확인 (관리자는 예외)
-        if self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}") and not self.bot.check_admin(interaction.user):
+        # 이미 세력을 가지고 있는지 확인
+        if self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}"):
             raise warnings.AlreadyExist("창설한 세력")
         
         await interaction.response.send_modal(modals.FactionCreateModal(bot=self.bot))

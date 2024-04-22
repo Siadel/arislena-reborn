@@ -137,7 +137,7 @@ class NonahedronJudge(ArislenaEnum):
     TRAGIC = "처참함", "😭"
     AVERAGE = "무난함", "😐"
     SUCCESS = "성공", "✅"
-    GRATE_SUCCESS = "멋지게 성공!", "🎉"
+    GREAT_SUCCESS = "멋지게 성공!", "🎉"
 
 class CrewLaborDetail(DetailEnum):
     UNSET = 0, ("미정",)
@@ -168,7 +168,7 @@ class CrewLaborDetail(DetailEnum):
         "근심이 없음", 
         "작업 내용 숙지"
     )
-    GRATE_SUCCESS = NonahedronJudge.GRATE_SUCCESS, (
+    GREAT_SUCCESS = NonahedronJudge.GREAT_SUCCESS, (
         "무사고", 
         "특별한 보약을 먹음", 
         "특별 휴가를 다녀옴", 
@@ -180,6 +180,14 @@ class CrewLaborDetail(DetailEnum):
     def get_from_corresponding(cls, corresponding) -> "CrewLaborDetail":
         return super().get_from_corresponding(corresponding)
 
+class LaborSphere(ArislenaEnum):
+    UNSET = "미정", "❓"
+    IRRIGATION = "관개", "🚰"
+    HUNTING = "사냥", "🏹"
+    GATHERING = "채집", "👐"
+    AGRICULTURE = "농경", "🌾"
+    FIGHTING = "전투", "⚔️"
+    CONSTRUCTION = "건설", "🏗️"
 
 # # 부대 상태
 # class Troop(IntEnum):

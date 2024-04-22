@@ -230,6 +230,20 @@ class TableObject(metaclass=ABCMeta):
         else:
             data = self.get_dict_without_id()
             self._database.insert(self.table_name, data.keys(), data.values())
+            
+    def update(self, **kwargs):
+        """
+        Updates the data to the table which has the same name as the object's class name.
+
+        Args:
+            kwargs (dict[str, Any]): The key-value pairs of the SQL statements.
+
+        Raises:
+            Exception: If the database is not set.
+        """
+        self._check_database()
+        self.__setattr__(**kwargs)
+        self._database.update_with_id(self.table_name, self.id, **kwargs)
     
     def delete(self):
         """

@@ -27,6 +27,7 @@ current_dir = os.path.dirname(__file__).replace("\\", "/") + "/"
 #else: raise ValueError("작업 환경을 다시 확인해주세요.")
 
 JSON_DIR = Path(CWD, "json")
+YAML_DIR = Path(CWD, "yaml")
 DATA_DIR = Path(CWD, "data")
 BACKUP_DIR = Path(CWD, "backup")
 LOCALIZATION = Path(CWD, "localization")
