@@ -1,19 +1,20 @@
 """
 Sql과 연동되는 데이터 클래스들
 """
-import random
 import datetime
 from sqlite3 import Row
 from math import sqrt
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from typing import Generator
 
 from py_base.utility import sql_value, DATE_EXPR
 from py_base.ari_logger import ari_logger
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, CrewLaborDetail
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, WorkerDetail, WorkCategory, WorkerCategory
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
 from py_base.arislena_dice import Nonahedron
-from py_system.abstract import TableObject, ResourceAbst
+from py_base.yamlobj import Detail
+from py_system.abstract import TableObject, ResourceAbst, Workable
 
 def form_database_from_tableobjects(main_db:DatabaseManager):
     """
@@ -67,40 +68,6 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
     main_db.connection.commit()
     
     ari_logger.info("Database initialized")
-
-class Laborable(metaclass=ABCMeta):
-    """
-    노동력을 가지는 객체
-    """
-    def __init__(
-        self,
-        experience: int,
-        labor: int,
-        availability: Availability
-    ):
-        self.experience = experience
-        self.labor = labor
-        self.availability = availability
-        
-        self._labor_dice: Nonahedron = None
-    
-    @property
-    def labor_time(self) -> int:
-        """
-        노동력 주사위를 던지는 횟수를 반환함
-        """
-        return 1
-    
-    @abstractmethod
-    def set_labor_dice(self):
-        """
-        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
-        """
-        self._labor_dice = Nonahedron()
-    
-    @property
-    def labor_dice(self):
-        return self._labor_dice
 
 class Inventory(metaclass=ABCMeta):
     """
@@ -215,73 +182,25 @@ class Resource(TableObject, ResourceAbst):
     def get_display_string(self) -> str:
         return self.category.local_name
 
-class CrewExperience(TableObject):
-    abstract = False
-    # TODO
-
-class CrewPersonality(TableObject):
+class WorkerExperience(TableObject):
     abstract = False
     def __init__(
         self,
         id: int = 0,
-        crew_id: int = 0,
-        raw_0: str = "",
-        raw_1: str = "",
-        raw_2: str = ""
+        worker_id: int = 0,
+        category: WorkCategory = WorkCategory.UNSET,
+        experience: int = 0
     ):
         TableObject.__init__(self, id)
-        self.crew_id = crew_id
-        self.raw_0 = raw_0
-        self.raw_1 = raw_1
-        self.raw_2 = raw_2
+        self.worker_id = worker_id
+        self.category = category
+        self.experience = experience
 
-class Crew(TableObject, Laborable):
-    abstract = False
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id: int = 0,
-        name: str = "",
-        experience: int = 0,
-        labor: int = 0,
-        labor_detail_index: int = 0,
-        availability: Availability = Availability.UNAVAILABLE,
-    ):
-        TableObject.__init__(self, id)
-        Laborable.__init__(
-            self,
-            experience,
-            labor,
-            availability
-        )
-        self.faction_id = faction_id
-        self.name = name
-        self.labor_detail_index = labor_detail_index
-    
-    @staticmethod
-    def new(faction_id: int):
-        """
-        faction_id에 해당하는 세력에 새로운 대원을 생성함
-        
-        대원의 이름은 "대원 {random_number}"로 설정됨
-        """
-        random_number = str(random.random()).split(".")[1]
-        return Crew(faction_id=faction_id, name=f"대원 {random_number}")
+    def __int__(self):
+        return self.experience
     
     @property
-    def food_consumption(self) -> int:
-        return 1
-    
-    @property
-    def water_consumption(self) -> int:
-        return 1
-    
-    @property
-    def labor_time(self) -> int:
-        # return int((-1 + sqrt(1 + 2/3 * self.experience)) // 2 + 1)
-        return 1
-    
-    def set_labor_dice(self):
+    def level(self) -> int:
         """
         experience와 dice mod의 상관관계
         experience가 12*(목표 mod 수치)만큼 오를 때마다 dice mod가 1씩 증가함
@@ -296,67 +215,87 @@ class Crew(TableObject, Laborable):
         mod = (-1 + sqrt(1 + 2/3 * experience)) // 2
         ```
         """
-        self._labor_dice = Nonahedron(
-            dice_mod=int((-1 + sqrt(1 + 2/3 * self.experience)) // 2)
-        )
+        return (-1 + sqrt(1 + 2/3 * self.experience)) // 2
+        
+    @classmethod
+    def new(cls, worker_id: int, category: WorkCategory):
+        return cls(worker_id=worker_id, experience_category=category)
     
-    def set_labor(self):
-        """
-        노동력 설정
-        """
-        if self._labor_dice is None: self.set_labor_dice()
-        self.labor = self._labor_dice.roll()
-        self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get_random_detail_index()
+    def get_labor_dice(self) -> Nonahedron:
+        return Nonahedron(self.level)
     
     def get_display_string(self) -> str:
-        return self.name
+        return self.category.local_name
     
-    def is_available(self) -> bool:
-        return self.availability.is_available()
+    def to_discord_text(self) -> str:
+        return f"- {self.category.express()} : {self.experience}"
 
-
-class Livestock(TableObject, Laborable):
+class WorkerDescription(TableObject):
     abstract = False
     def __init__(
         self,
         id: int = 0,
+        worker_id: int = 0,
+        worker_labor_detail: str = "",
+        ps_0: str = "",
+        ps_1: str = "",
+        ps_2: str = ""
+    ):
+        TableObject.__init__(self, id)
+        self.worker_id = worker_id
+        self.worker_labor_detail = worker_labor_detail
+        self.ps_0 = ps_0
+        self.ps_1 = ps_1
+        self.ps_2 = ps_2
+    
+    @classmethod
+    def new(cls, worker_id: int):
+        desc = Detail().get_random_worker_descriptions(3)
+        return cls(worker_id=worker_id, ps_0=desc[0], ps_1=desc[1], ps_2=desc[2])
+    
+    def set_worker_labor_detail(self, labor_dice_judge_value: int):
+        detail = WorkerDetail(labor_dice_judge_value)
+        self.labor_detail = detail.get_random_detail()
+        return self
+    
+    def get_display_string(self) -> str:
+        return self.worker_id
+    
+    def get_list(self) -> list[str]:
+        return [self.ps_0, self.ps_1, self.ps_2]
+
+class Worker(TableObject):
+    abstract = False
+    correspond_category: WorkerCategory = None
+    
+    def _check_category(self):
+        if self.__class__.correspond_category is not None and self.category != self.__class__.correspond_category:
+            raise ValueError("카테고리가 일치하지 않습니다.")
+    
+    def __init__(
+        self,
+        id: int = 0,
         faction_id: int = 0,
+        category: WorkerCategory = WorkerCategory.UNSET,
         name: str = "",
-        experience: int = 0,
         labor: int = 0,
         availability: Availability = Availability.UNAVAILABLE
     ):
         TableObject.__init__(self, id)
-        Laborable.__init__(
-            self,
-            experience,
-            labor,
-            availability
-        )
         self.faction_id = faction_id
+        self.category = category
         self.name = name
+        self.labor = labor
+        self.availability = availability
+        
+        self._check_category()
+        
+    @classmethod
+    def get_table_name(cls) -> str:
+        return Worker.__name__
     
     def get_display_string(self) -> str:
-        if self.name:
-            return self.name
-        return f"가축 {self.id}"
-    
-    @property
-    def feed_consumption(self) -> int:
-        return 1
-    
-    @property
-    def labor_time(self) -> int:
-        return 2
-    
-    def set_labor_dice(self):
-        """
-        기본적으로 주사위 결과에 2를 더함 (최소 3)
-        
-        경험 수치가 400 오를 때마다 주사위 결과에 추가로 1씩 더해짐
-        """
-        self._labor_dice = Nonahedron(dice_mod=self.experience // 400)
-
+        return self.name
 
 class FactionHierarchyNode(TableObject):
     abstract = False
@@ -425,37 +364,34 @@ class Deployment(TableObject):
     def __init__(
         self,
         id: int = 0,
-        crew_id: int = -1,
-        livestock_id: int = -1,
+        worker_id: int = -1,
         territory_id: int = -1,
         building_id: int = -1
     ):
         super().__init__(id)
-        self.crew_id = crew_id
-        self.livestock_id = livestock_id
+        self.worker_id = worker_id
         self.territory_id = territory_id
         self.building_id = building_id
     
     def get_display_string(self) -> str:
         return f"배치 현황 {self.id}"
     
-    def get_crew(self) -> Crew:
+    def get_worker(self) -> Worker:
         """
         배치된 인원을 가져옴
         """
-        return Crew.from_data(self._database.fetch(Crew.__name__, id=self.crew_id))
-    
-    def get_livestock(self) -> Livestock:
-        """
-        배치된 가축을 가져옴
-        """
-        return Livestock.from_data(self._database.fetch(Livestock.__name__, id=self.livestock_id))
+        return Worker.from_data(self._database.fetch(Worker.get_table_name(), id=self.worker_id))
 
     def get_building(self) -> "Building":
         """
         배치된 건물을 가져옴
         """
-        return Building.from_data(self._database.fetch(Building.__name__, id=self.building_id))
+        return Building.from_data(self._database.fetch(Building.get_table_name(), id=self.building_id))
+    
+    @classmethod
+    def get_unique_building_ids(cls, database: DatabaseManager) -> Generator[int, None, None]:
+        for row in database.cursor.execute(f"SELECT DISTINCT building_id FROM {cls.get_table_name()}").fetchall():
+            yield row[0]
 
 
 class Building(TableObject):
@@ -485,16 +421,16 @@ class Building(TableObject):
     def get_display_string(self) -> str:
         return self.name
     
-    def is_deployable(self, deployed_crew_ids: list[int] = None) -> bool:
+    def is_deployable(self, deployed_worker_ids: list[int] = None) -> bool:
         if not self.is_built(): return True
         
-        if deployed_crew_ids is None:
-            deployed_crew_ids = self.get_deployed_crew_ids()
+        if deployed_worker_ids is None:
+            deployed_worker_ids = self.get_deployed_worker_ids()
         
-        if len(deployed_crew_ids) >= self.deploy_limit: return False
+        if len(deployed_worker_ids) >= self.deploy_limit: return False
         return True
     
-    def deploy(self, crew: Crew):
+    def deploy(self, worker: Worker):
         """
         건물에 인원 배치
         
@@ -504,9 +440,9 @@ class Building(TableObject):
         """
         self._check_database()
         self._database.connection.execute(
-            f"DELETE FROM Deployment WHERE crew_id = {crew.id}"
+            f"DELETE FROM Deployment WHERE worker_id = {worker.id}"
         )
-        deployment = Deployment(crew_id=crew.id, territory_id=self.territory_id, building_id=self.id)
+        deployment = Deployment(worker_id=worker.id, territory_id=self.territory_id, building_id=self.id)
         deployment.set_database(self._database)
         deployment.push()
         
@@ -521,33 +457,24 @@ class Building(TableObject):
         """
         return self.remaining_dice_cost == 0
     
-    def get_deployed_crew_ids(self) -> list[int]:
+    def get_deployed_worker_ids(self) -> list[int]:
         """
         건물에 배치된 인원의 ID를 가져옴
         
         ! database가 필요함
         """
         self._check_database()
-        ids:list[Row] = self._database.cursor.execute("SELECT crew_id FROM deployment WHERE building_id = ?", (self.id,)).fetchall()
+        ids:list[Row] = self._database.cursor.execute("SELECT worker_id FROM deployment WHERE building_id = ?", (self.id,)).fetchall()
         return [id[0] for id in ids]
     
-    def get_deployed_crews(self, deployment_list: list[Deployment]) -> list[Crew]:
+    def get_deployed_workers(self, deployment_list: list[Deployment]) -> list[Worker]:
         """
         건물에 배치된 인원을 가져옴
         
         ! database가 필요함
         """
         self._check_database()
-        return [Crew.from_data(self._database.fetch("crew", id=deployment.crew_id)) for deployment in deployment_list if deployment.crew_id is not None]
-    
-    def get_deployed_livestocks(self, deployment_list: list[Deployment]) -> list[Livestock]:
-        """
-        건물에 배치된 가축을 가져옴
-        
-        ! database가 필요함
-        """
-        self._check_database()
-        return [Livestock.from_data(self._database.fetch("livestock", id=deployment.livestock_id)) for deployment in deployment_list if deployment.livestock_id is not None]
+        return [deployment.get_worker() for deployment in deployment_list if deployment.worker_id is not None]
 
 
 class CommandCounter(TableObject):
@@ -632,14 +559,14 @@ class Faction(TableObject):
         if not r: return Resource(faction_id=self.id, category=category)
         return Resource.from_data(r)
     
-    def get_crew(self, name:str) -> Crew:
+    def get_worker(self, name:str) -> Worker:
         """
         해당 세력의 인구를 가져옴
         """
-        cr = self._database.fetch("crew", faction_id=self.id, name=name)
+        cr = self._database.fetch("worker", faction_id=self.id, name=name)
 
-        if not cr: return Crew(faction_id=self.id, name=name)
-        return Crew.from_data(cr)
+        if not cr: return Worker(faction_id=self.id, name=name)
+        return Worker.from_data(cr)
     
     def get_command_counter(self, category:CommandCountCategory) -> CommandCounter:
         """

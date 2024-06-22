@@ -42,8 +42,7 @@ class FactionCommand(GroupCog, name="세력"):
             "세력 정보 열람", 
             view=views.TableObjectView(
                 faction_list,
-                sample_button=views.FactionLookupButton(interaction)\
-                    .set_database(self.bot.get_database(interaction.guild_id))
+                sample_button=views.FactionLookupButton(self.bot, interaction)
             )
         )
     
@@ -69,9 +68,7 @@ class FactionCommand(GroupCog, name="세력"):
             "세력 해산", 
             view=views.TableObjectView(
                 faction_list,
-                sample_button=views.FactionDeleteButton(interaction)\
-                    .set_database(self.bot.get_database(interaction.guild_id))\
-                    .set_bot(self.bot)
+                sample_button=views.FactionDeleteButton(self.bot, interaction)
             ),
             ephemeral=True
         )

@@ -23,9 +23,9 @@ def exit_bot():
 class BotBase(commands.Bot):
 
     def __init__(
-        self,
-        bot_setting: BotSetting
+        self
     ):
+        bot_setting = BotSetting.from_json_file()
 
         super().__init__(
             command_prefix="/",
@@ -41,7 +41,7 @@ class BotBase(commands.Bot):
         self._token = self._get_token_or_exit(os.environ.get("ARISLENA_BOT_TOKEN"))
         self._log_handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
         
-        self._guild_server_manager: dict[str, "ServerManager"] = {}
+        self._guild_server_manager: dict[str, ServerManager] = {}
     
     def get_database(self, guild_id: int | str) -> DatabaseManager:
         """
@@ -52,7 +52,7 @@ class BotBase(commands.Bot):
         """
         return self._guild_server_manager[str(guild_id)].database
     
-    def get_server_manager(self, guild_id: int | str) -> "ServerManager":
+    def get_server_manager(self, guild_id: int | str) -> ServerManager:
         """
         usage example:
         ```
@@ -95,18 +95,18 @@ class BotBase(commands.Bot):
         
         else: return environ_get_result
     
-    async def announce_channel(self, message:str, channel_id:int):
+    async def announce_channel(self, message:str, guild_id:int):
         """
         지정된 채널에 메세지를 보냄.
         """
-        if (channel := self.get_channel(channel_id)) is None: raise ValueError("채널을 찾을 수 없습니다.")
+        if (channel := self.get_channel(guild_id)) is None: ari_logger.error(f"길드 id {guild_id}의 채널을 찾을 수 없습니다.")
         await channel.send(message)
     
-    async def announce_channel_with_embed(self, embed:discord.Embed, channel_id:int):
+    async def announce_channel_with_embed(self, embed:discord.Embed, guild_id:int):
         """
         지정된 채널에 embed를 보냄.
         """
-        if (channel := self.get_channel(channel_id)) is None: raise ValueError("채널을 찾을 수 없습니다.")
+        if (channel := self.get_channel(guild_id)) is None: ari_logger.error(f"길드 id {guild_id}의 채널을 찾을 수 없습니다.")
         await channel.send(embed=embed)
 
     def run(self):

@@ -7,7 +7,9 @@ import random
 from py_base.ari_enum import BuildingCategory, CommandCountCategory
 from py_discord.bot_base import BotBase
 from py_discord import views, warnings, modals
-from py_system.tableobj import Faction, CommandCounter, Crew
+from py_discord.func import make_and_push_new_crew_package
+from py_system.systemobj import Crew
+from py_system.tableobj import Faction, CommandCounter, Worker
 
 class CrewCommand(GroupCog, name="대원"):
     
@@ -25,15 +27,17 @@ class CrewCommand(GroupCog, name="대원"):
     async def recruit(self, interaction: discord.Interaction, try_count:int = 1):
         # 다음 턴이 시작할 때 일정 수(0~2)의 대원을 추가한다. 매 턴 1회 가능하다. 팩션이 소유 중인 모병소에 따라 턴 당 최대 횟수가 증가한다.
         
-        if (faction := Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)) is None:
+        database = self.bot.get_database(interaction.guild_id)
+        
+        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
             raise warnings.NoFaction()
         
         recruit_counter:CommandCounter = faction.get_command_counter(CommandCountCategory.RECRUIT)
-        recruit_counter.set_database(self.bot.get_database(interaction.guild_id))
-        territory_ids:list[Row] = self.bot.get_database(interaction.guild_id).connection.execute(f"SELECT id FROM territory WHERE faction_id = {faction.id}").fetchall()
+        recruit_counter.set_database(database)
+        territory_ids:list[Row] = database.connection.execute(f"SELECT id FROM territory WHERE faction_id = {faction.id}").fetchall()
         recruit_limit = 1
         for territory_id in territory_ids:
-            recruit_limit += self.bot.get_database(interaction.guild_id).fetch_many(
+            recruit_limit += database.fetch_many(
                 "building", category=BuildingCategory.RECRUITING_CAMP.value, territory_id=territory_id["id"]
             ).__len__()
         
@@ -47,14 +51,12 @@ class CrewCommand(GroupCog, name="대원"):
             members_recruited += random.randint(0, 2)
         
         for _ in range(members_recruited):
-            new_crew = Crew.new(faction.id)
-            new_crew.set_database(self.bot.get_database(interaction.guild_id))
-            new_crew.push()
+            make_and_push_new_crew_package(database, Crew.new(faction.id))
         
         await interaction.response.send_message(f"모집 횟수를 {try_count}회 사용해 새 인원을 {members_recruited}명 모집했습니다.")
         
         recruit_counter.push()
-        self.bot.get_database(interaction.guild_id).connection.commit()
+        database.connection.commit()
     
     @app_commands.command(
         name = "열람",
@@ -62,17 +64,18 @@ class CrewCommand(GroupCog, name="대원"):
     )
     async def lookup(self, interaction: discord.Interaction):
         
-        if (faction := Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)) is None:
+        database = self.bot.get_database(interaction.guild_id)
+        
+        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
             raise warnings.NoFaction()
         
-        crew_list = [Crew.from_data(data) for data in self.bot.get_database(interaction.guild_id).fetch_many("crew", faction_id=faction.id)]
+        crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
         await interaction.response.send_message(
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                sample_button=views.CrewLookupButton()\
-                    .set_database(self.bot.get_database(interaction.guild_id))
+                sample_button=views.CrewLookupButton(self.bot, interaction)
             )
         )
     
@@ -81,20 +84,18 @@ class CrewCommand(GroupCog, name="대원"):
         description = "세력이 가지고 있는 대원의 이름을 정합니다."
     )
     async def name(self, interaction: discord.Interaction):
+        database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)) is None:
+        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
             raise warnings.NoFaction()
 
-        crew_list = [Crew.from_data(data) for data in self.bot.get_database(interaction.guild_id).fetch_many("crew", faction_id=faction.id)]
+        crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
         await interaction.response.send_message(
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                sample_button=views.CrewNameButton()\
-                    .set_database(self.bot.get_database(interaction.guild_id))\
-                    .set_bot(self.bot)\
-                    .set_previous_interaction(interaction)
+                sample_button=views.CrewNameButton(self.bot, interaction)
             )
         )
     
@@ -103,20 +104,38 @@ class CrewCommand(GroupCog, name="대원"):
         description = "세력이 가지고 있는 대원을 건물에 배치합니다. 이미 배치되어 있는 경우에도 사용할 수 있습니다."
     )
     async def deploy(self, interaction: discord.Interaction):
+        database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)) is None:
+        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
             raise warnings.NoFaction()
         
-        crew_list = [Crew.from_data(data) for data in self.bot.get_database(interaction.guild_id).fetch_many("crew", faction_id=faction.id)]
+        crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
         await interaction.response.send_message(
             "대원 목록",
             view=views.TableObjectView(
                 crew_list, 
-                sample_button=views.SelectCrewToDeployButton(faction)\
-                    .set_database(self.bot.get_database(interaction.guild_id))\
-                    .set_bot(self.bot)\
-                    .set_previous_interaction(interaction)
+                sample_button=views.SelectCrewToDeployButton(self.bot, interaction, faction)
+            )
+        )
+        
+    @app_commands.command(
+        name = "해고",
+        description = "[관리자 전용] 세력이 가지고 있는 대원을 없앱니다."
+    )
+    async def dismiss(self, interaction: discord.Interaction):
+        database = self.bot.get_database(interaction.guild_id)
+        
+        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
+            raise warnings.NoFaction()
+        
+        crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
+        
+        await interaction.response.send_message(
+            "대원 목록",
+            view=views.TableObjectView(
+                crew_list, 
+                sample_button=views.CrewDismissButton(self.bot, interaction)
             )
         )
 

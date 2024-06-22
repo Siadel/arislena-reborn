@@ -3,7 +3,8 @@ from discord.ui import Modal, TextInput
 
 from py_base.koreanstring import objective, instrumental
 from py_base.ari_enum import BuildingCategory, ResourceCategory
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building, Crew, Resource
+from py_system.systemobj import Crew, Livestock
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building, Resource
 from py_discord import func
 from py_discord.bot_base import BotBase
 
@@ -85,12 +86,11 @@ class FactionCreateModal(ArislenaGeneralModal):
         new_fhn.push(new_faction, optimal_faction)
         
         # 경험치가 12인 대원 2명 추가
+        # TODO 리팩토링으로 인해 이 부분을 다시 작성해야 함
         for _ in range(2):
-            new_crew = Crew.new(new_faction.id)\
-                .set_database(database)
-            new_crew.faction_id = new_faction.id
-            new_crew.experience = 12
-            new_crew.push()
+            func.make_and_push_new_crew_package(
+                database, Crew.new(new_faction.id)
+            )
         
         # 자원 추가: 식량 6, 식수 6
         Resource(faction_id=new_faction.id, category=ResourceCategory.FOOD, amount=6)\
@@ -159,11 +159,11 @@ class NewBuildingModal(ArislenaGeneralModal):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         raise NotImplementedError()
 
-class NameCrew(ArislenaGeneralModal):
+class NameCrewModal(ArislenaGeneralModal):
     
     new_crew_name = ArislenaTextInput("대원 이름")
     
-    def __init__(self, *, bot:BotBase, previous_crew_name:str):
+    def __init__(self, bot:BotBase, previous_crew_name:str):
         super().__init__(title="대원 이름 정하기")
         self.bot = bot
         self.previous_crew_name = previous_crew_name
@@ -178,6 +178,28 @@ class NameCrew(ArislenaGeneralModal):
         crew.name = self.new_crew_name.value
         crew.push()
         
-        await interaction.response.send_message(f"대원 이름을 **{before_crew_name}**에서 {instrumental(self.new_crew_name.value, '**')} 변경했습니다.", ephemeral=True)
+        await interaction.response.send_message(f"대원 이름을 **{before_crew_name}**에서 {instrumental(self.new_crew_name.value, '**')} 변경했습니다.\n버튼 내용은 변경되지 않으므로, 확인을 위해서는 새로 정보를 열람하셔야 합니다.", ephemeral=True)
         
         database.connection.commit()
+
+class TrainLivestockModal(ArislenaGeneralModal):
+    
+    new_livestock_name = ArislenaTextInput("가축 이름")
+    
+    def __init__(self, *, bot: BotBase):
+        super().__init__(title="가축 이름 정하기")
+        self.bot = bot
+        
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        database = self.bot.get_database(interaction.guild_id)
+        
+        faction = Faction.from_database(database, user_id=interaction.user.id)
+        livestock = Livestock(
+            faction_id=faction.id,
+            name=self.new_livestock_name.value
+        )
+        livestock.set_database(database)
+        livestock.push()
+        
+        await interaction.response.send_message(f"가축 이름을 {instrumental(self.new_livestock_name.value, '**')} 정하고, 노동에 활용할 수 있도록 새로 훈련했습니다.", ephemeral=True)
+        

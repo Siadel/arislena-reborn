@@ -1,5 +1,5 @@
 # deprecated python files
-deprecated/
+__deprecated/
 
 # any file with sensitive data
 json/bot_setting.json

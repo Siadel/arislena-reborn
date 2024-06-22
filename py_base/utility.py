@@ -1,10 +1,8 @@
 """
 파일 경로, 유틸리티 함수 모음 모듈
 """
-import datetime
-import os
+import datetime, re
 from pathlib import Path
-from typing import Any
 from enum import Enum
 
 UTF8 = "utf-8"
@@ -18,19 +16,16 @@ DATE_EXPR = "%Y-%m-%d"
 FULL_DATE_EXPR = "%Y-%m-%d %H:%M:%S"
 FULL_DATE_EXPR_2 = "%Y-%m-%d_%H-%M-%S"
 
-# CWD = os.getcwd().replace("\\", "/") + "/"
-# refactoring
-CWD = Path(os.getcwd())
-current_dir = os.path.dirname(__file__).replace("\\", "/") + "/"
-#if "ghftr" in os.getcwd(): current_path = LOCAL_PATH
-#elif "workspace" in os.getcwd(): current_path = GROOM_PATH
-#else: raise ValueError("작업 환경을 다시 확인해주세요.")
+CWD = Path.cwd()
 
 JSON_DIR = Path(CWD, "json")
 YAML_DIR = Path(CWD, "yaml")
 DATA_DIR = Path(CWD, "data")
 BACKUP_DIR = Path(CWD, "backup")
 LOCALIZATION = Path(CWD, "localization")
+
+# 한글, 영문, 숫자, 공백만 허용하는 정규식
+name_regex = re.compile(r"[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]")
 
 def get_date(date_expression="%Y-%m-%d"):
     timezone = datetime.timezone(datetime.timedelta(hours=9))

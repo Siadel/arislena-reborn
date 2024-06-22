@@ -139,7 +139,7 @@ class NonahedronJudge(ArislenaEnum):
     SUCCESS = "성공", "✅"
     GREAT_SUCCESS = "멋지게 성공!", "🎉"
 
-class CrewLaborDetail(DetailEnum):
+class WorkerDetail(DetailEnum):
     UNSET = 0, ("미정",)
     TRAGIC = NonahedronJudge.TRAGIC, (
         "작업 중 중상", 
@@ -177,10 +177,15 @@ class CrewLaborDetail(DetailEnum):
     )
     
     @classmethod
-    def get_from_corresponding(cls, corresponding) -> "CrewLaborDetail":
+    def get_from_corresponding(cls, corresponding) -> "WorkerDetail":
         return super().get_from_corresponding(corresponding)
 
-class LaborSphere(ArislenaEnum):
+class WorkerCategory(ArislenaEnum):
+    UNSET = "미정", "❓"
+    CREW = "대원", "👥",
+    LIVESTOCK = "가축", "🐄"
+
+class WorkCategory(ArislenaEnum):
     UNSET = "미정", "❓"
     IRRIGATION = "관개", "🚰"
     HUNTING = "사냥", "🏹"
@@ -188,6 +193,14 @@ class LaborSphere(ArislenaEnum):
     AGRICULTURE = "농경", "🌾"
     FIGHTING = "전투", "⚔️"
     CONSTRUCTION = "건설", "🏗️"
+    MANUFACTURING = "제조", "🏭"
+    
+    @classmethod
+    def to_list(cls) -> list["WorkCategory"]:
+        """
+        UNSET을 제외한 모든 ExperienceCategory를 반환함
+        """
+        return [component for component in cls if component != cls.UNSET]
 
 # # 부대 상태
 # class Troop(IntEnum):

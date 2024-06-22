@@ -1,18 +1,15 @@
 import discord
 from discord.ui import View, Button
-from discord import ui, Colour
-from typing import Type, TypeVar, Any
-from abc import ABCMeta, abstractmethod
+from discord import ui
+from typing import Any
 
 from py_base.koreanstring import nominative
-from py_base.ari_enum import BuildingCategory, TerritorySafety, CrewLaborDetail
-from py_base.dbmanager import DatabaseManager
-from py_base.arislena_dice import Nonahedron
-from py_system.tableobj import TableObject, User, Faction, Territory, Building, Crew, Deployment
-from py_system.systemobj import SystemBuilding
-from py_discord import warnings, modals
-from py_discord.embeds import add_basic_table_info
+from py_base.ari_enum import BuildingCategory, TerritorySafety
+from py_system.tableobj import TableObject, User, Faction, Territory, Building
+from py_system.systemobj import Crew, SystemBuilding
+from py_discord import warnings, modals, embeds
 from py_discord.bot_base import BotBase
+from py_discord.abstract import TableObjectButton
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -41,33 +38,7 @@ from py_discord.bot_base import BotBase
 #     async def callback(self, interaction:discord.Interaction):
 #         await interaction.response.send_message(f"{self.key} : **{self.value}**", ephemeral = True)
 
-# view 전용 추상 클래스
-class BuilderPattern(metaclass=ABCMeta):
-    
-    def __init__(self):
-        self._builded = False
-    
-    def build(self):
-        self._builded = True
-        return self
 
-class Uninterruptable(metaclass=ABCMeta):
-    
-    def set_previous_interaction(self, prev_interaction:discord.Interaction):
-        self.prev_interaction = prev_interaction
-        return self
-    
-    def check_interruption(self, interaction:discord.Interaction):
-        """
-        view의 버튼이 다른 유저에 의해 눌렸을 때 발생하는 오류를 방지합니다.
-        """
-        if interaction.user.id != self.prev_interaction.user.id: raise warnings.ImpossibleToInterrupt()
-
-class Announceable(metaclass=ABCMeta):
-    
-    def set_bot(self, bot:BotBase):
-        self.bot = bot
-        return self
 
 # 범용 데이터 없음 표시 버튼
 class NoDataButton(Button):
@@ -91,103 +62,24 @@ class CancelButton(Button):
 # 인자로 table 이름을 받아서 해당 테이블의 name column과 ID column을 출력
 # 출력 양식은 "이름 (ID : %d)" 형태
 
-# TableObjectButton을 상속받은 버튼에 대한 type hint
-TableObjectButtonT = TypeVar("TableObjectButtonT", bound="TableObjectButton")
-TableObjectT = TypeVar("TableObjectT", bound=TableObject)
-
-class TableObjectButton(Button, BuilderPattern, metaclass=ABCMeta):
-    
-    corr_obj_type:Type[TableObject] = TableObject
-    
-    def __init__(self):
-        """
-        사용법:
-        ```python3
-        btn = TableObjectButton(...).set_table_object(table_object)
-        ```
-        """        
-        Button.__init__(self, style = discord.ButtonStyle.primary)
-        BuilderPattern.__init__(self)
-        
-        self._table_object: TableObject = None
-        self._database: DatabaseManager = None
-        self.label_complementary: str = None
-        
-    @abstractmethod
-    def clone(self: TableObjectButtonT) -> TableObjectButtonT:
-        """
-        build하기 이전, 버튼의 속성을 복사한 새로운 버튼 객체를 반환
-        """
-        return TableObjectButton()
-    
-    def _get_basic_embed(self):
-        return add_basic_table_info(
-            discord.Embed(title = f"{self.label} 정보", color = Colour.green()), 
-            self._table_object
-        )
-    
-    def check_type(self, object: TableObjectT | Any):
-        if type(object) != self.__class__.corr_obj_type:
-            raise TypeError(f"{object.__class__} 클래스는 {self.__class__.corr_obj_type} 클래스의 객체와 호환되지 않습니다.")
-        
-    def set_database(self, database: DatabaseManager):
-        self._database = database
-        return self
-        
-    def set_label_complementary(self, table_object:TableObject):
-        pass
-        
-    def set_table_object(self, table_object:TableObject):
-        self.check_type(table_object)
-        self.set_label_complementary(table_object)
-        
-        self._table_object = table_object
-        return self
-    
-    def build(self):
-        BuilderPattern.build(self)
-        label_txt = self._table_object.get_display_string()
-
-        if self.label_complementary: label_txt += f" ({self.label_complementary})"
-        # <메인으로 출력할 데이터> (<서브로 보여줄 데이터 컬럼 한국어명> : <서브로 출력할 데이터>) 형태
-        self.label = label_txt
-        return self
-    
-    def disable_or_not(self):
-        """
-        이 버튼을 view에 추가하기 전에 버튼을 비활성화할지 여부를 결정합니다.
-        
-        이 버튼에 해당하는 객체에 대해 버튼이 정의한 행동이 불가능한 경우에 버튼을 비활성화합니다.
-        """
-        pass
-    
-    async def callback(self, interaction:discord.Interaction):
-        await interaction.response.send_message(
-            embed = self._get_basic_embed(),
-            ephemeral = False # 일단은 False로
-        )
-
-
 
 class UserLookupButton(TableObjectButton):
     
     corr_obj_type = User
 
-    def __init__(self, prev_interaction:discord.Interaction):
-        super().__init__()
-        self.prev_interaction = prev_interaction
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        super().__init__(bot, interaction_for_this)
         self.user: User = None
         
     def clone(self):
-        return UserLookupButton(self.prev_interaction)\
-            .set_database(self._database)
+        return UserLookupButton(self._bot, self._interaction_for_this)
         
-    def check_type(self, user: User | Any):
-        super().check_type(user)
+    def _check_type(self, user: User | Any):
+        super()._check_type(user)
         
-    def set_label_complementary(self, user: User):
-        member = discord.utils.get(self.prev_interaction.guild.members, id = user.discord_id)
-        self.label_complementary = f"{member.nick or member.name}"
+    def _set_label_complementary(self, user: User):
+        member = discord.utils.get(self._interaction_for_this.guild.members, id = user.discord_id)
+        self.label_complementary = f"{member.display_name}"
     
     def set_table_object(self, user: User):
         self.user = user
@@ -197,20 +89,18 @@ class FactionLookupButton(TableObjectButton):
     
     corr_obj_type = Faction
 
-    def __init__(self, prev_interaction:discord.Interaction):
-        super().__init__()
-        self.prev_interaction = prev_interaction
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        super().__init__(bot, interaction_for_this)
         self.faction: Faction = None
         
     def clone(self):
-        return FactionLookupButton(self.prev_interaction)\
-            .set_database(self._database)
+        return FactionLookupButton(self._bot, self._interaction_for_this)
         
-    def check_type(self, faction: Faction | Any):
-        super().check_type(faction)
+    def _check_type(self, faction: Faction | Any):
+        super()._check_type(faction)
     
-    def set_label_complementary(self, faction: Faction):
-        user = discord.utils.get(self.prev_interaction.guild.members, id = faction.user_id)
+    def _set_label_complementary(self, faction: Faction):
+        user = discord.utils.get(self._interaction_for_this.guild.members, id = faction.user_id)
         self.label_complementary = f"소유자 : {user.display_name}"
         
     def set_table_object(self, faction: Faction):
@@ -221,23 +111,22 @@ class TerritoryLookupButton(TableObjectButton):
     
     corr_obj_type = Territory
 
-    def __init__(self, faction:Faction):
-        super().__init__()
-        self.faction = faction
-        self.territory: Territory = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction:Faction):
+        super().__init__(bot, interaction_for_this)
+        self._faction = faction
+        self._territory: Territory = None
         
     def clone(self):
-        return TerritoryLookupButton(self.faction)\
-            .set_database(self._database)
+        return TerritoryLookupButton(self._bot, self._interaction_for_this, self._faction)
         
-    def check_type(self, territory: Territory | Any):
-        super().check_type(territory)
+    def _check_type(self, territory: Territory | Any):
+        super()._check_type(territory)
     
-    def set_label_complementary(self, _: Territory):
-        self.label_complementary = f"소유 세력 : {self.faction.name}"
+    def _set_label_complementary(self, _: Territory):
+        self.label_complementary = f"소유 세력 : {self._faction.name}"
     
     def set_table_object(self, territory: Territory):
-        self.territory = territory
+        self._territory = territory
         return super().set_table_object(territory)
     
     async def callback(self, interaction:discord.Interaction):
@@ -245,7 +134,7 @@ class TerritoryLookupButton(TableObjectButton):
         field_value = ""
         # 건물 정보 추가
         
-        if (b_datas := self._database.fetch_many(Building.__name__, territory_id = self.territory.id)):
+        if (b_datas := self._database.fetch_many(Building.__name__, territory_id = self._territory.id)):
             for b_data in b_datas:
                 b_obj = Building.from_data(b_data)
                 field_value += f"- {b_obj.name} ({b_obj.category.emoji} {b_obj.category.local_name})\n"
@@ -266,77 +155,85 @@ class CrewLookupButton(TableObjectButton):
     
     corr_obj_type = Crew
     
-    def __init__(self):
-        super().__init__()
-        self.crew: Crew = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        super().__init__(bot, interaction_for_this)
+        self._crew: Crew = None
         
     def clone(self):
-        return CrewLookupButton()\
-            .set_database(self._database)
+        return CrewLookupButton(self._bot, self._interaction_for_this)
         
-    def check_type(self, crew: Crew | Any):
-        super().check_type(crew)
+    def _check_type(self, crew: Crew | Any):
+        super()._check_type(crew)
         
-    def set_label_complementary(self, crew: Crew):
+    def _set_label_complementary(self, crew: Crew):
         self.label_complementary = f"{crew.id}"
         
     def set_table_object(self, crew: Crew):
-        self.crew = crew
-        self.crew.set_database(self._database)
+        self._crew = crew
+        self._crew.set_database(self._database)
         return super().set_table_object(crew)
     
-    def _add_location_info(self, embed:discord.Embed):
-        if (d_data := self._database.fetch(Deployment.__name__, crew_id = self.crew.id)):
-            b_data = self._database.fetch(Building.__name__, id = d_data["building_id"])
-            b_obj = Building.from_data(b_data)
-            embed.add_field(
-                name="위치 정보",
-                value=f"{b_obj.name} ({b_obj.category.express()})"
-            )
-        else:
-            embed.add_field(
-                name="위치 정보",
-                value="배치되지 않음"
-            )
-        return embed
-    
-    def _add_feeling_info(self, embed:discord.Embed):
-        embed.add_field(
-            name="상태",
-            value=CrewLaborDetail.get_from_corresponding(
-                Nonahedron().set_last_roll(self.crew.labor).last_judge
-            ).get_detail(
-                self.crew.labor_detail_index
-            )
-        )
-        return embed
-    
     async def callback(self, interaction:discord.Interaction):
-        embed = self._get_basic_embed()
-        embed = self._add_location_info(embed)
-        embed = self._add_feeling_info(embed)
+        embed = embeds.CrewLookupEmbed(self._crew, self._database)\
+            .add_basic_field(self._bot.get_server_manager(interaction.guild_id).tableobj_translate)\
+            .add_location_field()\
+            .add_experience_field()
         
         await interaction.response.send_message(
             embed = embed,
             ephemeral = False
         )
 
+class CrewDismissButton(CrewLookupButton):
+    
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        CrewLookupButton.__init__(self, bot, interaction_for_this)
+        
+        self.interaction_for_this:discord.Interaction = None
+        self.style = discord.ButtonStyle.danger
+        
+    def clone(self):
+        return CrewDismissButton(self._bot, self.interaction_for_this)
+    
+    async def callback(self, interaction:discord.Interaction):
+        self.check_interruption(interaction)
+        self._crew.set_database(self._database)
+        desc = self._crew.get_description()
+        desc.set_database(self._database)
+        exp_list = self._crew.get_every_experience()
+        for exp in exp_list:
+            exp.set_database(self._database)
+            exp.delete()
+        desc.delete()
+        self._crew.delete()
+        
+        # 누른 버튼 비활성화
+        self.disabled = True
+        await interaction.response.edit_message(view = self.view)
+        
+        await interaction.followup.send(f"**{self._crew.name}** 대원을 해고했습니다.")
+        await self._bot.announce_channel(
+            f"{interaction.user.display_name}님께서 **{self._crew.name}** 대원을 해고했습니다.", 
+            self._bot.get_server_manager(interaction.guild_id).guild_setting.announce_channel_id
+        )
+        
+        self._database.connection.commit()
+
 class BuildingLookupButton(TableObjectButton):
     
     corr_obj_type = Building
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        super().__init__(bot, interaction_for_this)
         self.building: Building = None
         
     def clone(self):
-        return BuildingLookupButton()\
-            .set_database(self._database)
+        return BuildingLookupButton(self._bot, self._interaction_for_this)
         
-    def check_type(self, building: Building | Any):
-        super().check_type(building)
+    def _check_type(self, building: Building | Any):
+        super()._check_type(building)
         
-    def set_label_complementary(self, building: Building):
+    def _set_label_complementary(self, building: Building):
         self.label_complementary = building.category.express()
     
     def set_table_object(self, building: Building):
@@ -347,67 +244,57 @@ class BuildingLookupButton(TableObjectButton):
     async def callback(self, interaction: discord.Interaction):
         pass
 
-class CrewNameButton(CrewLookupButton, Uninterruptable, Announceable):
+class CrewNameButton(CrewLookupButton):
     
-    def __init__(self):
-        CrewLookupButton.__init__(self)
-        self.bot:BotBase = None
-        self.prev_interaction:discord.Interaction = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        CrewLookupButton.__init__(self, bot, interaction_for_this)
         
     def clone(self):
-        return CrewNameButton()\
-            .set_database(self._database)\
-            .set_bot(self.bot)\
-            .set_previous_interaction(self.prev_interaction)
+        return CrewNameButton(self._bot, self._interaction_for_this)
     
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)
-        await interaction.response.send_modal(modals.NameCrew(self.bot, self.crew.name))
+        await interaction.response.send_modal(
+            modals.NameCrewModal(self._bot, self._crew.name)
+        )
 
-class SelectCrewToDeployButton(CrewLookupButton, Uninterruptable, Announceable):
+class SelectCrewToDeployButton(CrewLookupButton):
     
-    def __init__(self, faction:Faction):
-        CrewLookupButton.__init__(self)
-        self.faction = faction
-        self.bot:BotBase = None
-        self.prev_interaction:discord.Interaction = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction:Faction):
+        CrewLookupButton.__init__(self, bot, interaction_for_this)
+        
+        self._faction = faction
         
     def clone(self):
-        return SelectCrewToDeployButton(self.faction)\
-            .set_database(self._database)\
-            .set_bot(self.bot)\
-            .set_previous_interaction(self.prev_interaction)
+        return SelectCrewToDeployButton(self._bot, self._interaction_for_this, self._faction)
     
     def disable_or_not(self):
-        return self.crew.is_available()
+        return self._crew.is_available()
     
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)
         # deployment 가져오기
         view = TableObjectView(
-            fetch_list = [Building.from_data(data) for data in self._database.fetch_many("building", faction_id = self.faction.id)],
-            sample_button = DeployToBuildingButton(self.crew, self.faction)\
-                .set_database(self.bot.get_database(interaction.guild_id))\
-                .set_previous_interaction(interaction)
+            fetch_list = [Building.from_data(data) for data in self._database.fetch_many("building", faction_id = self._faction.id)],
+            sample_button = DeployToBuildingButton(self._bot, interaction, self._crew, self._faction)
         )
         view.add_item(CancelButton())
         await interaction.response.send_message(
-            f"**{self.crew.name}** 대원을 배치할 건물을 선택하세요.",
+            f"**{self._crew.name}** 대원을 배치할 건물을 선택하세요.",
             view = view
         )
-
-class DeployToBuildingButton(BuildingLookupButton, Uninterruptable):
     
-    def __init__(self, crew:Crew, faction:Faction):
-        BuildingLookupButton.__init__(self)
-        self.crew = crew
-        self.faction = faction
-        self.prev_interaction:discord.Interaction = None
+
+class DeployToBuildingButton(BuildingLookupButton):
+    
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, crew:Crew, faction:Faction):
+        BuildingLookupButton.__init__(self, bot, interaction_for_this)
+        
+        self._crew = crew
+        self._faction = faction
         
     def clone(self):
-        return DeployToBuildingButton(self.crew, self.faction)\
-            .set_database(self._database)\
-            .set_previous_interaction(self.prev_interaction)
+        return DeployToBuildingButton(self._bot, self._interaction_for_this, self._crew, self._faction)
         
     def disable_or_not(self):
         self.disabled = not self.building.is_deployable()
@@ -416,69 +303,64 @@ class DeployToBuildingButton(BuildingLookupButton, Uninterruptable):
         self.check_interruption(interaction)
         
         self.building.set_database(self._database)
-        self.building.deploy(self.crew)
+        self.building.deploy(self._crew)
         
         await interaction.response.send_message(
-            f"**{self.crew.name}** 대원을 **{self.building.name}** ({self.building.category.express()}) 건물에 배치했습니다!"
+            f"**{self._crew.name}** 대원을 **{self.building.name}** ({self.building.category.express()}) 건물에 배치했습니다!"
         )
         
         self._database.connection.commit()
 
-class PurifyButton(TerritoryLookupButton, Uninterruptable):
+class PurifyButton(TerritoryLookupButton):
     
-    def __init__(self, faction:Faction):
-        TerritoryLookupButton.__init__(self, faction)
-        self.prev_interaction:discord.Interaction = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction: Faction):
+        super().__init__(bot, interaction_for_this, faction)
     
     def clone(self):
-        return PurifyButton(self.faction)\
-            .set_database(self._database)\
-            .set_previous_interaction(self.prev_interaction)
+        return PurifyButton(self._faction, self._bot, self._interaction_for_this)
             
     def disable_or_not(self):
-        if self.territory.safety.value == TerritorySafety.max_value(): self.disabled = True
+        if self._territory.safety.value == TerritorySafety.max_value(): self.disabled = True
     
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)
-        self.territory.set_database(self._database)
+        self._territory.set_database(self._database)
         
         # if self.territory.safety.value == TerritorySafety.max_value():
         #     await interaction.response.send_message("이미 최대 정화 단계입니다.", ephemeral=True)
         #     return
-        self.territory.safety = TerritorySafety(self.territory.safety.value + 1)
-        self.territory.push()
+        self._territory.safety = TerritorySafety(self._territory.safety.value + 1)
+        self._territory.push()
         
-        await interaction.response.send_message(f"성공적으로 **{self.territory.name}** 영토를 정화했습니다!", ephemeral=True)
+        await interaction.response.send_message(f"성공적으로 **{self._territory.name}** 영토를 정화했습니다!", ephemeral=True)
         
         self._database.connection.commit()
 
-class BuildButton(TerritoryLookupButton, Uninterruptable):
+class BuildButton(TerritoryLookupButton):
     
-    def __init__(self, building_category:discord.app_commands.Choice[int], building_name:str):
-        TerritoryLookupButton.__init__(self)
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction: Faction,  building_category:discord.app_commands.Choice[int], building_name:str):
+        super().__init__(bot, interaction_for_this, faction)
         self.building_category = building_category
         self.building_name = building_name
-        self.prev_interaction:discord.Interaction = None
+        self.interaction_for_this:discord.Interaction = None
         
     def clone(self):
-        return BuildButton(self.building_category, self.building_name)\
-            .set_database(self._database)\
-            .set_previous_interaction(self.prev_interaction)
+        return BuildButton(self._bot, self._interaction_for_this, self._faction, self.building_category, self.building_name)
         
     async def callback(self, interaction:discord.Interaction):
         
         self.check_interruption(interaction)
         
-        self.territory.set_database(self._database)
+        self._territory.set_database(self._database)
         
-        if self.territory.remaining_space == 0: raise warnings.NoSpace()
+        if self._territory.remaining_space == 0: raise warnings.NoSpace()
 
         category = BuildingCategory(self.building_category.value)
-        sys_building_type = SystemBuilding.get_sys_building_type_from_category(category)
+        sys_building_type = SystemBuilding.type_from_category(category)
         
         building = Building(
-            faction_id=self.faction.id,
-            territory_id=self.territory.id,
+            faction_id=self._faction.id,
+            territory_id=self._territory.id,
             category=category,
             name=self.building_name,
             remaining_dice_cost=sys_building_type.required_dice_cost
@@ -492,17 +374,14 @@ class BuildButton(TerritoryLookupButton, Uninterruptable):
         self._database.connection.commit()
 
 # 세력 해산 버튼
-class FactionDeleteButton(FactionLookupButton, Announceable):
+class FactionDeleteButton(FactionLookupButton):
 
-    def __init__(self, prev_interaction:discord.Interaction):
-        FactionLookupButton.__init__(self, prev_interaction)
-        self.bot:BotBase = None
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
+        super().__init__(bot, interaction_for_this)
         self.style = discord.ButtonStyle.danger
         
     def clone(self):
-        return FactionDeleteButton(self.prev_interaction)\
-            .set_database(self._database)\
-            .set_bot(self.bot)
+        return FactionDeleteButton(self._bot, self._interaction_for_this)
     
     async def callback(self, interaction:discord.Interaction):
         # hierarchy 제거
@@ -519,9 +398,9 @@ class FactionDeleteButton(FactionLookupButton, Announceable):
 
         await interaction.followup.send(f"{self.faction.name} 세력이 해산되었습니다.", ephemeral = True)
 
-        await self.bot.announce_channel(
+        await self._bot.announce_channel(
             f"**{interaction.user.display_name}**님께서 **{self.faction.name}** 세력을 해산하셨습니다.",
-            self.bot.get_server_manager(interaction.guild_id).guild_setting.announce_channel_id
+            self._bot.get_server_manager(interaction.guild_id).guild_setting.announce_channel_id
         )
         self._database.connection.commit()
 

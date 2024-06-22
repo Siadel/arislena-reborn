@@ -1,10 +1,9 @@
 import discord
 from discord.ext.commands import GroupCog
-from discord import app_commands, Colour
+from discord import app_commands
 from datetime import datetime
 
 from py_base import utility
-from py_system._global import setting_by_guild
 from py_system.tableobj import User
 from py_discord import embeds, views, warnings
 from py_discord.bot_base import BotBase
@@ -19,6 +18,8 @@ class UserManagement(GroupCog, name="유저"):
         description = "아리슬레나에 등록합니다."
     )
     async def register(self, interaction: discord.Interaction):
+        
+        database = self.bot.get_database(interaction.guild_id)
 
         # 이미 등록되어 있는지 확인
         self.bot.check_user_not_exists_or_raise(interaction)
@@ -27,7 +28,7 @@ class UserManagement(GroupCog, name="유저"):
             discord_id=interaction.user.id, 
             discord_name=interaction.user.name, 
             register_date=datetime.now().strftime(utility.DATE_EXPR))
-        user.set_database(self.bot.get_database(interaction.guild_id))
+        user.set_database(database)
         user.push()
 
         # 유저에게 "주인"이라는 이름의 역할 부여
@@ -47,17 +48,31 @@ class UserManagement(GroupCog, name="유저"):
         # id, 이름, 등록일 출력
 
         await interaction.response.send_message(embed=embeds.register(user), ephemeral=True)
+        
+        database.connection.commit()
 
     @app_commands.command(
         name = "열람",
         description = "유저 정보를 열람합니다. 인자가 없을 경우 자신의 정보를 열람합니다."
     )
     @app_commands.describe(
-        view_other_member = "다른 유저의 정보를 열람할 수 있는 버튼 ui를 출력합니다. 버튼 ui는 180초 후 비활성화됩니다.",
+        view_my_info = "내 정보를 열람하고 싶은 경우 True로 설정하세요.",
     )
-    async def info(self, interaction: discord.Interaction, view_other_member:bool = False):
+    async def info(self, interaction: discord.Interaction, view_my_info:bool = False):
         
-        if view_other_member:
+        if view_my_info:
+
+            self.bot.check_user_exists_or_raise(interaction)
+            user = User.from_database(self.bot.get_database(interaction.guild_id), discord_id=interaction.user.id)
+        
+            await interaction.response.send_message(
+                embed=embeds.TableObjectEmbed(f"{interaction.user.display_name}님의 정보").add_basic_info(
+                    user,
+                    self.bot.get_server_manager(interaction.guild_id).tableobj_translate
+                )
+            )
+        
+        else:
 
             # 유저 정보 가져오기
             user_data_list = self.bot.get_database(interaction.guild_id).fetch_all("user")
@@ -67,22 +82,10 @@ class UserManagement(GroupCog, name="유저"):
                 "유저 정보 열람", 
                 view=views.TableObjectView(
                     user_list,
-                    sample_button=views.UserLookupButton(interaction)\
-                    .set_database(self.bot.get_database(interaction.guild_id))
+                    sample_button=views.UserLookupButton(self.bot, interaction)
                 )
             )
         
-        else:
-
-            self.bot.check_user_exists_or_raise(interaction)
-            user = User.from_database(self.bot.get_database(interaction.guild_id), discord_id=interaction.user.id)
-        
-            await interaction.response.send_message(
-                embed=embeds.add_basic_table_info(
-                    discord.Embed(title=f"{interaction.user.display_name}님의 정보", color=Colour.green()), 
-                    user
-                )
-            )
 
     @app_commands.command(
         name = "동기화",
@@ -101,9 +104,9 @@ class UserManagement(GroupCog, name="유저"):
         # 동기화 완료 엠베드 출력
         await interaction.response.send_message(
             f"{interaction.user.mention}님의 정보를 동기화했습니다.",
-            embed=embeds.add_basic_table_info(
-                discord.Embed(title=f"{interaction.user.display_name}님의 정보", color=Colour.green()),
-                user
+            embed=embeds.TableObjectEmbed(f"{interaction.user.display_name}님의 정보").add_basic_info(
+                user,
+                self.bot.get_server_manager(interaction.guild_id).tableobj_translate
             )
         )
     

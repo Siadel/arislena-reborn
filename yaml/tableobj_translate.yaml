@@ -1,0 +1,29 @@
+general:
+  id: 아이디
+  discord_id: 디스코드 아이디
+  faction_id: 세력 아이디
+  territory_id: 영토 아이디
+  user_id: 유저 아이디
+  name: 이름
+  discord_name: 디스코드 이름
+  register_date: 등록일
+  category: 카테고리
+  amount: 수량
+  labor: 노동력
+  labor_dice: 노동력 주사위 눈
+  higher: 상위 세력
+  lower: 하위 세력
+  food_consumption: 식량 소비
+  water_consumption: 물 소비
+  feed_consumption: 사료 소비
+  is_laboring: 노동 중
+  space_limit: 공간 제한
+  safety: 안정도
+  discriminator: 구분자
+  availability: 상태
+  remaining_dice_cost: 남은 주사위 총량
+  level: 레벨
+  experience: 경험치
+Faction:
+  name: 세력명
+

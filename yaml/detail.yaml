@@ -150,7 +150,7 @@ CrewDescription:
     - 가출
     - 고아
     - 조부모가 길러주심
-  love_connection:
+  love_condition:
     - 약혼자가 있음
     - 신혼
     - 짝사랑 중임

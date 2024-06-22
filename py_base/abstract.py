@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum, Enum
 
-from py_base import jsonwork
+from py_base import jsonwork, yamlwork
 
 class ArislenaEnum(IntEnum):
     """
@@ -33,6 +33,12 @@ class ArislenaEnum(IntEnum):
         이모지, 번역 이름을 반환함
         """
         return f"{self.emoji} {self.local_name}"
+    
+    def to_discord_text(self) -> str:
+        """
+        express()와 같지만 local_name 부분을 **로 감싸줌
+        """
+        return f"{self.emoji} **{self.local_name}**"
     
     @classmethod
     def from_int(cls, value:int) -> "ArislenaEnum":
@@ -72,6 +78,9 @@ class DetailEnum(IntEnum):
         """
         if index is None: index = self.get_random_detail_index()
         return self.details[index]
+    
+    def get_random_detail(self) -> str:
+        return self.get_detail(self.get_random_detail_index())
 
 @dataclass
 class JsonObject(metaclass=ABCMeta):
@@ -116,6 +125,10 @@ class FluidJsonObject(JsonObject, metaclass=ABCMeta):
         """
         self.__dict__.update(kwargs)
 
-
-
+class YamlObject(metaclass=ABCMeta):
+    
+    file_name: ClassVar[str] = None
+    
+    def __init__(self) -> None:
+        self.data: dict = yamlwork.load_yaml(self.__class__.file_name)
 

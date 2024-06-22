@@ -8,6 +8,20 @@ from typing import Any
 from py_base.abstract import ArislenaEnum
 from py_base.ari_enum import NonahedronJudge
 
+def adjust(value, min_value, max_value) -> int:
+    """
+    value가 min_value보다 작으면 min_value로, max_value보다 크면 max_value로 보정\n
+    """
+    value = min(value, max_value)
+    value = max(value, min_value)
+    return value
+
+class DiceOption:
+    
+    def __init__(self):
+        self.enable_min_cap = True
+        self.enable_max_cap = True
+
 class Dice:
     """
     기본 주사위 클래스
@@ -15,14 +29,6 @@ class Dice:
     category : 주사위 종류\n
     """
     category = ""
-
-    # 설정 명령어로 수정 가능한 변수의 딕셔너리
-    variables_kr_en = {
-        "최소 숫자" : "dice_min",
-        "최대 숫자" : "dice_max",
-        "눈 보정치" : "dice_mod",
-        "등급 보정치" : "grade_mod",
-        "이름" : "name"}
 
     def __init__(
         self, 
@@ -79,29 +85,14 @@ class Dice:
         self._grade_mod = grade_mod
 
         self.name:str = None
+        self.option:DiceOption = DiceOption()
         self._grade_min = 0
         self._grade_table:dict[str, list[int]] = {}
-        self._last_roll = None
+        self._last_roll: int = None
         self._last_grade = None
         self._last_judge = None
 
         if len(self._grade_distribution) > 0: self._make_grade_table()
-    
-    @property
-    def grade_table(self):
-        return self._grade_table
-    
-    @property
-    def last_roll(self):
-        return self._last_roll
-    
-    @property
-    def last_grade(self):
-        return self._last_grade
-    
-    @property
-    def last_judge(self):
-        return self._last_judge
         
     def __str__(self):
         rtn_str = f"[{self.get_judge}] **{self._last_roll}**"
@@ -139,6 +130,22 @@ class Dice:
     def __mul__(self, other: int):
         return sum(self.roll_multiple_times(other))
     
+    @property
+    def grade_table(self):
+        return self._grade_table
+    
+    @property
+    def last_roll(self):
+        return self._last_roll
+    
+    @property
+    def last_grade(self):
+        return self._last_grade
+    
+    @property
+    def last_judge(self):
+        return self._last_judge
+    
     @classmethod
     def from_dice_data(cls, dice_data:dict):
         """
@@ -148,10 +155,6 @@ class Dice:
         for key, value in dice_data.items():
             setattr(dice, key, value)
         return dice
-
-    def set_name(self, name:str):
-        self.name = name
-        return self
     
     def _check_same_type_or_raise(self, other: Any):
         if type(other) != type(self): raise TypeError("같은 타입의 주사위만 비교할 수 있습니다.")
@@ -189,28 +192,41 @@ class Dice:
         if len(self._grade_table) == 0: return False
         else: return True
     
-    def _adjust(self, value, min_value, max_value) -> int:
+    def _adjust_dice(self, value) -> int:
         """
         value가 min_value보다 작으면 min_value로, max_value보다 크면 max_value로 보정\n
         """
-        value = max(value, min_value)
-        value = min(value, max_value)
+        if self.option.enable_min_cap:
+            value = min(value, self.dice_min)
+        if self.option.enable_max_cap:
+            value = max(value, self.dice_max)
         return value
     
     def _roll_core(self):
-        return self._adjust(
-            random.randint(self.dice_min, self.dice_max) + self._dice_mod,
-            self.dice_min,
-            self.dice_max
-        )
+        return self._adjust_dice(random.randint(self.dice_min, self.dice_max) + self._dice_mod)
         
     def _update(self):
         self._last_grade = self.get_grade()
         self._last_judge = self.get_judge()
+
+    def set_name(self, name:str):
+        self.name = name
+        return self
     
     def set_last_roll(self, value:int):
-        self._last_roll = self._adjust(value, self.dice_min, self.dice_max)
+        """
+        주사위를 굴려서 value의 값이 나온 것으로 치고, last_roll, last_grade, last_judge를 갱신함
+        """
+        self._last_roll = self._adjust_dice(value)
         self._update()
+        return self
+    
+    def set_dice_mod(self, value:int):
+        self._dice_mod = value
+        return self
+    
+    def add_dice_mod(self, value:int):
+        self._dice_mod += value
         return self
 
     def roll(self):
@@ -244,7 +260,11 @@ class Dice:
             if num_range[0] <= self._last_roll <= num_range[1]: grade_result = grade
         
         if self._grade_mod != 0:
-            grade_result = self._adjust(grade_result + self._grade_mod, self._grade_min, len(self._grade_table) - 1)
+            grade_result = adjust(
+                grade_result + self._grade_mod, 
+                self._grade_min, 
+                len(self._grade_table) - 1
+            )
         
         return int(grade_result)
 
@@ -256,6 +276,7 @@ class Dice:
         return self._judge_enum[self._last_grade]
 
 
+
 class Nonahedron(Dice):
     """
     9면체 주사위
@@ -265,9 +286,6 @@ class Nonahedron(Dice):
     ---
     roll() 메서드로 주사위를 굴리면, last_roll과 last_grade가 갱신됨\n
     """
-    category = "이벤트(9면체)"
-
-    variables_kr_en = deepcopy(Dice.variables_kr_en)
 
     def __init__(self, dice_mod:int=0, grade_mod:int=0):
         """

@@ -4,14 +4,17 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from threading import Thread
 from pathlib import Path
 
-from py_base import ari_enum
+from py_base import ari_enum, yamlobj
 from py_base.ari_logger import ari_logger
 from py_base.dbmanager import DatabaseManager
-from py_base.ari_enum import ScheduleState
+from py_base.ari_enum import ScheduleState, WorkCategory
 from py_base.utility import get_date, DATE_EXPR, BACKUP_DIR, FULL_DATE_EXPR_2
 from py_base.jsonobj import BotSetting
-from py_system.tableobj import Chalkboard, Deployment, Building, Resource, Crew, Livestock, CommandCounter, Laborable, JobSetting, GuildSetting
-from py_system.systemobj import SystemBuilding
+from py_system.abstract import Workable
+from py_system.tableobj import Chalkboard, Deployment, Building, Resource, CommandCounter, JobSetting, GuildSetting
+from py_system.systemobj import Crew, Livestock, SystemBuilding
+
+from py_discord import turn_progress
 
 class ServerManager:
     
@@ -24,6 +27,9 @@ class ServerManager:
         self.bot_setting = bot_setting
         self.database = database
         self.guild_id = guild_id
+        
+        self.detail = yamlobj.Detail()
+        self.tableobj_translate = yamlobj.TableObjTranslate()
 
         self.job_setting = JobSetting.from_database(self.database)
         self.guild_setting = GuildSetting.from_database(self.database)
@@ -176,97 +182,6 @@ class ServerManager:
         # 게임 종료 메시지 추가 예정
         return "게임이 종료 되었습니다."
     
-    def building_produce(self) -> list[discord.Embed]:
-        # 모든 건물이 생산을 실행
-        # TODO 코드 작성
-        
-        result_embed_list = []
-        
-        # 배치 현황에서 unique한 건물 아이디별로 전체 row 불러오기
-        for building_id_row in self.database.cursor.execute(f"SELECT DISTINCT building_id FROM {Deployment.__name__}")\
-                .fetchall():
-            building_id = building_id_row[0]
-            deployment_row_list = self.database.fetch_many(Deployment.__name__, building_id=building_id)
-            deployment_list = [Deployment.from_data(row) for row in deployment_row_list]
-            # 건물과 대원, 가축 불러오기
-            building = Building.from_database(self.database, id=building_id)
-            deployed_crews = building.get_deployed_crews(deployment_list)
-            deployed_livestocks = building.get_deployed_livestocks(deployment_list)
-            
-            sys_building = SystemBuilding.get_sys_building_from_building(building)
-            production_recipe = sys_building.get_production_recipe()
-            
-            result_embed = discord.Embed(
-                title = f"**{building.name}**({building.category.express()}) 생산 결과",
-                colour = discord.Colour.yellow()
-            )
-            
-            # 건물에 배치된 노동원마다 실행
-            for labor in deployed_crews + deployed_livestocks:
-                # 자원 소모
-                resource_insufficient = False
-                embed_value_list = [f"- 배치 노동원: {labor.name}", f"- 노동력: {labor.labor}"]
-                for consume_resource in production_recipe.consume:
-                    
-                    r_data = self.database.fetch(Resource.__name__, faction_id=building.faction_id, category=consume_resource.category)
-                    
-                    if r_data is None:
-                        embed_value_list.append("자원이 부족해 생산을 진행할 수 없습니다.")
-                        result_embed.add_field(
-                            name=f"자원 부족: {consume_resource.category.express()}",
-                            value="\n".join(embed_value_list)
-                        )
-                        resource_insufficient = True
-                        continue
-                    
-                    r = Resource.from_database(self.database, faction_id=building.faction_id, category=consume_resource.category)
-                    
-                    if r < consume_resource:
-                        embed_value_list.append("자원이 부족해 생산을 진행할 수 없습니다.")
-                        result_embed.add_field(
-                            name=f"자원 부족: {consume_resource.category.express()}",
-                            value="\n".join(embed_value_list)
-                        )
-                        resource_insufficient = True
-                    else:
-                        r.amount -= consume_resource.amount
-                        embed_value_list.append(f"- 소모량: {consume_resource.amount}")
-                        result_embed.add_field(
-                            name=f"{consume_resource.category.express()}",
-                            value="\n".join(embed_value_list)
-                        )
-                        r.push()
-                
-                if resource_insufficient: continue
-                
-                # 자원 생산
-                for produce_resource in production_recipe.produce:
-                    
-                    r_data = self.database.fetch(Resource.__name__, faction_id=building.faction_id, category=produce_resource.category)
-                    r: Resource
-                    if r_data is None:
-                        r = Resource(
-                            faction_id=building.faction_id,
-                            category=produce_resource.category,
-                        )
-                        r.set_database(self.database)
-                    else:
-                        r = Resource.from_database(self.database, faction_id=building.faction_id, category=produce_resource.category)
-                    
-                    produced_resource = produce_resource * labor.labor
-                    r.amount += produced_resource.amount
-                    
-                    result_embed.add_field(
-                        name=f"{produce_resource.category.express()}",
-                        value=f"- 배치 노동원: {labor.name}\n- 노동력: {labor.labor}\n- 생산량: **{produced_resource.amount}**"
-                    )
-                    
-                    r.push()
-        
-            result_embed_list.append(result_embed)
-                
-        return result_embed_list
-    
     def crew_consume(self) -> list[discord.Embed]:
         pass
 
@@ -274,9 +189,8 @@ class ServerManager:
         '''
         턴 종료 시 실행 함수
         '''
-        building_produce_embed_list = self.building_produce()
-        for embed in building_produce_embed_list:
-            await self.announce_channel.send(embed=embed)
+        for building_id in Deployment.get_unique_building_ids(self.database):
+            await self.announce_channel.send(embed=turn_progress.building_progress(self.database, building_id))
     
     async def execute_after_turn_end(self):
         '''
@@ -286,10 +200,10 @@ class ServerManager:
         report_lines = []
         
         # availablity가 STANDBY인 모든 Crew, Livestock을 IDLE로 변경하고, labor를 설정함
-        laborable_tables:list[Crew | Livestock] = Laborable.__subclasses__()
-        for table in laborable_tables:
-            for row in self.database.fetch_many(table.__name__, availability=ari_enum.Availability.UNAVAILABLE.value):
-                obj = table.from_data(row)
+        laborable_tables:list[Crew | Livestock] = Workable.__subclasses__()
+        for laborable_table in laborable_tables:
+            for row in self.database.fetch_many(laborable_table.get_table_name(), availability=ari_enum.Availability.UNAVAILABLE.value):
+                obj = laborable_table.from_data(row)
                 obj.set_database(self.database)
                 obj.availability = ari_enum.Availability.STANDBY
                 
@@ -300,14 +214,20 @@ class ServerManager:
         report_lines.append(
             f"- **{ari_enum.Availability.UNAVAILABLE.express()}** 상태인 모든 대원과 가축이 **{ari_enum.Availability.STANDBY.express()}** 상태로 변경되었습니다."
         )
-        
-        for table in laborable_tables:
-            for row in self.database.fetch_many(table.__name__, availability=ari_enum.Availability.STANDBY.value):
-                obj = table.from_data(row)
-                obj.set_database(self.database)
-                obj.set_labor_dice()
-                obj.set_labor()
+        for laborable_table in laborable_tables:
+            for row in self.database.fetch_many(laborable_table.get_table_name(), availability=ari_enum.Availability.STANDBY.value):
+                obj = laborable_table.from_data(row)
+                obj.set_database(self.database)\
+                    .set_labor_dice()\
+                    .set_labor()
                 
+                # Crew의 경우 기본 노동력에 따른 labor_detail을 설정
+                if isinstance(obj, Crew):
+                    desc = obj.get_description()\
+                        .set_database(self.database)\
+                        .set_crew_labor_detail(obj.labor_dice.last_judge.value)
+                    desc.push()
+
                 obj.push()
         
         report_lines.append(

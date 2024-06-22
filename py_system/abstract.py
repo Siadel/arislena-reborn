@@ -2,12 +2,14 @@ import re
 
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
+from typing import Iterable, Iterator, Self
 
-from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory
+from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory, Availability
 from py_base.utility import sql_type
 from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum, DetailEnum
-from py_base.jsonobj import Translate
+from py_base.yamlobj import TableObjTranslate
+from py_base.arislena_dice import Nonahedron
 
 class TableObject(metaclass=ABCMeta):
     """
@@ -72,21 +74,34 @@ class TableObject(metaclass=ABCMeta):
         return new_obj
     
     @classmethod
-    def from_data(cls, sqlite_row:Row):
+    def from_data(cls, sqlite_row:Row | None, **kwargs) -> Self:
         """
         Creates a table object from the database, using the sqlite3.Row object.
 
         This function not sets the database attribute of the table object. You should set the database attribute manually.
+        
+        if sqlite_row is None, returns object with default values.
+        
+        You can also pass the keyword arguments to set the attributes of the object, if the sqlite_row is None.
         """
-
-        new_obj = cls()
 
         # if not set(sqlite_row.keys()).issubset(cls.__annotations__.keys()):
         #     raise ValueError(f"데이터베이스의 컬럼과 클래스의 어노테이션에 불일치가 있습니다: {set(sqlite_row.keys()) - set(cls.__annotations__.keys())}")
+        if sqlite_row is not None:
+            new_cls = cls()
+            new_cls._set_attributes_from_sqlite_row(sqlite_row)
+            return new_cls
+        else:
+            return cls(**kwargs)
+    
+    @classmethod
+    def from_data_iter(cls, sqlite_rows:Iterable[Row]) -> Iterator[Self]:
+        """
+        Creates a list of table objects from the database, using the sqlite3.Row object.
 
-        new_obj._set_attributes_from_sqlite_row(sqlite_row)
-            
-        return new_obj
+        This function not sets the database attribute of the table object. You should set the database attribute manually.
+        """
+        return iter(cls.from_data(row) for row in sqlite_rows)
     
     @property
     def table_name(self):
@@ -255,7 +270,7 @@ class TableObject(metaclass=ABCMeta):
         self._check_database()
         self._database.delete_with_id(self.table_name, self.id)
         
-    def to_discord_text(self, translate:Translate) -> str:
+    def to_discord_text(self, translate:TableObjTranslate) -> str:
         """
         Returns the text for the discord message.
 
@@ -265,9 +280,9 @@ class TableObject(metaclass=ABCMeta):
 
         texts = []
         for key, value in self.get_dict().items():
-            key = translate.get_from_map('table_object', key, self.table_name, key)
+            key = translate.get(key, self.table_name, key)
             if isinstance(value, ArislenaEnum):
-                value = f"{value.emoji} **{value.local_name}**"
+                value = value.to_discord_text()
             elif isinstance(value, DetailEnum):
                 continue
             else:
@@ -302,8 +317,8 @@ class ResourceAbst(metaclass=ABCMeta):
         if amount is None or amount > self.amount: amount = self.amount
         
         other.amount += amount
-        self.amount -= amount
-        
+        self.amount -= amount    
+    
     def __add__(self, other:"ResourceAbst"):
         self._check_category(other)
         return ResourceAbst(self.category, self.amount + other.amount)
@@ -311,6 +326,8 @@ class ResourceAbst(metaclass=ABCMeta):
     def __sub__(self, other:"ResourceAbst"):
         self._check_category(other)
         return ResourceAbst(self.category, self.amount - other.amount)
+    
+    # 카테고리가 다른 경우 amount 값과 상관 없이 False 반환
     
     def __lt__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount < other.amount
@@ -329,7 +346,7 @@ class ResourceAbst(metaclass=ABCMeta):
     
     def __ge__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount >= other.amount
-        
+
 
 class BuildingAbst(metaclass=ABCMeta):
     
@@ -340,6 +357,47 @@ class BuildingAbst(metaclass=ABCMeta):
     ):
         self.category = category
         self.level = level
+
+class GeneralResource(ResourceAbst):
+    
+    def __init__(
+        self, 
+        category: ResourceCategory, 
+        amount: int = 1
+    ):
+        super().__init__(category, amount)
+
+
+class Workable(metaclass=ABCMeta):
+    """
+    노동력을 가지는 객체
+    """
+    def __init__(self):
+        
+        self._labor_dice: Nonahedron = None
+    
+    @property
+    def labor_dice(self):
+        return self._labor_dice
+    
+    @abstractmethod
+    def get_consumption_recipe(self) -> list[GeneralResource]:
+        """
+        노동력 소모에 필요한 자원을 반환함
+        """
+        pass
+    
+    @abstractmethod
+    def set_labor_dice(self):
+        """
+        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
+        """
+        self._labor_dice = Nonahedron()
+        return self
+    
+    @abstractmethod
+    def set_labor(self):
+        return self
 
 # deprecated
 # @dataclass

@@ -25,16 +25,19 @@ class BuildingCommand(GroupCog, name="건물"):
         building_category = "건물 종류",
         building_name = "건물 이름"
     )
-    async def build(self, interaction: discord.Interaction, building_category: app_commands.Choice[int], building_name: str):
+    async def build(self, interaction: discord.Interaction, building_category: app_commands.Choice[int], building_name: str):\
         
-        if not self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
+        database = self.bot.get_database(interaction.guild_id)
+        faction_data = database.fetch(Faction.get_table_name(), user_id=interaction.user.id)
+        if faction_data is None: raise warnings.NoFaction()
+        faction = Faction.from_data(faction_data)
         
-        territory_list = self.bot.get_database(interaction.guild_id).fetch_many("territory", f"faction_id = (SELECT id FROM faction WHERE user_id = {interaction.user.id})")
+        territory_list = database.fetch_many("territory", faction_id=faction.id)
         
         if len(territory_list) == 0:
             await interaction.response.send_message("건설할 영토가 없습니다.", ephemeral=True)
             
-        building_name_list = self.bot.get_database(interaction.guild_id).cursor.execute("SELECT name FROM building").fetchall()
+        building_name_list = database.cursor.execute("SELECT name FROM building").fetchall()
         if building_name in building_name_list: raise warnings.AlreadyExist("그 이름의 건물")
         
         await interaction.response.send_message(
@@ -42,11 +45,12 @@ class BuildingCommand(GroupCog, name="건물"):
             view=views.TableObjectView(
                 [Territory.from_data(data) for data in territory_list],
                 sample_button = views.BuildButton(
+                    self.bot,
+                    interaction,
+                    faction,
                     building_category=building_category,
                     building_name=building_name
-                )\
-                    .set_database(self.bot.get_database(interaction.guild_id))\
-                    .set_previous_interaction(interaction)
+                )
             )
         )
     
@@ -72,8 +76,7 @@ class BuildingCommand(GroupCog, name="건물"):
             "열람할 건물을 선택해주세요.",
             view=views.TableObjectView(
                 [Building.from_data(data) for data in b_list],
-                sample_button = views.BuildingLookupButton()\
-                    .set_database(self.bot.get_database(interaction.guild_id))
+                sample_button = views.BuildingLookupButton(self.bot, interaction)
             )
         )
 

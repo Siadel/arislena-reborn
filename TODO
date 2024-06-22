@@ -1,0 +1,24 @@
+- 제안 ! 해결 ? 실패
+
+
+240525 영감
+
+- TableObject에 Worker 클래스를 만들고, 기존의 Crew와 Livestock 클래스는 SystemObject 파일로 옮기고 Worker 클래스를 상속받도록 하기
+    (TableObject를 직접 상속하는 클래스만 데이터베이스의 테이블로 저장되기 때문에, SystemObject가 된 Crew와 Livestock 클래스는 데이터베이스에 저장되지 않음)
+- Worker 클래스의 속성에 worker_catrgory를 추가하고, 이는 Crew나 Livestock로 변환할 때 어떤 클래스로 변환할지 결정하는 데 사용
+- 이에 따라 Crew, Livestock 클래스를 활용하는 실행 로직들을 바꿔야 할 필요가 있음
+
+
+- Laborable의 labor 수치를 정하는 논리를 기본 Nonahedron으로 단순화하기
+- 대원의 경우 분야당 (-1 + sqrt(1 + 2/3 * int(<경험치 수치>))) // 2
+- 가축의 경우 경험치 관련 로직이 없음
+- 각 건물 혹은 활동 별로 대응되는 LaborCategory 정하기
+- 각 건물별로 Laborable을 받아서 LaborCategory와 LaborExperience에 따라 labor 수치를 계산하기
+
+- Laborable의 labor_detail_index를 CrewDescription의 속성으로 변경
+
+- 대원의 labor_detail_index는 노동력을 새로 정할 때 유저에게 보이는 메세지로서만 사용
+self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get_random_detail_index()
+
+240622 계획
+

@@ -4,14 +4,13 @@ from discord import app_commands
 
 from py_base.utility import CWD
 from py_base.ari_logger import ari_logger
-from py_system._global import bot_setting
 from py_discord import warnings
 from py_discord.bot_base import BotBase
 
 class AriBot(BotBase):
     
-    def __init__(self, bot_setting):
-        super().__init__(bot_setting)
+    def __init__(self):
+        super().__init__()
         self._ready_flag = False
         
     async def setup_hook(self):
@@ -22,6 +21,12 @@ class AriBot(BotBase):
     async def on_ready(self):
         await self.wait_until_ready()
         await self.change_presence(status=discord.Status.online, activity=discord.Game("아리슬레나 가꾸기"))
+        
+        # data 폴더의 .db-journal 파일 제거
+        # commit이 제대로 되지 않고 남아있는 파일이므로 제거
+        for file in (CWD / "data").iterdir():
+            if file.is_file() and file.suffix == ".db-journal":
+                file.unlink()
         
         for guild in self.guilds:
             self._add_server_manager(guild.id)
@@ -51,7 +56,7 @@ class AriBot(BotBase):
         await super().close()
 
 # 봇 객체 생성
-aribot = AriBot(bot_setting)
+aribot = AriBot()
 
 # 명령어 오류 핸들링
 @aribot.tree.error
