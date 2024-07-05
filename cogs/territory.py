@@ -19,9 +19,12 @@ class TerritoryCommand(GroupCog, name="영토"):
         description = "자신 소유 영토의 정보를 열람할 수 있는 버튼 ui를 출력합니다. 버튼 ui는 180초 후 비활성화됩니다."
     )
     async def lookup(self, interaction: discord.Interaction):
-        faction = Faction.from_database(self.bot.get_database(interaction.guild_id), user_id=interaction.user.id)
+        
+        database = self.bot.get_database(interaction.guild_id)
+        
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         # 모든 영토 정보 가져오기
-        territory_data_list = self.bot.get_database(interaction.guild_id).fetch_many(Territory.get_table_name(), faction_id=faction.id)
+        territory_data_list = database.fetch_many(Territory.get_table_name(), faction_id=faction.id)
         territory_list = [Territory.from_data(data) for data in territory_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
@@ -39,7 +42,7 @@ class TerritoryCommand(GroupCog, name="영토"):
     )
     async def scout(self, interaction: discord.Interaction):
 
-        if not self.bot.get_database(interaction.guild_id).is_exist("faction", f"user_id = {interaction.user.id}"): raise warnings.NoFaction()
+        Faction.fetch_or_raise(self.bot.get_database(interaction.guild_id), warnings.NoFaction(), user_id=interaction.user.id)
 
         # TODO 기능 코드 작성
         
@@ -53,10 +56,11 @@ class TerritoryCommand(GroupCog, name="영토"):
     )
     async def purify(self, interaction: discord.Interaction):
         
-        if (faction_data := self.bot.get_database(interaction.guild_id).fetch(Faction.get_table_name(), user_id=interaction.user.id)) is None: raise warnings.NoFaction()
-        faction = Faction.from_data(faction_data)
+        database = self.bot.get_database(interaction.guild_id)
         
-        territory_list = self.bot.get_database(interaction.guild_id).fetch_many(Territory.get_table_name(), faction_id=faction.id)
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
+        
+        territory_list = database.fetch_many(Territory.get_table_name(), faction_id=faction.id)
 
         await interaction.response.send_message(
             "정화할 영토를 선택해주세요.",

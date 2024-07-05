@@ -4,6 +4,10 @@ from discord import app_commands, Colour
 
 from py_discord.bot_base import BotBase
 
+def get_mention_or_default(obj: discord.Role | discord.TextChannel):
+    if obj is None:
+        return "설정되지 않음"
+    return obj.mention
 
 class GuildManagement(GroupCog, name="서버설정"):
     
@@ -17,11 +21,6 @@ class GuildManagement(GroupCog, name="서버설정"):
     )
     async def show(self, interaction: discord.Interaction):
         server_manager = self.bot.get_server_manager(interaction.guild_id)
-        
-        def get_mention_or_default(obj: discord.Role | discord.TextChannel):
-            if obj is None:
-                return "설정되지 않음"
-            return obj.mention
         
         result_embed = discord.Embed(
             title="서버 설정",

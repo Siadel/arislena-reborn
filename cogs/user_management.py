@@ -68,7 +68,7 @@ class UserManagement(GroupCog, name="유저"):
             await interaction.response.send_message(
                 embed=embeds.TableObjectEmbed(f"{interaction.user.display_name}님의 정보").add_basic_info(
                     user,
-                    self.bot.get_server_manager(interaction.guild_id).tableobj_translate
+                    self.bot.get_server_manager(interaction.guild_id).table_obj_translator
                 )
             )
         
@@ -89,12 +89,11 @@ class UserManagement(GroupCog, name="유저"):
 
     @app_commands.command(
         name = "동기화",
-        description = "아리슬레나의 데이터를 디스코드에 동기화합니다. | 동기화 데이터: 닉네임"
+        description = "아리슬레나 유저의 데이터(닉네임)를 디스코드에 동기화합니다."
     )
     async def sync(self, interaction: discord.Interaction):
-        self.bot.check_user_exists_or_raise(interaction)
-        # 유저 정보 가져오기
-        user = User.from_database(self.bot.get_database(interaction.guild_id), discord_id=interaction.user.id)
+        
+        user = User.fetch_or_raise(self.bot.get_database(interaction.guild_id), warnings.NotRegistered(interaction.user.display_name), discord_id=interaction.user.id)
         
         # 닉네임 동기화
         if user.discord_name != interaction.user.name:
@@ -106,7 +105,7 @@ class UserManagement(GroupCog, name="유저"):
             f"{interaction.user.mention}님의 정보를 동기화했습니다.",
             embed=embeds.TableObjectEmbed(f"{interaction.user.display_name}님의 정보").add_basic_info(
                 user,
-                self.bot.get_server_manager(interaction.guild_id).tableobj_translate
+                self.bot.get_server_manager(interaction.guild_id).table_obj_translator
             )
         )
     
@@ -119,10 +118,12 @@ class UserManagement(GroupCog, name="유저"):
     )
     async def unregister(self, interaction: discord.Interaction, target_member:discord.Member):
         self.bot.check_admin_or_raise(interaction)
-        target_user = User.from_database(self.bot.get_database(interaction.guild_id), discord_id=target_member.id)
-        if not target_user: raise warnings.NotRegistered(target_member.name)
+        database = self.bot.get_database(interaction.guild_id)
+        
+        target_user = User.fetch_or_raise(database, warnings.NotRegistered(interaction.user.display_name), discord_id=interaction.user.id)
+        
         # 데이터에서 유저 삭제
-        self.bot.get_database(interaction.guild_id).delete_with_id("user", target_user.id)
+        database.delete_with_id("user", target_user.id)
         # 유저에게 "주인"이라는 이름의 역할 삭제
         await target_member.remove_roles(
             discord.utils.get(

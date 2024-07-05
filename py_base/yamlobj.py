@@ -19,7 +19,7 @@ class Detail(YamlObject):
         
         return descriptions
 
-class TableObjTranslate(YamlObject):
+class TableObjTranslator(YamlObject):
     file_name: str = "tableobj_translate.yaml"
     
     def __init__(self):

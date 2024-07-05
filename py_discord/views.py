@@ -4,8 +4,8 @@ from discord import ui
 from typing import Any
 
 from py_base.koreanstring import nominative
-from py_base.ari_enum import BuildingCategory, TerritorySafety
-from py_system.tableobj import TableObject, User, Faction, Territory, Building
+from py_base.ari_enum import BuildingCategory, TerritorySafety, ResourceCategory
+from py_system.tableobj import TableObject, User, Faction, Territory, Building, Resource
 from py_system.systemobj import Crew, SystemBuilding
 from py_discord import warnings, modals, embeds
 from py_discord.bot_base import BotBase
@@ -106,6 +106,27 @@ class FactionLookupButton(TableObjectButton):
     def set_table_object(self, faction: Faction):
         self.faction = faction
         return super().set_table_object(faction)
+    
+    async def callback(self, interaction: discord.Interaction[discord.Client]):
+        embed = self._get_basic_embed()
+        
+        # 자원 상황 출력
+        field_values = []
+        for resource_category in ResourceCategory.to_list():
+            resource = Resource.from_database(
+                self._database, faction_id = self.faction.id, category = resource_category
+            )
+            field_values.append(resource.to_discord_text())
+        
+        embed.add_field(
+            name="자원 현황",
+            value="\n".join(field_values)
+        )
+        
+        await interaction.response.send_message(
+            embed = embed,
+            ephemeral = False
+        )
 
 class TerritoryLookupButton(TableObjectButton):
     
@@ -122,8 +143,8 @@ class TerritoryLookupButton(TableObjectButton):
     def _check_type(self, territory: Territory | Any):
         super()._check_type(territory)
     
-    def _set_label_complementary(self, _: Territory):
-        self.label_complementary = f"소유 세력 : {self._faction.name}"
+    def _set_label_complementary(self, territory: Territory):
+        self.label_complementary = f"{territory.safety.emoji}"
     
     def set_table_object(self, territory: Territory):
         self._territory = territory
@@ -134,7 +155,7 @@ class TerritoryLookupButton(TableObjectButton):
         field_value = ""
         # 건물 정보 추가
         
-        if (b_datas := self._database.fetch_many(Building.__name__, territory_id = self._territory.id)):
+        if (b_datas := self._database.fetch_many(Building.get_table_name(), territory_id = self._territory.id)):
             for b_data in b_datas:
                 b_obj = Building.from_data(b_data)
                 field_value += f"- {b_obj.name} ({b_obj.category.emoji} {b_obj.category.local_name})\n"
@@ -174,10 +195,15 @@ class CrewLookupButton(TableObjectButton):
         return super().set_table_object(crew)
     
     async def callback(self, interaction:discord.Interaction):
-        embed = embeds.CrewLookupEmbed(self._crew, self._database)\
-            .add_basic_field(self._bot.get_server_manager(interaction.guild_id).tableobj_translate)\
+        embed = embeds.CrewLookupEmbed(
+            self._crew, 
+            self._database, 
+            self._bot.get_server_manager(self._interaction_for_this.guild_id).table_obj_translator
+        )\
+            .add_basic_field()\
             .add_location_field()\
-            .add_experience_field()
+            .add_experience_field()\
+            .add_description_field()
         
         await interaction.response.send_message(
             embed = embed,
@@ -234,7 +260,8 @@ class BuildingLookupButton(TableObjectButton):
         super()._check_type(building)
         
     def _set_label_complementary(self, building: Building):
-        self.label_complementary = building.category.express()
+        t_name = self._database.connection.execute(f"SELECT {Territory.name.name} FROM {Territory.get_table_name()} WHERE id = {building.territory_id}").fetchone()[0]
+        self.label_complementary = t_name
     
     def set_table_object(self, building: Building):
         self.building = building
@@ -320,7 +347,7 @@ class PurifyButton(TerritoryLookupButton):
         return PurifyButton(self._faction, self._bot, self._interaction_for_this)
             
     def disable_or_not(self):
-        if self._territory.safety.value == TerritorySafety.max_value(): self.disabled = True
+        if self._territory.safety == TerritorySafety.get_max_safety(): self.disabled = True
     
     async def callback(self, interaction:discord.Interaction):
         self.check_interruption(interaction)

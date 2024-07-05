@@ -15,9 +15,10 @@ class ArislenaEnum(IntEnum):
         obj._value_ = len(cls.__members__)
         return obj
     
-    def __init__(self, local_name:str, emoji:str = ""):
-        self.local_name:str = local_name
-        self.emoji:str = emoji
+    def __init__(self, local_name: str, emoji: str = "", level: int = 0):
+        self.local_name: str = local_name
+        self.emoji: str = emoji
+        self.level: int = level
     
     def __str__(self) -> str:
         return self.name
@@ -27,6 +28,14 @@ class ArislenaEnum(IntEnum):
     
     def __repr__(self) -> str:
         return super().__repr__()
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        return self.value == other
+    
+    def __ne__(self, other) -> bool:
+        return not self.__eq__(other)
     
     def express(self) -> str:
         """
@@ -43,6 +52,7 @@ class ArislenaEnum(IntEnum):
     @classmethod
     def from_int(cls, value:int) -> "ArislenaEnum":
         return cls(value)
+
 
 class DetailEnum(IntEnum):
     """

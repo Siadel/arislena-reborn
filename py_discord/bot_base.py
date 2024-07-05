@@ -134,7 +134,7 @@ class BotBase(commands.Bot):
         if not self.check_admin(interaction):
             raise warnings.NotAdmin()
     
-    def check_admin(self, interaction: discord.Interaction, server_manager) -> bool:
+    def check_admin(self, interaction: discord.Interaction) -> bool:
         """
         서버에서 봇에게 정한 관리자 역할을 가지고 있는지 확인하는 함수
         

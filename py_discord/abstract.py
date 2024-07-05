@@ -6,7 +6,7 @@ from copy import deepcopy
 
 
 from py_base.dbmanager import DatabaseManager
-from py_base.yamlobj import TableObjTranslate
+from py_base.yamlobj import TableObjTranslator
 from py_system.tableobj import TableObject
 from py_discord import warnings, embeds
 from py_discord.bot_base import BotBase
@@ -66,7 +66,7 @@ class TableObjectButton(Button, BuilderPattern, metaclass=ABCMeta):
     def _get_basic_embed(self):
         return embeds.TableObjectEmbed(f"{self.label} 정보").add_basic_info(
                 self._table_object,
-                TableObjTranslate()
+                TableObjTranslator()
             )
     
     def _check_type(self, object: Any):

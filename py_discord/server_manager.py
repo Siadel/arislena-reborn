@@ -10,7 +10,7 @@ from py_base.dbmanager import DatabaseManager
 from py_base.ari_enum import ScheduleState, WorkCategory
 from py_base.utility import get_date, DATE_EXPR, BACKUP_DIR, FULL_DATE_EXPR_2
 from py_base.jsonobj import BotSetting
-from py_system.abstract import Workable
+from py_system.systemobj import SystemWorker
 from py_system.tableobj import Chalkboard, Deployment, Building, Resource, CommandCounter, JobSetting, GuildSetting
 from py_system.systemobj import Crew, Livestock, SystemBuilding
 
@@ -29,7 +29,7 @@ class ServerManager:
         self.guild_id = guild_id
         
         self.detail = yamlobj.Detail()
-        self.tableobj_translate = yamlobj.TableObjTranslate()
+        self.table_obj_translator = yamlobj.TableObjTranslator()
 
         self.job_setting = JobSetting.from_database(self.database)
         self.guild_setting = GuildSetting.from_database(self.database)
@@ -189,6 +189,7 @@ class ServerManager:
         '''
         턴 종료 시 실행 함수
         '''
+        ari_logger.info(f"길드 {self.guild_id}의 {self.chalkboard.now_turn}턴 종료 진행")
         for building_id in Deployment.get_unique_building_ids(self.database):
             await self.announce_channel.send(embed=turn_progress.building_progress(self.database, building_id))
     
@@ -200,8 +201,8 @@ class ServerManager:
         report_lines = []
         
         # availablity가 STANDBY인 모든 Crew, Livestock을 IDLE로 변경하고, labor를 설정함
-        laborable_tables:list[Crew | Livestock] = Workable.__subclasses__()
-        for laborable_table in laborable_tables:
+        worker_types:list[Crew | Livestock] = SystemWorker.__subclasses__()
+        for laborable_table in worker_types:
             for row in self.database.fetch_many(laborable_table.get_table_name(), availability=ari_enum.Availability.UNAVAILABLE.value):
                 obj = laborable_table.from_data(row)
                 obj.set_database(self.database)
@@ -214,7 +215,7 @@ class ServerManager:
         report_lines.append(
             f"- **{ari_enum.Availability.UNAVAILABLE.express()}** 상태인 모든 대원과 가축이 **{ari_enum.Availability.STANDBY.express()}** 상태로 변경되었습니다."
         )
-        for laborable_table in laborable_tables:
+        for laborable_table in worker_types:
             for row in self.database.fetch_many(laborable_table.get_table_name(), availability=ari_enum.Availability.STANDBY.value):
                 obj = laborable_table.from_data(row)
                 obj.set_database(self.database)\
@@ -225,7 +226,7 @@ class ServerManager:
                 if isinstance(obj, Crew):
                     desc = obj.get_description()\
                         .set_database(self.database)\
-                        .set_crew_labor_detail(obj.labor_dice.last_judge.value)
+                        .set_worker_labor_detail(obj.labor_dice.last_judge.value)
                     desc.push()
 
                 obj.push()
@@ -235,7 +236,7 @@ class ServerManager:
         )
 
         # 모든 CommandCounter 0으로 설정
-        cc_list = [CommandCounter.from_data(cc) for cc in self.database.fetch_all(CommandCounter.__name__)]
+        cc_list = [CommandCounter.from_data(cc) for cc in self.database.fetch_all(CommandCounter.get_table_name())]
         for cc in cc_list:
             cc.set_database(self.database)
             cc.reset()

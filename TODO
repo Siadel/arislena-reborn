@@ -22,3 +22,8 @@ self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get
 
 240622 계획
 
+- `/건물 건설` 커맨드가 현재 자원으로 건설 가능한 건물 목록을 버튼 ui로 보여주게끔 변경
+! BuildingCategory가 어떤 건물이 기본 건물이고 어떤 건물이 심화 건물인지 구분하지 못하는 문제 -> ArislenaEnum의 인스턴스 선언 인자에 level을 추가해 해결
+- 턴이 끝날 때 각 건물이 조건을 계산해 건설 진행, 자원 생산 등의 행동을 수행하게끔 기능 구현
+- worker를 가져오는 내부 함수들을 다시 Crew나 Livestock을 반환하는 함수로 변경
+

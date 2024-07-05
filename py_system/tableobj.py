@@ -3,18 +3,16 @@ Sql과 연동되는 데이터 클래스들
 """
 import datetime
 from sqlite3 import Row
-from math import sqrt
 from abc import ABCMeta
 from typing import Generator
 
 from py_base.utility import sql_value, DATE_EXPR
 from py_base.ari_logger import ari_logger
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, WorkerDetail, WorkCategory, WorkerCategory
+from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, WorkerDetail, WorkCategory, WorkerCategory, BiologicalSex
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
-from py_base.arislena_dice import Nonahedron
-from py_base.yamlobj import Detail
-from py_system.abstract import TableObject, ResourceAbst, Workable
+from py_base.yamlobj import Detail, TableObjTranslator
+from py_system.abstract import Column, TableObject, ResourceAbst
 
 def form_database_from_tableobjects(main_db:DatabaseManager):
     """
@@ -79,7 +77,7 @@ class SingleComponentTable(TableObject, metaclass=ABCMeta):
     abstract = True
     
     def __init__(self, id: int = 1):
-        super().__init__(id)
+        super().__init__()
     
     @classmethod
     def from_database(cls, database: DatabaseManager):
@@ -98,6 +96,16 @@ class SingleComponentTable(TableObject, metaclass=ABCMeta):
 
 class Chalkboard(SingleComponentTable, TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    test_mode = Column(bool)
+    admin_mode = Column(bool)
+    start_date = Column(str)
+    end_date = Column(str)
+    now_turn = Column(int)
+    turn_limit = Column(int)
+    state = Column(ScheduleState)
+    
     def __init__(
         self,
         id: int = 1,
@@ -109,7 +117,8 @@ class Chalkboard(SingleComponentTable, TableObject):
         turn_limit: int = 9999,
         state: ScheduleState = ScheduleState.WAITING
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.test_mode = test_mode
         self.admin_mode = admin_mode
         self.start_date = start_date
@@ -120,6 +129,13 @@ class Chalkboard(SingleComponentTable, TableObject):
 
 class JobSetting(SingleComponentTable, TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    trigger = Column(str)
+    day_of_week = Column(str)
+    hour = Column(str)
+    minute = Column(str)
+    
     def __init__(
         self,
         id: int = 1,
@@ -128,7 +144,8 @@ class JobSetting(SingleComponentTable, TableObject):
         hour: str = "21",
         minute: str = "00"
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.trigger = trigger
         self.day_of_week = day_of_week
         self.hour = hour
@@ -136,6 +153,12 @@ class JobSetting(SingleComponentTable, TableObject):
 
 class GuildSetting(SingleComponentTable, TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    announce_channel_id = Column(int)
+    user_role_id = Column(int)
+    admin_role_id = Column(int)
+    
     def __init__(
         self,
         id: int = 1,
@@ -143,13 +166,20 @@ class GuildSetting(SingleComponentTable, TableObject):
         user_role_id: int = 0,
         admin_role_id: int = 0
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.announce_channel_id = announce_channel_id
         self.user_role_id = user_role_id
         self.admin_role_id = admin_role_id
 
 class User(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    discord_id = Column(int)
+    discord_name = Column(str)
+    register_date = Column(str)
+    
     def __init__(
         self, 
         id: int = 0,
@@ -157,7 +187,8 @@ class User(TableObject):
         discord_name: str = "", 
         register_date: str = ""
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.discord_id = discord_id
         self.discord_name = discord_name
         self.register_date = register_date
@@ -168,22 +199,42 @@ class User(TableObject):
 
 class Resource(TableObject, ResourceAbst):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    category = Column(ResourceCategory)
+    amount = Column(ExtInt)
+    
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
         category: ResourceCategory = ResourceCategory.UNSET,
-        amount: ExtInt = ExtInt(0, min_value=0)
+        amount: ExtInt | int = ExtInt(0, min_value=0)
     ):
-        TableObject.__init__(self, id)
+        if type(amount) == int:
+            amount = ExtInt(amount, min_value=0)
+        TableObject.__init__(self)
         ResourceAbst.__init__(self, category, amount)
+        self.id = id
         self.faction_id = faction_id
+        self.category = category
+        self.amount = amount
     
     def get_display_string(self) -> str:
         return self.category.local_name
+    
+    def to_discord_text(self) -> str:
+        return f"- {self.category.express()} : {self.amount}"
 
 class WorkerExperience(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    worker_id = Column(int, show_front=False)
+    category = Column(WorkCategory)
+    experience = Column(int)
+    
     def __init__(
         self,
         id: int = 0,
@@ -191,38 +242,18 @@ class WorkerExperience(TableObject):
         category: WorkCategory = WorkCategory.UNSET,
         experience: int = 0
     ):
-        TableObject.__init__(self, id)
+        TableObject.__init__(self)
+        self.id = id
         self.worker_id = worker_id
         self.category = category
         self.experience = experience
 
     def __int__(self):
         return self.experience
-    
-    @property
-    def level(self) -> int:
-        """
-        experience와 dice mod의 상관관계
-        experience가 12*(목표 mod 수치)만큼 오를 때마다 dice mod가 1씩 증가함
-        ```
-        0 -> +0
-        12 -> +1
-        36 (== 12 + 24) -> +2
-        72 (== 12 + 24 + 36) -> +3
-        120 (== 12 + 24 + 36 + 48) -> +4
-        ...
-        req. experience = 6 * mod * (mod + 1)
-        mod = (-1 + sqrt(1 + 2/3 * experience)) // 2
-        ```
-        """
-        return (-1 + sqrt(1 + 2/3 * self.experience)) // 2
         
     @classmethod
     def new(cls, worker_id: int, category: WorkCategory):
-        return cls(worker_id=worker_id, experience_category=category)
-    
-    def get_labor_dice(self) -> Nonahedron:
-        return Nonahedron(self.level)
+        return cls(worker_id=worker_id, category=category)
     
     def get_display_string(self) -> str:
         return self.category.local_name
@@ -232,6 +263,14 @@ class WorkerExperience(TableObject):
 
 class WorkerDescription(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    worker_id = Column(int, show_front=False)
+    worker_labor_detail = Column(str)
+    ps_0 = Column(str)
+    ps_1 = Column(str)
+    ps_2 = Column(str)
+    
     def __init__(
         self,
         id: int = 0,
@@ -241,7 +280,8 @@ class WorkerDescription(TableObject):
         ps_1: str = "",
         ps_2: str = ""
     ):
-        TableObject.__init__(self, id)
+        TableObject.__init__(self)
+        self.id = id
         self.worker_id = worker_id
         self.worker_labor_detail = worker_labor_detail
         self.ps_0 = ps_0
@@ -255,18 +295,33 @@ class WorkerDescription(TableObject):
     
     def set_worker_labor_detail(self, labor_dice_judge_value: int):
         detail = WorkerDetail(labor_dice_judge_value)
-        self.labor_detail = detail.get_random_detail()
+        self.worker_labor_detail = detail.get_random_detail()
         return self
     
     def get_display_string(self) -> str:
         return self.worker_id
     
-    def get_list(self) -> list[str]:
-        return [self.ps_0, self.ps_1, self.ps_2]
+    def get_description_line(self) -> str:
+        return f"{self.ps_0} | {self.ps_1} | {self.ps_2}"
+    
+    def to_discord_text(self, translator: TableObjTranslator) -> str:
+        lines = [
+            f"- {translator.get(self.__class__.worker_labor_detail.name, self.table_name)} : **{self.worker_labor_detail}**",
+            f"- 특징: **{self.get_description_line()}**"
+        ]
+        return "\n".join(lines)
 
 class Worker(TableObject):
     abstract = False
     correspond_category: WorkerCategory = None
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    category = Column(WorkerCategory)
+    name = Column(str)
+    sex = Column(BiologicalSex)
+    labor = Column(int)
+    availability = Column(Availability)
     
     def _check_category(self):
         if self.__class__.correspond_category is not None and self.category != self.__class__.correspond_category:
@@ -278,17 +333,20 @@ class Worker(TableObject):
         faction_id: int = 0,
         category: WorkerCategory = WorkerCategory.UNSET,
         name: str = "",
+        sex: BiologicalSex = BiologicalSex.UNSET,
         labor: int = 0,
         availability: Availability = Availability.UNAVAILABLE
     ):
-        TableObject.__init__(self, id)
+        TableObject.__init__(self)
+        self.id = id
         self.faction_id = faction_id
         self.category = category
         self.name = name
+        self.sex = sex
         self.labor = labor
         self.availability = availability
         
-        self._check_category()
+        # self._check_category()
         
     @classmethod
     def get_table_name(cls) -> str:
@@ -296,16 +354,31 @@ class Worker(TableObject):
     
     def get_display_string(self) -> str:
         return self.name
+    
+    def get_experience(self, category: WorkCategory) -> WorkerExperience:
+        self._check_database()
+        we = WorkerExperience.from_database(
+            self._database, worker_id=self.id, category=category
+        )
+        return we
+    
+    
 
 class FactionHierarchyNode(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    higher = Column(int)
+    lower = Column(int)
+    
     def __init__(
         self,
         id: int = 0,
         higher: int = 0,
         lower: int = 0
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.higher = higher
         self.lower = lower
     
@@ -327,24 +400,35 @@ class FactionHierarchyNode(TableObject):
 
 class Territory(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    name = Column(str)
+    space_limit = Column(int)
+    safety = Column(TerritorySafety)
+    shared = Column(bool)
+    
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
         name: str = "",
         space_limit: int = 1,
-        safety: TerritorySafety = TerritorySafety.UNKNOWN
+        safety: TerritorySafety = TerritorySafety.UNKNOWN,
+        shared: bool = True
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.faction_id = faction_id
         self.name = name
         self.space_limit = space_limit
         self.safety = safety
+        self.shared = shared
 
     def get_display_string(self) -> str:
         return self.name
 
-    def explicit_post_init(self):
+    def set_safety_by_random(self):
         """
         안전도를 랜덤으로 설정함
         """
@@ -361,6 +445,12 @@ class Territory(TableObject):
 
 class Deployment(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    worker_id = Column(int)
+    territory_id = Column(int)
+    building_id = Column(int)
+    
     def __init__(
         self,
         id: int = 0,
@@ -368,7 +458,8 @@ class Deployment(TableObject):
         territory_id: int = -1,
         building_id: int = -1
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.worker_id = worker_id
         self.territory_id = territory_id
         self.building_id = building_id
@@ -380,12 +471,14 @@ class Deployment(TableObject):
         """
         배치된 인원을 가져옴
         """
+        self._check_database()
         return Worker.from_data(self._database.fetch(Worker.get_table_name(), id=self.worker_id))
 
     def get_building(self) -> "Building":
         """
         배치된 건물을 가져옴
         """
+        self._check_database()
         return Building.from_data(self._database.fetch(Building.get_table_name(), id=self.building_id))
     
     @classmethod
@@ -396,6 +489,16 @@ class Deployment(TableObject):
 
 class Building(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    territory_id = Column(int, show_front=False)
+    category = Column(BuildingCategory)
+    name = Column(str)
+    remaining_dice_cost = Column(int)
+    level = Column(int)
+    shared = Column(bool)
+    
     def __init__(
         self,
         id: int = 0,
@@ -404,22 +507,25 @@ class Building(TableObject):
         category: BuildingCategory = BuildingCategory.UNSET,
         name: str = "",
         remaining_dice_cost: int = 0,
-        level: int = 0
+        level: int = 0,
+        shared: bool = True
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.faction_id = faction_id
         self.territory_id = territory_id
         self.category = category
         self.name = name
         self.remaining_dice_cost = remaining_dice_cost
         self.level = level
+        self.shared = shared
     
     @property
     def deploy_limit(self) -> int:
         return self.level + 2
 
     def get_display_string(self) -> str:
-        return self.name
+        return f"{self.name}: {self.category.express()}"
     
     def is_deployable(self, deployed_worker_ids: list[int] = None) -> bool:
         if not self.is_built(): return True
@@ -445,6 +551,18 @@ class Building(TableObject):
         deployment = Deployment(worker_id=worker.id, territory_id=self.territory_id, building_id=self.id)
         deployment.set_database(self._database)
         deployment.push()
+        
+    def deshare(self):
+        """
+        건물의 공유 여부를 해제함
+        """
+        self.shared = False
+        
+    def enshare(self):
+        """
+        건물의 공유 여부를 설정함
+        """
+        self.shared = True
         
     def apply_production(self, dice:int):
         if self.is_built():
@@ -479,6 +597,12 @@ class Building(TableObject):
 
 class CommandCounter(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    category = Column(CommandCountCategory)
+    amount = Column(int)
+    
     def __init__(
         self,
         id: int = 0,
@@ -486,7 +610,8 @@ class CommandCounter(TableObject):
         category: CommandCountCategory = CommandCountCategory.UNSET,
         amount: int = 0
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.faction_id = faction_id
         self.category = category
         self.amount = amount
@@ -509,6 +634,12 @@ class CommandCounter(TableObject):
 
 class Faction(TableObject):
     abstract = False
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    user_id = Column(int, show_front=False)
+    name = Column(str)
+    level = Column(int)
+    
     def __init__(
         self,
         id: int = 0,
@@ -516,7 +647,8 @@ class Faction(TableObject):
         name: str = "",
         level: int = 0
     ):
-        super().__init__(id)
+        super().__init__()
+        self.id = id
         self.user_id = user_id
         self.name = name
         self.level = level
@@ -572,6 +704,7 @@ class Faction(TableObject):
         """
         해당 세력의 명령 카운터를 가져옴
         """
+        self._check_database()
         cc = self._database.fetch("CommandCounter", faction_id=self.id, category=category.value)
         if not cc: return CommandCounter(faction_id=self.id, category=category)
         return CommandCounter.from_data(cc)

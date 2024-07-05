@@ -1,13 +1,11 @@
-from discord import Embed, Colour, utils
-from enum import Enum
+from discord import Embed, Colour
 
 from py_base.ari_enum import ResourceCategory, WorkCategory
 from py_base.dbmanager import DatabaseManager
-from py_base.arislena_dice import Nonahedron
-from py_base.yamlobj import TableObjTranslate
+from py_base.yamlobj import TableObjTranslator
 from py_system.abstract import TableObject
-from py_system.tableobj import User, Deployment, Building, WorkerDetail, WorkerDescription
-from py_system.systemobj import Crew, GeneralResource, ProductionResource
+from py_system.tableobj import User, Deployment, Building, WorkerDescription
+from py_system.systemobj import Crew, GeneralResource
 
 def embed_for_user(*messages) -> Embed:
     """
@@ -73,7 +71,7 @@ class TableObjectEmbed(ArislenaEmbed):
     def __init__(self, title: str, description: str = None):
         super().__init__(title, description, Colour.green())
     
-    def add_basic_info(self, table_obj: TableObject, translate: TableObjTranslate):
+    def add_basic_info(self, table_obj: TableObject, translate: TableObjTranslator):
         """
         TableObject의 기본 정보를 embed에 추가합니다.
         """
@@ -93,13 +91,14 @@ class ResourceConsumeEmbed(ArislenaEmbed):
 
 class CrewLookupEmbed(ArislenaEmbed):
     
-    def __init__(self, crew: Crew, database: DatabaseManager):
+    def __init__(self, crew: Crew, database: DatabaseManager, translator: TableObjTranslator):
         super().__init__(title="대원 정보", colour=Colour.green())
         self.crew = crew
         self.database = database
+        self.translator = translator
         
-    def add_basic_field(self, translate: TableObjTranslate):
-        self.add_field(name="기본 정보", value=self.crew.to_discord_text(translate))
+    def add_basic_field(self):
+        self.add_field(name="기본 정보", value=self.crew.to_discord_text(self.translator))
         return self
     
     def add_location_field(self):
@@ -122,7 +121,7 @@ class CrewLookupEmbed(ArislenaEmbed):
     # def add_labor_detail_field(self):
     #     self.add_field(
     #         name="컨디션",
-    #         value=CrewLaborDetail.get_from_corresponding(
+    #         value=WorkerDetail.get_from_corresponding(
     #             Nonahedron().set_last_roll(self.crew.labor).last_judge
     #         ).get_detail(
     #             self.crew.labor_detail_index
@@ -132,15 +131,13 @@ class CrewLookupEmbed(ArislenaEmbed):
     
     def add_description_field(self):
         self.add_field(
-            name="대원 설정",
-            value="\n".join(
-                WorkerDescription.from_database(self.database, worker_id = self.crew.id).get_list()
-            )
+            name="상태와 특징",
+            value=WorkerDescription.from_database(self.database, worker_id = self.crew.id).to_discord_text(self.translator)
+            
         )
         return self
     
     def add_experience_field(self):
-        # TODO: 경험치 정보 추가
         value_text_list = []
         for category in WorkCategory.to_list():
             exp = self.crew.get_experience(category)

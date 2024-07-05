@@ -29,8 +29,7 @@ class CrewCommand(GroupCog, name="대원"):
         
         database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
-            raise warnings.NoFaction()
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id).set_database(database)
         
         recruit_counter:CommandCounter = faction.get_command_counter(CommandCountCategory.RECRUIT)
         recruit_counter.set_database(database)
@@ -48,7 +47,8 @@ class CrewCommand(GroupCog, name="대원"):
         
         members_recruited = 0
         for _ in range(try_count):
-            members_recruited += random.randint(0, 2)
+            # 0명: 20%, 1명: 70%, 2명: 10%
+            members_recruited += random.choices([0, 1, 2], [0.2, 0.7, 0.1])[0]
         
         for _ in range(members_recruited):
             make_and_push_new_crew_package(database, Crew.new(faction.id))
@@ -66,8 +66,7 @@ class CrewCommand(GroupCog, name="대원"):
         
         database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
-            raise warnings.NoFaction()
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         
         crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
@@ -86,8 +85,7 @@ class CrewCommand(GroupCog, name="대원"):
     async def name(self, interaction: discord.Interaction):
         database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
-            raise warnings.NoFaction()
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
 
         crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
@@ -106,8 +104,7 @@ class CrewCommand(GroupCog, name="대원"):
     async def deploy(self, interaction: discord.Interaction):
         database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
-            raise warnings.NoFaction()
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         
         crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         
@@ -126,8 +123,7 @@ class CrewCommand(GroupCog, name="대원"):
     async def dismiss(self, interaction: discord.Interaction):
         database = self.bot.get_database(interaction.guild_id)
         
-        if (faction := Faction.from_database(database, user_id=interaction.user.id)) is None:
-            raise warnings.NoFaction()
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         
         crew_list = [Crew.from_data(data) for data in database.fetch_many(Crew.get_table_name(), faction_id=faction.id)]
         

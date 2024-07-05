@@ -6,7 +6,8 @@ from copy import deepcopy
 from typing import Any
 
 from py_base.abstract import ArislenaEnum
-from py_base.ari_enum import NonahedronJudge
+from py_base.ari_enum import D9Judge, D20Judge
+from py_base.ari_logger import ari_logger
 
 def adjust(value, min_value, max_value) -> int:
     """
@@ -203,7 +204,9 @@ class Dice:
         return value
     
     def _roll_core(self):
-        return self._adjust_dice(random.randint(self.dice_min, self.dice_max) + self._dice_mod)
+        roll = random.randint(self.dice_min, self.dice_max) + self._dice_mod
+        ari_logger.debug(f"{self.name} dice roll: {self.dice_min} ~ {self.dice_max} + {self._dice_mod}; {roll}")
+        return self._adjust_dice(roll)
         
     def _update(self):
         self._last_grade = self.get_grade()
@@ -294,14 +297,33 @@ class Nonahedron(Dice):
         super().__init__(
             1, 9,
             [3, 3, 2, 1],
-            list(NonahedronJudge),
+            list(D9Judge),
             dice_mod,
             grade_mod
         )
     
     @property
-    def last_judge(self) -> NonahedronJudge:
+    def last_judge(self) -> D9Judge:
         return super().last_judge
     
-    def get_judge(self) -> NonahedronJudge | None:
+    def get_judge(self) -> D9Judge | None:
+        return super().get_judge()
+
+
+class D20(Dice):
+    
+    def __init__(self, dice_mod:int=0):
+        super().__init__(
+            1, 20,
+            [2, 4, 6, 3, 2, 1],
+            list(D20Judge),
+            dice_mod,
+            0
+        )
+    
+    @property
+    def last_judge(self) -> D20Judge:
+        return super().last_judge
+    
+    def get_judge(self) -> D20Judge | None:
         return super().get_judge()

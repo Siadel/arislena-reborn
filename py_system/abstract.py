@@ -2,14 +2,121 @@ import re
 
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
-from typing import Iterable, Iterator, Self
+from typing import Iterable, Iterator, Self, Any
+from enum import IntEnum
 
 from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory, Availability
+from py_base.ari_logger import ari_logger
+from py_base.datatype import ExtInt
 from py_base.utility import sql_type
 from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum, DetailEnum
-from py_base.yamlobj import TableObjTranslate
-from py_base.arislena_dice import Nonahedron
+from py_base.yamlobj import TableObjTranslator
+
+class Column:
+    
+    def __init__(
+        self,
+        annotation: type,
+        *,
+        show_front: bool = True,
+        primary_key: bool = False,
+        auto_increment: bool = False,
+        not_null: bool = True,
+        unique: bool = False
+    ):
+        """
+        name : name of the column
+        annotation : type of the column
+        value : value of the column
+        show_front : whether to display the column in the front(discord)
+        primary_key : whether the column is a primary key
+        auto_increment : whether the column is auto increment
+        not_null : whether the column is not null
+        unique : whether the column is unique
+        """
+        self._name: str = None
+        self._value: annotation = None
+        self.annotation = annotation
+        self.show_front = show_front
+        self.primary_key = primary_key
+        self.auto_increment = auto_increment
+        self.not_null = not_null
+        self.unique = unique
+        
+    def __str__(self):
+        return str(self._value)
+    
+    def __get__(self, instance, owner):
+        if instance is None: return self
+        # print(f"Column {self._name} is accessed; {instance} {owner}")
+        return instance.__dict__[self._name]
+    
+    def __set__(self, instance: object, value):
+        # print(f"Column {self._name} will set; {instance} with value {value}, which type is {type(value)}")
+        if not isinstance(value, self.annotation):
+            raise TypeError(f"(function skipped) Column {self._name} is not {self.annotation} type. The value is '{value}' ({type(value)}).")
+            
+        instance.__dict__[self._name] = value
+        
+    def __set_name__(self, owner, name):
+        self._name = name
+    
+    def __delete__(self, instance):
+        del self._value
+    
+    @property
+    def name(self) -> str:
+        return self._name
+    
+    @property
+    def sql_type(self) -> str:
+        """
+        Returns the data type of the column used in SQL.
+        """
+        if self.annotation.__module__ == "builtins":
+            match self.annotation.__name__:
+                case "str": return "TEXT"
+                case "int": return "INTEGER"
+                case "float": return "REAL"
+                case "NoneType": return "NULL"
+                case "bool": return "INTEGER"
+        elif self.annotation is ExtInt: return "INTEGER"
+        elif issubclass(self.annotation, IntEnum): return "INTEGER"
+        
+        else: raise ValueError(f"Type {self.annotation} is not supported in Arislena's SQL.")
+        
+    @property
+    def creator(self) -> str:
+        """
+        Returns the string for column creation in SQL.
+
+        Returns:
+            str: The SQL string for creating the column.
+        """
+        sub_queries = []
+        sub_queries.append(f"{self._name} {self.sql_type}")
+        if self.primary_key: sub_queries.append("PRIMARY KEY")
+        if self.auto_increment: sub_queries.append("AUTOINCREMENT")
+        if self.not_null: sub_queries.append("NOT NULL")
+        if self.unique: sub_queries.append("UNIQUE")
+        return " ".join(sub_queries)
+
+    @property
+    def foreign_key_creator(self):
+        """
+        Returns the string for foreign key creation in SQL.
+
+        Returns:
+            str: The SQL string for creating the foreign key.
+        """
+        if self.is_foreign_key():
+            return f"FOREIGN KEY ({self._name}) REFERENCES {self._name.split('_')[0]}(id)"
+        else:
+            return ""
+    
+    def is_foreign_key(self) -> bool:
+        return self._name.endswith("_id")
 
 class TableObject(metaclass=ABCMeta):
     """
@@ -35,11 +142,9 @@ class TableObject(metaclass=ABCMeta):
     abstract = True # TableObject 클래스를 상속하지만 추상 클래스로 사용할 경우 True로 설정
     
     def __init__(
-        self,
-        id:int = 0
-    ):
-        self.id: int = id
-        
+        self
+    ):  
+        self.id: int
         self._database: DatabaseManager = None
     
     @abstractmethod
@@ -59,6 +164,16 @@ class TableObject(metaclass=ABCMeta):
         이 클래스의 테이블 이름을 반환
         """
         return cls.__name__
+    
+    @classmethod
+    def fetch_or_raise(cls, database:DatabaseManager, _raise: Exception, *raw_statements, **statements):
+        """
+        데이터베이스에서 데이터를 가져오거나, 데이터가 없을 경우 예외를 발생시킵니다.
+        """
+        data = database.fetch(cls.get_table_name(), *raw_statements, **statements)
+        if data is None:
+            raise _raise
+        return cls.from_data(data)
     
     @classmethod
     def from_database(cls, database:DatabaseManager, *raw_statements, **statements):
@@ -95,13 +210,21 @@ class TableObject(metaclass=ABCMeta):
             return cls(**kwargs)
     
     @classmethod
-    def from_data_iter(cls, sqlite_rows:Iterable[Row]) -> Iterator[Self]:
+    def from_data_iter(cls, sqlite_rows:Iterable[Row], database: DatabaseManager = None) -> Iterator[Self]:
         """
         Creates a list of table objects from the database, using the sqlite3.Row object.
-
-        This function not sets the database attribute of the table object. You should set the database attribute manually.
         """
+        if database:
+            return iter(cls.from_data(row).set_database(database) for row in sqlite_rows)
         return iter(cls.from_data(row) for row in sqlite_rows)
+        
+    @classmethod
+    def from_database_to_iter(cls, database:DatabaseManager, *raw_statements, **statements):
+        """
+        Creates a list of table objects from the database.
+        """
+        rows = database.fetch_many(cls.get_table_name(), *raw_statements, **statements)
+        return cls.from_data_iter(rows, database)
     
     @property
     def table_name(self):
@@ -122,39 +245,52 @@ class TableObject(metaclass=ABCMeta):
         """
 
         for key in row.keys():
-
-            annotation = str(type(getattr(self, key))).removeprefix("<").removesuffix(">").split("'")
-            ref_class = annotation[0].strip()
-            class_name = annotation[1].strip()
             
-            if row[key] is None: continue # None 값은 무시 (기본값으로 설정됨)
+            _get = getattr(self.__class__, key, None)
+            if not isinstance(_get, Column): continue
             
-            match (ref_class, class_name):
-                
-                case (_, "int") | (_, "str") | (_, "float"):
-                    setattr(self, key, row[key])
-                case (_, "bool"):
-                    setattr(self, key, bool(row[key]))
-                case (_, "py_base.datatype.ExtInt"):
-                    setattr(self, key, getattr(self, key) + row[key])
-                case (_, "enum.EnumType"):
-                    setattr(self, key, get_enum(class_name, row[key]))
-                case ("enum", _):
-                    setattr(self, key, get_intenum(class_name, int(row[key])))
-                case _:
-                    raise ValueError(f"지원하지 않는 데이터 형식입니다: {type(row[key])}, 값: {row[key]}")
+            if _get.annotation.__module__ == "builtins":
+                match _get.annotation.__name__:
+                    case "str" | "int" | "float": setattr(self, key, row[key])
+                    case "bool": setattr(self, key, bool(row[key]))
+                    case "NoneType": setattr(self, key, None)
+            elif _get.annotation is ExtInt: setattr(self, key, getattr(self, key) + row[key])
+            elif issubclass(_get.annotation, IntEnum): setattr(self, key, get_intenum(_get.annotation.__name__, row[key]))
+            else: raise ValueError(f"Type {_get.annotation} is not supported in Arislena's SQL.")
+    
+    def set_value(self, key:str, value:Any):
+        """
+        key가 Column 객체인 경우 해당 key의 value 설정
+        """
+        _get = getattr(self.__class__, key, None)
+        if isinstance(_get, Column) and isinstance(value, _get.annotation):
+            _get._value = value
+            
+    @classmethod
+    def get_columns(cls) -> dict[str, Column]:
+        """
+        Returns the dictionary of the columns.
+        """
+        return {k: v for k, v in cls.__dict__.items() if isinstance(v, Column)}
+    
+    @classmethod
+    def get_showables(cls) -> list[str]:
+        """
+        Returns the list of the attributes that are shown in the front-end.
+        """
+        return [k for k, v in cls.__dict__.items() if isinstance(v, Column) and v.show_front]
         
-    def get_dict(self) -> dict:
+    def get_dict(self) -> dict[str, Any]:
         """
-        self.__dict__를 호출하나 key가 '_'로 시작하는 것은 제외
+        self.__dict__를 호출하나 _로 시작하는 attribute는 제외
         """
-        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
-    def get_dict_without_id(self) -> dict:
+    def get_dict_without_id(self) -> dict[str, Any]:
         """
-        self.__dict__를 호출하나 key가 '_'로 시작하는 것과 id는 제외
+        self.__dict__를 호출하나 _로 시작하는 attribute와 id는 제외
         """
-        return {k: v for k, v in self.__dict__.items() if not k.startswith('_') and k != "id"}
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and k != "id"}
     
     def get_wildcard_string(self) -> str:
         """
@@ -179,35 +315,38 @@ class TableObject(metaclass=ABCMeta):
 
         """
 
-        return sql_type(type(getattr(self, column_name)))
+        _get = getattr(self.__class__, column_name, None)
+        if isinstance(_get, Column):
+            return _get.sql_type
+        else:
+            raise ValueError(f"Column {column_name} is not found.")
     
-    def get_create_table_string(self) -> str:
+    @classmethod
+    def get_create_table_string(cls) -> str:
         """
         Returns the string for table creation in SQL.
 
         Returns:
             str: The SQL string for creating the table.
         """
-        keys = self.get_dict().keys()
-        foreign_keys:list[str] = [key for key in keys if re.match(r"\w+_id", key)]
         sub_queries = []
+        foreign_keys = []
 
-        for key in keys:
-            if key == "id":
-                sub_queries.append(f"{key} INTEGER PRIMARY KEY AUTOINCREMENT")
-            else:
-                sub_queries.append(f"{key} {self.get_column_type(key)}")
+        for v in cls.get_columns().values():
+            sub_queries.append(v.creator)
+            if v.is_foreign_key():
+                foreign_keys.append(v.foreign_key_creator)
+        
+        if foreign_keys:
+            sub_queries.extend(foreign_keys)
 
-        for foreign_key in foreign_keys:
-            sub_queries.append(f"FOREIGN KEY ({foreign_key}) REFERENCES {foreign_key.split('_')[0]}(id)")
-
-        return f"CREATE TABLE IF NOT EXISTS {self.table_name} ({', '.join(sub_queries)})"
+        return f"CREATE TABLE IF NOT EXISTS {cls.get_table_name()} ({', '.join(sub_queries)})"
     
     def pull(self, *raw_statements, **statements):
         """
         Fetches the data from the table which has the same name as the object's class name.
 
-        If the data does not exist, an exception is raised.
+        If the data does not exist, this function sets the object's attributes to the values passed as arguments. (only for KWARGS statements)
 
         If the data exists, it will update the object's attributes.
 
@@ -223,10 +362,11 @@ class TableObject(metaclass=ABCMeta):
         
         row = self._database.fetch(self.table_name, *raw_statements, **statements)
         
-        if not row:
-            raise ValueError(f"해당 조건({raw_statements} | {statements})으로 데이터베이스에서 데이터를 찾을 수 없습니다.")
-
-        self._set_attributes_from_sqlite_row(row)
+        if row:
+            self._set_attributes_from_sqlite_row(row)
+        else:
+            for k, v in statements.items():
+                setattr(self, k, v)
     
     def push(self):
         """
@@ -270,7 +410,7 @@ class TableObject(metaclass=ABCMeta):
         self._check_database()
         self._database.delete_with_id(self.table_name, self.id)
         
-    def to_discord_text(self, translate:TableObjTranslate) -> str:
+    def to_discord_text(self, translator:TableObjTranslator) -> str:
         """
         Returns the text for the discord message.
 
@@ -279,15 +419,17 @@ class TableObject(metaclass=ABCMeta):
         """
 
         texts = []
-        for key, value in self.get_dict().items():
-            key = translate.get(key, self.table_name, key)
+        discord_text = ""
+        for key in self.get_showables():
+            value = getattr(self, key)
+            show_key = translator.get(key, self.table_name, key)
             if isinstance(value, ArislenaEnum):
-                value = value.to_discord_text()
+                discord_text = value.to_discord_text()
             elif isinstance(value, DetailEnum):
                 continue
             else:
-                value = f"**{value}**"
-            texts.append(f"- {key} : {value}")
+                discord_text = f"**{value}**"
+            texts.append(f"- {show_key} : {discord_text}")
         return "\n".join(texts)
 
 class ResourceAbst(metaclass=ABCMeta):
@@ -367,37 +509,6 @@ class GeneralResource(ResourceAbst):
     ):
         super().__init__(category, amount)
 
-
-class Workable(metaclass=ABCMeta):
-    """
-    노동력을 가지는 객체
-    """
-    def __init__(self):
-        
-        self._labor_dice: Nonahedron = None
-    
-    @property
-    def labor_dice(self):
-        return self._labor_dice
-    
-    @abstractmethod
-    def get_consumption_recipe(self) -> list[GeneralResource]:
-        """
-        노동력 소모에 필요한 자원을 반환함
-        """
-        pass
-    
-    @abstractmethod
-    def set_labor_dice(self):
-        """
-        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
-        """
-        self._labor_dice = Nonahedron()
-        return self
-    
-    @abstractmethod
-    def set_labor(self):
-        return self
 
 # deprecated
 # @dataclass

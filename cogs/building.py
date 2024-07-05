@@ -28,9 +28,8 @@ class BuildingCommand(GroupCog, name="건물"):
     async def build(self, interaction: discord.Interaction, building_category: app_commands.Choice[int], building_name: str):\
         
         database = self.bot.get_database(interaction.guild_id)
-        faction_data = database.fetch(Faction.get_table_name(), user_id=interaction.user.id)
-        if faction_data is None: raise warnings.NoFaction()
-        faction = Faction.from_data(faction_data)
+        
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         
         territory_list = database.fetch_many("territory", faction_id=faction.id)
         
@@ -51,7 +50,8 @@ class BuildingCommand(GroupCog, name="건물"):
                     building_category=building_category,
                     building_name=building_name
                 )
-            )
+            ),
+            ephemeral=True
         )
     
     @app_commands.command(
@@ -63,14 +63,13 @@ class BuildingCommand(GroupCog, name="건물"):
     )
     async def view(self, interaction: discord.Interaction, other_user: discord.User = None):
         
-        f_data = None
+        database = self.bot.get_database(interaction.guild_id)
         
-        if not other_user and not (f_data := self.bot.get_database(interaction.guild_id).fetch(Faction.get_table_name(), user_id = interaction.user.id)): raise warnings.NoFaction()
-        elif other_user and not (f_data := self.bot.get_database(interaction.guild_id).fetch(Faction.get_table_name(), user_id = other_user.id)): raise warnings.NoFaction()
+        user_id = other_user.id if other_user else interaction.user.id
         
-        f = Faction.from_data(f_data)
+        faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=user_id)
         
-        b_list = self.bot.get_database(interaction.guild_id).fetch_many(Building.get_table_name(), faction_id = f.id)
+        b_list = database.fetch_many(Building.get_table_name(), faction_id = faction.id)
         
         await interaction.response.send_message(
             "열람할 건물을 선택해주세요.",

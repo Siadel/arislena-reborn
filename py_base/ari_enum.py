@@ -3,17 +3,18 @@
 """
 from enum import IntEnum, Enum
 import random
+import numpy.random as npr
 
 from py_base.abstract import ArislenaEnum, DetailEnum
 
-def get_intenum(enum_class_name, value:int|None) -> IntEnum:
+def get_intenum(enum_class_name: str, value:int|None) -> IntEnum:
     """
     enum을 반환함
     """
     if value is None: raise ValueError("enum의 값이 None입니다. 데이터에서 값을 확인해주세요.")
     return globals()[enum_class_name](value)
 
-def get_enum(enum_class_name, value:str|None) -> Enum:
+def get_enum(enum_class_name: str, value:str|None) -> Enum:
     """
     enum을 반환함
     """
@@ -36,23 +37,29 @@ class Language(ArislenaEnum):
     KOREAN = "한국어", "🇰🇷"
     ENGLISH = "English", "🇺🇸"
 
-class HumanSex(ArislenaEnum):
+class BiologicalSex(ArislenaEnum):
     # 0: 남성, 1: 여성
+    UNSET = "미정", "❓", -1
     MALE = "남성", "♂"
     FEMALE = "여성", "♀"
+    
+    @classmethod
+    def get_random(cls):
+        
+        return cls(npr.choice(2, 1, p=[0.9, 0.1])+1)
 
 class Availability(ArislenaEnum):
     UNAVAILABLE = "배치 불가", "❌"
-    LABORING = "노동 중 (배치됨)", "🛠️"
     HEALING = "치료 중", "🩹"
-    STANDBY = "대기 중", "✅"
+    LABORING = "노동 중 (배치됨)", "🛠️", 1
+    STANDBY = "대기 중", "✅", 1
     
     @classmethod
     def get_availables(cls):
-        return cls.STANDBY or cls.LABORING
+        return [cls.LABORING, cls.STANDBY]
     
     def is_available(self) -> bool:
-        return self == self.__class__.get_availables()
+        return self in self.__class__.get_availables()
 
 class TerritorySafety(ArislenaEnum):
     # 회색, 흑색, 적색, 황색, 녹색
@@ -65,8 +72,8 @@ class TerritorySafety(ArislenaEnum):
     GREEN = "녹색", "🟢"
 
     @classmethod
-    def max_value(cls):
-        return cls.GREEN.value
+    def get_max_safety(cls):
+        return cls.GREEN
     
     @classmethod
     def get_randomly(cls) -> "TerritorySafety":
@@ -79,28 +86,32 @@ class TerritorySafety(ArislenaEnum):
         return random.choice([cls.BLACK, cls.YELLOW, cls.RED, cls.RED, cls.RED, cls.RED])
         
 class ResourceCategory(ArislenaEnum):
-    UNSET = "미정", "❓"
+    UNSET = "미정", "❓", -1
     WATER = "물", "💧"
     FOOD = "식량", "🍞"
     FEED = "사료", "🌾"
-    WOOD = "목재", "🌲"
-    SOIL = "흙", "🏞️"
-    STONE = "석재", "🥌"
+    WOOD = "목재", ":wood:"
+    SOIL = "흙", "🟫"
+    STONE = "석재", ":rock:"
     BUILDING_MATERIAL = "건축자재", "🧱"
     LIVESTOCK = "가축", "🐄"
+    
+    @classmethod
+    def to_list(cls) -> list["ResourceCategory"]:
+        return [component for component in cls if component.value != cls.UNSET.value]
 
 class BuildingCategory(ArislenaEnum):
-    UNSET = "미정", "❓"
+    UNSET = "미정", "❓", -1
     FRESH_WATER_SOURCE = "담수원", "🚰"
     HUNTING_GROUND = "수렵지", "🏹"
     GATHERING_POST = "채집지", "🌾"
-    PASTURELAND = "목초지", "🐄"
-    FARMLAND = "농경지", "🌾⛺"
-    WOOD_GATHERING_POST = "목재 채취장", "🌲🏭"
-    EARTH_GATHERING_POST = "토석 채취장", "🏞️🏭"
-    BUILDING_MATERIAL_FACTORY = "건축자재 공장", "🧱🏭"
-    RECRUITING_CAMP = "모병소", "🛡️🏭"
-    AUTOMATED_GATHERING_FACILITY = "자동 채취 시설", "🏭🤖"
+    PASTURELAND = "목초지", "🐄", 1
+    FARMLAND = "농경지", "🌾⛺", 1
+    WOOD_GATHERING_POST = "목재 채취장", "🌲🏭", 1
+    EARTH_GATHERING_POST = "토석 채취장", "🏞️🏭", 1
+    BUILDING_MATERIAL_FACTORY = "건축자재 공장", "🧱🏭", 1
+    RECRUITING_CAMP = "모병소", "🛡️🏭", 1
+    AUTOMATED_GATHERING_FACILITY = "자동 채취 시설", "🏭🤖", 1
     
     @classmethod
     def get_basic_building_list(cls) -> list["BuildingCategory"]:
@@ -117,7 +128,7 @@ class BuildingCategory(ArislenaEnum):
     
     @classmethod
     def get_advanced_building_list(cls) -> list["BuildingCategory"]:
-        rtn = [component for component in cls if component not in cls.get_basic_building_list() and component != cls.UNSET]
+        rtn = [comp for comp in cls if comp.level == 1]
         return rtn
 
 class Strategy(ArislenaEnum):
@@ -130,18 +141,27 @@ class Strategy(ArislenaEnum):
     RETREAT = "후퇴", "🏳️"
 
 class CommandCountCategory(ArislenaEnum):
-    UNSET = "미정", "❓"
+    UNSET = "미정", "❓", -1
     RECRUIT = "모병", "🛡️"
 
-class NonahedronJudge(ArislenaEnum):
+class D9Judge(ArislenaEnum):
     TRAGIC = "처참함", "😭"
     AVERAGE = "무난함", "😐"
     SUCCESS = "성공", "✅"
     GREAT_SUCCESS = "멋지게 성공!", "🎉"
 
+class D20Judge(ArislenaEnum):
+    TRAGIC = "처참함", "😭"
+    POOR = "아쉬움", "😔"
+    AVERAGE = "무난함", "😐"
+    PROPER = "적절함", "😊"
+    SUCCESS = "성공", "✅"
+    GREAT_SUCCESS = "멋지게 성공!", "🎉"
+
+# TODO D20Judge를 활용하도록 수정 필요
 class WorkerDetail(DetailEnum):
     UNSET = 0, ("미정",)
-    TRAGIC = NonahedronJudge.TRAGIC, (
+    TRAGIC = D9Judge.TRAGIC, (
         "작업 중 중상", 
         "심한 몸살", 
         "현재 만취", 
@@ -150,7 +170,7 @@ class WorkerDetail(DetailEnum):
         "파업 시위 중", 
         "잘못된 작업 내용"
     )
-    AVERAGE = NonahedronJudge.AVERAGE, (
+    AVERAGE = D9Judge.AVERAGE, (
         "작업 중 경상", 
         "가벼운 몸살", 
         "전날 과음함", 
@@ -159,7 +179,7 @@ class WorkerDetail(DetailEnum):
         "심한 근심걱정 중", 
         "작업 내용 몰이해"
     )
-    SUCCESS = NonahedronJudge.SUCCESS, (
+    SUCCESS = D9Judge.SUCCESS, (
         "무사고", 
         "건강함", 
         "술을 절제함", 
@@ -168,7 +188,7 @@ class WorkerDetail(DetailEnum):
         "근심이 없음", 
         "작업 내용 숙지"
     )
-    GREAT_SUCCESS = NonahedronJudge.GREAT_SUCCESS, (
+    GREAT_SUCCESS = D9Judge.GREAT_SUCCESS, (
         "무사고", 
         "특별한 보약을 먹음", 
         "특별 휴가를 다녀옴", 
@@ -181,12 +201,12 @@ class WorkerDetail(DetailEnum):
         return super().get_from_corresponding(corresponding)
 
 class WorkerCategory(ArislenaEnum):
-    UNSET = "미정", "❓"
+    UNSET = "미정", "❓", -1
     CREW = "대원", "👥",
     LIVESTOCK = "가축", "🐄"
 
 class WorkCategory(ArislenaEnum):
-    UNSET = "미정", "❓"
+    UNSET = "미정", "❓", -1
     IRRIGATION = "관개", "🚰"
     HUNTING = "사냥", "🏹"
     GATHERING = "채집", "👐"

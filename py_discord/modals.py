@@ -70,14 +70,7 @@ class FactionCreateModal(ArislenaGeneralModal):
         database = self.bot.get_database(interaction.guild_id)
 
         # 세력 데이터베이스에 추가
-        new_faction = Faction(user_id=interaction.user.id, name=faction_name)
-        new_faction.set_database(database)
-        new_faction.push()
-
-        database.connection.commit()
-        
-        # 추가된 세력을 다시 가져옴
-        new_faction = Faction.from_database(database, user_id=interaction.user.id)
+        new_faction = func.make_and_push_new_faction(database, Faction(user_id=interaction.user.id, name=faction_name))
 
         # id가 가장 낮은 세력의 하위 세력으로 설정
         optimal_faction = Faction.from_database(database, "id = (SELECT MIN(id) FROM faction)")
@@ -99,6 +92,9 @@ class FactionCreateModal(ArislenaGeneralModal):
         Resource(faction_id=new_faction.id, category=ResourceCategory.WATER, amount=6)\
             .set_database(database)\
             .push()
+            
+        # 기본 영토와 건물(담수원, 수렵지, 목초지, 채집지) 추가
+        func.add_new_territory_set(database, new_faction)
         
         database.connection.commit()
 
@@ -126,7 +122,7 @@ class NewTerritoryModal(ArislenaGeneralModal):
         faction = Faction.from_database(database, user_id=interaction.user.id)
         # 새 영토 생성
         t = Territory(faction_id=faction.id, name=territory_name)
-        t.explicit_post_init()
+        t.set_safety_by_random()
         t.set_database(database)
         t.push()
         # 생성된 영토 데이터 가져오기

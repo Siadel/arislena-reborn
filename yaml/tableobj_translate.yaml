@@ -24,6 +24,11 @@ general:
   remaining_dice_cost: 남은 주사위 총량
   level: 레벨
   experience: 경험치
+  sex: 성별
+  worker_labor_detail: 오늘의 상태
+  ps_0: 특징 1
+  ps_1: 특징 2
+  ps_2: 특징 3
 Faction:
   name: 세력명
 

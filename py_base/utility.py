@@ -62,6 +62,7 @@ def sql_type(dtype: type) -> str:
         case ("enum", _): return "INTEGER"
         
         case _: Exception(f"Type {type(dtype)} is not supported in Arislena's SQL.")
+    
 
 def sql_value(value: str | Enum | None | int | float) -> str:
     """
