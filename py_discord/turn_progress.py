@@ -42,7 +42,7 @@ def building_progress(database: DatabaseManager, building_id: int) -> Embed:
 
             result_embed.add_field(
                 name=f"건축 노동원: {sys_worker.name}",
-                value=f"진척 추가: {sys_worker.labor + exp_level}\n건축 진척: {sys_building.get_construction_progress()} / {sys_building.required_dice_cost}"
+                value=f"진척 추가: {sys_worker.labor + exp_level}\n건축 진척: {sys_building.construction_progress} / {sys_building.required_dice_cost}"
             )
         
         sys_building.push()

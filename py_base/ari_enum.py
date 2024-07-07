@@ -143,6 +143,8 @@ class Strategy(ArislenaEnum):
 class CommandCountCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
     RECRUIT = "모병", "🛡️"
+    SCOUT = "정찰", ":eye:"
+    RETREAT = "후퇴", ":runner:"
 
 class D9Judge(ArislenaEnum):
     TRAGIC = "처참함", "😭"
@@ -160,8 +162,8 @@ class D20Judge(ArislenaEnum):
 
 # TODO D20Judge를 활용하도록 수정 필요
 class WorkerDetail(DetailEnum):
-    UNSET = 0, ("미정",)
-    TRAGIC = D9Judge.TRAGIC, (
+    UNSET = -1, ("미정",)
+    TRAGIC = D20Judge.TRAGIC, (
         "작업 중 중상", 
         "심한 몸살", 
         "현재 만취", 
@@ -170,7 +172,10 @@ class WorkerDetail(DetailEnum):
         "파업 시위 중", 
         "잘못된 작업 내용"
     )
-    AVERAGE = D9Judge.AVERAGE, (
+    POOR = D20Judge.POOR, (
+
+    )
+    AVERAGE = D20Judge.AVERAGE, (
         "작업 중 경상", 
         "가벼운 몸살", 
         "전날 과음함", 
@@ -179,7 +184,10 @@ class WorkerDetail(DetailEnum):
         "심한 근심걱정 중", 
         "작업 내용 몰이해"
     )
-    SUCCESS = D9Judge.SUCCESS, (
+    PROPER = D20Judge.PROPER, (
+
+    )
+    SUCCESS = D20Judge.SUCCESS, (
         "무사고", 
         "건강함", 
         "술을 절제함", 
@@ -188,7 +196,7 @@ class WorkerDetail(DetailEnum):
         "근심이 없음", 
         "작업 내용 숙지"
     )
-    GREAT_SUCCESS = D9Judge.GREAT_SUCCESS, (
+    GREAT_SUCCESS = D20Judge.GREAT_SUCCESS, (
         "무사고", 
         "특별한 보약을 먹음", 
         "특별 휴가를 다녀옴", 

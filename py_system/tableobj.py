@@ -224,7 +224,7 @@ class Resource(TableObject, ResourceAbst):
     def get_display_string(self) -> str:
         return self.category.local_name
     
-    def to_discord_text(self) -> str:
+    def to_embed_value(self) -> str:
         return f"- {self.category.express()} : {self.amount}"
 
 class WorkerExperience(TableObject):
@@ -258,7 +258,7 @@ class WorkerExperience(TableObject):
     def get_display_string(self) -> str:
         return self.category.local_name
     
-    def to_discord_text(self) -> str:
+    def to_embed_value(self) -> str:
         return f"- {self.category.express()} : {self.experience}"
 
 class WorkerDescription(TableObject):
@@ -289,25 +289,26 @@ class WorkerDescription(TableObject):
         self.ps_2 = ps_2
     
     @classmethod
-    def new(cls, worker_id: int):
-        desc = Detail().get_random_worker_descriptions(3)
+    def new(cls, worker_id: int, file: Detail = None):
+        if file is None: file = Detail()
+        desc = file.get_random_worker_descriptions(3)
         return cls(worker_id=worker_id, ps_0=desc[0], ps_1=desc[1], ps_2=desc[2])
     
-    def set_worker_labor_detail(self, labor_dice_judge_value: int):
-        detail = WorkerDetail(labor_dice_judge_value)
-        self.worker_labor_detail = detail.get_random_detail()
+    def set_worker_labor_detail(self, d20_judge_name: str, file:Detail = None):
+        if file is None: file = Detail()
+        self.worker_labor_detail = file.get_random_detail(d20_judge_name)
         return self
     
     def get_display_string(self) -> str:
         return self.worker_id
     
     def get_description_line(self) -> str:
-        return f"{self.ps_0} | {self.ps_1} | {self.ps_2}"
+        return f"**{self.ps_0}** | **{self.ps_1}** | **{self.ps_2}**"
     
-    def to_discord_text(self, translator: TableObjTranslator) -> str:
+    def to_embed_value(self, translator: TableObjTranslator) -> str:
         lines = [
             f"- {translator.get(self.__class__.worker_labor_detail.name, self.table_name)} : **{self.worker_labor_detail}**",
-            f"- 특징: **{self.get_description_line()}**"
+            f"- 특징: {self.get_description_line()}"
         ]
         return "\n".join(lines)
 
@@ -545,6 +546,11 @@ class Building(TableObject):
         이전 배치 정보가 존재하는 경우 삭제
         """
         self._check_database()
+        if not self.is_deployable():
+            ari_logger.warning(
+                "이 경고가 발생했다면 코드를 수정하세요 - 건물에 더 이상 인원을 배치할 수 없습니다. (최대 수용량에 다다름)"
+            )
+            return
         self._database.connection.execute(
             f"DELETE FROM Deployment WHERE worker_id = {worker.id}"
         )

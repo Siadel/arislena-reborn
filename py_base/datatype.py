@@ -68,6 +68,34 @@ class ExtInt(int):
     def __repr__(self) -> str:
         return self.__class__.__name__ + f"({super().__repr__()}, max_value={self.max_value}, min_value={self.min_value})"
 
+class DiscordEmbedField:
+
+    def __init__(self, name: str, value: str, inline: bool=False):
+        """
+        name: 256자 이내의 문자열
+        value: 1024자 이내의 문자열
+        """
+        self.name = name
+        self.value = value
+        self.inline = inline
+
+    def to_dict(self):
+        """
+        다음과 같이 사용:
+        ```
+        field = DiscordEmbedField("name", "value", inline=True)
+        e = discord.Embed()
+        e.add_field(**field.to_dict())
+        ```
+        """
+        return {"name": self.name, "value": self.value, "inline": self.inline}
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name}, {self.value}, inline={self.inline})"
+
 """
 ExtInt 오류 테스트
 최소치가 0, 최대치가 100인 변수 a를 만들고, 10을 넣음

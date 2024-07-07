@@ -6,8 +6,7 @@ import random
 
 from py_base.ari_enum import BuildingCategory, CommandCountCategory
 from py_discord.bot_base import BotBase
-from py_discord import views, warnings, modals
-from py_discord.func import make_and_push_new_crew_package
+from py_discord import views, warnings, func
 from py_system.systemobj import Crew
 from py_system.tableobj import Faction, CommandCounter, Worker
 
@@ -51,7 +50,7 @@ class CrewCommand(GroupCog, name="대원"):
             members_recruited += random.choices([0, 1, 2], [0.2, 0.7, 0.1])[0]
         
         for _ in range(members_recruited):
-            make_and_push_new_crew_package(database, Crew.new(faction.id))
+            func.make_and_push_new_crew_package(database, Crew.new(faction.id), self.bot.get_server_manager(interaction.guild_id).detail)
         
         await interaction.response.send_message(f"모집 횟수를 {try_count}회 사용해 새 인원을 {members_recruited}명 모집했습니다.")
         

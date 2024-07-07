@@ -116,7 +116,7 @@ class FactionLookupButton(TableObjectButton):
             resource = Resource.from_database(
                 self._database, faction_id = self.faction.id, category = resource_category
             )
-            field_values.append(resource.to_discord_text())
+            field_values.append(resource.to_embed_value())
         
         embed.add_field(
             name="자원 현황",

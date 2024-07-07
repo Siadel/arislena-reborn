@@ -226,7 +226,7 @@ class ServerManager:
                 if isinstance(obj, Crew):
                     desc = obj.get_description()\
                         .set_database(self.database)\
-                        .set_worker_labor_detail(obj.labor_dice.last_judge.value)
+                        .set_worker_labor_detail(obj.labor_dice.last_judge.name, self.detail)
                     desc.push()
 
                 obj.push()

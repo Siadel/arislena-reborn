@@ -296,7 +296,8 @@ class SystemBuilding(Building, metaclass=ABCMeta):
         
             yield resource
     
-    def get_construction_progress(self) -> int:
+    @property
+    def construction_progress(self) -> int:
         return self.required_dice_cost - self.remaining_dice_cost
     
     def get_deployed_crews(self, deployment_list: list[Deployment]) -> list[Crew]:
@@ -309,6 +310,11 @@ class SystemBuilding(Building, metaclass=ABCMeta):
         deployed_workers = self.get_deployed_workers(deployment_list)
         return [Livestock.from_data(row).set_database(self._database) for row in deployed_workers if row.category == WorkerCategory.LIVESTOCK]
     
+    def level_up(self):
+        # 여기에 warnings 객체 넣어야 하는데...
+        if not self.is_built(): return
+        self.remaining_dice_cost = self.level * 25 + int(self.__class__.required_dice_cost / 2)
+
     # def construct(self, deployed_crews: list[Crew]):
     #     if self.is_built(): return
         

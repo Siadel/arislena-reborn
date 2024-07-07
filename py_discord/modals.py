@@ -82,7 +82,8 @@ class FactionCreateModal(ArislenaGeneralModal):
         # TODO 리팩토링으로 인해 이 부분을 다시 작성해야 함
         for _ in range(2):
             func.make_and_push_new_crew_package(
-                database, Crew.new(new_faction.id)
+                database, Crew.new(new_faction.id),
+                self.bot.get_server_manager(interaction.guild_id).detail
             )
         
         # 자원 추가: 식량 6, 식수 6

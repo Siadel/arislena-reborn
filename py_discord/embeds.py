@@ -75,7 +75,7 @@ class TableObjectEmbed(ArislenaEmbed):
         """
         TableObject의 기본 정보를 embed에 추가합니다.
         """
-        self.add_field(name="기본 정보", value=table_obj.to_discord_text(translate))
+        self.add_field(name="기본 정보", value=table_obj.to_embed_value(translate))
         return self
     
 
@@ -98,7 +98,7 @@ class CrewLookupEmbed(ArislenaEmbed):
         self.translator = translator
         
     def add_basic_field(self):
-        self.add_field(name="기본 정보", value=self.crew.to_discord_text(self.translator))
+        self.add_field(name="기본 정보", value=self.crew.to_embed_value(self.translator))
         return self
     
     def add_location_field(self):
@@ -132,7 +132,7 @@ class CrewLookupEmbed(ArislenaEmbed):
     def add_description_field(self):
         self.add_field(
             name="상태와 특징",
-            value=WorkerDescription.from_database(self.database, worker_id = self.crew.id).to_discord_text(self.translator)
+            value=WorkerDescription.from_database(self.database, worker_id = self.crew.id).to_embed_value(self.translator)
             
         )
         return self
@@ -142,7 +142,7 @@ class CrewLookupEmbed(ArislenaEmbed):
         for category in WorkCategory.to_list():
             exp = self.crew.get_experience(category)
             value_text_list.append(
-                exp.to_discord_text()
+                exp.to_embed_value()
             )
         self.add_field(
             name="경험치 현황",

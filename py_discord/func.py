@@ -3,6 +3,7 @@ from discord.app_commands import Choice
 from py_base.ari_enum import BuildingCategory, Availability
 from py_base.dbmanager import DatabaseManager
 from py_base.utility import name_regex
+from py_base.yamlobj import Detail
 from py_system.systemobj import Crew
 from py_system.tableobj import WorkerDescription, Faction, Territory, Building
 from py_discord.warnings import NameContainsSpecialCharacter
@@ -30,14 +31,14 @@ def get_building_category_choices() -> list[Choice[int]]:
         ) for category in BuildingCategory.get_advanced_building_list()
     ]
 
-def make_and_push_new_crew_package(database: DatabaseManager, new_crew: Crew) -> None:
+def make_and_push_new_crew_package(database: DatabaseManager, new_crew: Crew, file:Detail) -> None:
     """
     새로운 Crew 객체를 생성할 때, CrewPersonality 객체도 같이 생성하고, 데이터베이스에 추가합니다.
     """
     if new_crew.database is None: new_crew.set_database(database)
     new_crew.availability = Availability.STANDBY
     new_crew.push()
-    crew_personality = WorkerDescription.new(database.cursor.lastrowid)
+    crew_personality = WorkerDescription.new(database.cursor.lastrowid, file)
     crew_personality.set_database(new_crew.database)
     crew_personality.push()
 

@@ -410,12 +410,12 @@ class TableObject(metaclass=ABCMeta):
         self._check_database()
         self._database.delete_with_id(self.table_name, self.id)
         
-    def to_discord_text(self, translator:TableObjTranslator) -> str:
+    def to_embed_value(self, translator:TableObjTranslator) -> str:
         """
-        Returns the text for the discord message.
+        Returns the text for the discord embed.
 
         Returns:
-            str: The text for the discord message.
+            str: The text for the discord embed.
         """
 
         texts = []

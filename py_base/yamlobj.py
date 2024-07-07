@@ -7,6 +7,9 @@ class Detail(YamlObject):
     
     def __init__(self):
         super().__init__()
+    
+    def get_random_detail(self, enum_component_name) -> str:
+        return random.choice(self.data["CrewDetail"][enum_component_name])
         
     def get_random_worker_descriptions(self, sample_count:int) -> list[str]:
         # 무작위로 sample_count개 분류를 선택하고, 그 중에서 무작위로 1개의 성격을 선택한다.
