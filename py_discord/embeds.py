@@ -4,8 +4,10 @@ from py_base.ari_enum import ResourceCategory, WorkCategory
 from py_base.dbmanager import DatabaseManager
 from py_base.yamlobj import TableObjTranslator
 from py_system.abstract import TableObject
-from py_system.tableobj import User, Deployment, Building, WorkerDescription
-from py_system.systemobj import Crew, GeneralResource
+from py_system.tableobj import Facility
+from py_system.tableobj import User, Deployment, WorkerDescription
+from py_system.systemobj import GeneralResource
+from py_system.worker import Crew
 
 def embed_for_user(*messages) -> Embed:
     """
@@ -103,10 +105,10 @@ class CrewLookupEmbed(ArislenaEmbed):
     
     def add_location_field(self):
         if (d_data := self.database.fetch(
-            Deployment.get_table_name(), worker_id = self.crew.id
+            Deployment.table_name, worker_id = self.crew.id
         )):
             d_obj = Deployment.from_data(d_data)
-            b_obj = Building.from_database(self.database, id=d_obj.building_id)
+            b_obj = Facility.from_database(self.database, id=d_obj.facility_id)
             self.add_field(
                 name="위치 정보",
                 value=f"{b_obj.name} ({b_obj.category.express()})"

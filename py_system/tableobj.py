@@ -2,19 +2,20 @@
 Sql과 연동되는 데이터 클래스들
 """
 import datetime
-from sqlite3 import Row
 from abc import ABCMeta
+from sqlite3 import Row
 from typing import Generator
 
 from py_base.utility import sql_value, DATE_EXPR
 from py_base.ari_logger import ari_logger
-from py_base.ari_enum import TerritorySafety, BuildingCategory, ResourceCategory, CommandCountCategory, Availability, ScheduleState, WorkerDetail, WorkCategory, WorkerCategory, BiologicalSex
+from py_base import ari_enum
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
 from py_base.yamlobj import Detail, TableObjTranslator
-from py_system.abstract import Column, TableObject, ResourceAbst
+from py_system.abstract import Column, TableObject, ResourceAbst, GeneralResource
+from py_base.arislena_dice import D20
 
-def form_database_from_tableobjects(main_db:DatabaseManager):
+def form_database_from_tableobjects(database:DatabaseManager):
     """
     TableObject 객체를 상속하는 객체의 수만큼 테이블 생성하고, 테이블을 초기화
     만약 TableObject를 상속하는 객체의 데이터 형식이 기존의 데이터 형식과 다를 경우, 기존의 데이터를 유지하며 새로운 데이터 형식을 추가
@@ -22,16 +23,15 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
     
     for subclass_type in TableObject.__subclasses__():
         # TableObject를 상속하는 추상 클래스는 무시함
-        if subclass_type.abstract: continue
+        if not subclass_type.table_name: continue
         # TableObject를 상속하는 객체의 테이블을 생성함 (이미 존재할 경우, 무시함)
         subclass = subclass_type()
-        subclass.set_database(main_db)
-        main_db.cursor.execute(subclass.get_create_table_string())
+        subclass.set_database(database)
+        database.cursor.execute(subclass.get_create_table_string())
 
-        table_name = subclass.table_name
         # TableObject를 상속하는 객체의 데이터 형식과 main_db의 데이터 형식을 불러와 차이를 판별하기
         # main_db의 데이터 형식을 불러옴
-        sql_table_column_set = main_db.table_column_set(table_name)
+        sql_table_column_set = database.table_column_set(subclass.table_name)
 
         # TableObject를 상속하는 객체의 데이터 형식을 불러옴
         tableobj_column_set = set(subclass.get_dict().keys())
@@ -39,31 +39,31 @@ def form_database_from_tableobjects(main_db:DatabaseManager):
         # 데이터베이스 테이블의 데이터 형식과 TableObject를 상속하는 객체의 데이터 형식을 비교함
         # TableObject를 상속하는 객체에 없는 데이터 형식이 있을 경우, main_db에서 해당 데이터 형식을 삭제함
         for column_name in (sql_table_column_set - tableobj_column_set):
-            main_db.cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
+            database.cursor.execute(f"ALTER TABLE {subclass.table_name} DROP COLUMN {column_name}")
         # main_db에 없는 데이터 형식이 있을 경우, main_db에 해당 데이터 형식을 추가하고, 기본값을 넣음
         # subclass 객체는 기본값을 가지고 있다는 점을 이용함
         for column_name in (tableobj_column_set - sql_table_column_set):
-            main_db.cursor.execute(
-                f"ALTER TABLE {table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)} DEFAULT {sql_value(getattr(subclass, column_name))}"
+            database.cursor.execute(
+                f"ALTER TABLE {subclass.table_name} ADD COLUMN {column_name} {subclass.get_column_type(column_name)} DEFAULT {sql_value(getattr(subclass, column_name))}"
             )
     
     # 데이터베이스의 테이블 목록 불러오기
-    main_db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables: set[str] = {table[0] for table in main_db.cursor.fetchall()}
+    database.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables: set[str] = {table[0] for table in database.cursor.fetchall()}
     tables.remove("sqlite_sequence")
     # TableObject를 상속하는 객체의 테이블 목록 불러오기
     tableobj_tables: set[str] = {subclass().table_name for subclass in TableObject.__subclasses__()}
     
     # 데이터베이스에 존재하지 않는 테이블을 삭제함
     for table in (tables - tableobj_tables):
-        main_db.cursor.execute(f"DROP TABLE {table}")
+        database.cursor.execute(f"DROP TABLE {table}")
         
     # Schedule 테이블에 요소가 없을 경우, 새 요소를 추가함
     for single_component_table in SingleComponentTable.__subclasses__():
-        if not main_db.fetch(single_component_table.get_table_name(), id=1):
-            single_component_table().set_database(main_db).push()
+        if not database.fetch(single_component_table.table_name, id=1):
+            single_component_table().set_database(database).push()
     
-    main_db.connection.commit()
+    database.connection.commit()
     
     ari_logger.info("Database initialized")
 
@@ -74,7 +74,6 @@ class Inventory(metaclass=ABCMeta):
     # TODO
 
 class SingleComponentTable(TableObject, metaclass=ABCMeta):
-    abstract = True
     
     def __init__(self, id: int = 1):
         super().__init__()
@@ -82,10 +81,6 @@ class SingleComponentTable(TableObject, metaclass=ABCMeta):
     @classmethod
     def from_database(cls, database: DatabaseManager):
         return super().from_database(database, id=1)
-    
-    @classmethod
-    def get_table_name(cls) -> str:
-        return "__" + super().get_table_name() + "__"
     
     def get_display_string(self) -> str:
         return ""
@@ -95,7 +90,8 @@ class SingleComponentTable(TableObject, metaclass=ABCMeta):
 """
 
 class Chalkboard(SingleComponentTable, TableObject):
-    abstract = False
+    
+    table_name = "__Chalkboard__"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     test_mode = Column(bool)
@@ -104,7 +100,7 @@ class Chalkboard(SingleComponentTable, TableObject):
     end_date = Column(str)
     now_turn = Column(int)
     turn_limit = Column(int)
-    state = Column(ScheduleState)
+    state = Column(ari_enum.ScheduleState)
     
     def __init__(
         self,
@@ -115,7 +111,7 @@ class Chalkboard(SingleComponentTable, TableObject):
         end_date: str = "",
         now_turn: int = 0,
         turn_limit: int = 9999,
-        state: ScheduleState = ScheduleState.WAITING
+        state: ari_enum.ScheduleState = ari_enum.ScheduleState.WAITING
     ):
         super().__init__()
         self.id = id
@@ -128,7 +124,8 @@ class Chalkboard(SingleComponentTable, TableObject):
         self.state = state
 
 class JobSetting(SingleComponentTable, TableObject):
-    abstract = False
+    
+    table_name = "__JobSetting__"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     trigger = Column(str)
@@ -152,7 +149,8 @@ class JobSetting(SingleComponentTable, TableObject):
         self.minute = minute
 
 class GuildSetting(SingleComponentTable, TableObject):
-    abstract = False
+    
+    table_name = "__GuildSetting__"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     announce_channel_id = Column(int)
@@ -173,7 +171,8 @@ class GuildSetting(SingleComponentTable, TableObject):
         self.admin_role_id = admin_role_id
 
 class User(TableObject):
-    abstract = False
+    
+    table_name = "User"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     discord_id = Column(int)
@@ -198,18 +197,19 @@ class User(TableObject):
 
 
 class Resource(TableObject, ResourceAbst):
-    abstract = False
+    
+    table_name = "Resource"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     faction_id = Column(int, show_front=False)
-    category = Column(ResourceCategory)
+    category = Column(ari_enum.ResourceCategory)
     amount = Column(ExtInt)
     
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
-        category: ResourceCategory = ResourceCategory.UNSET,
+        category: ari_enum.ResourceCategory = ari_enum.ResourceCategory.UNSET,
         amount: ExtInt | int = ExtInt(0, min_value=0)
     ):
         if type(amount) == int:
@@ -228,18 +228,19 @@ class Resource(TableObject, ResourceAbst):
         return f"- {self.category.express()} : {self.amount}"
 
 class WorkerExperience(TableObject):
-    abstract = False
+    
+    table_name = "WorkerExperience"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     worker_id = Column(int, show_front=False)
-    category = Column(WorkCategory)
+    category = Column(ari_enum.WorkCategory)
     experience = Column(int)
     
     def __init__(
         self,
         id: int = 0,
         worker_id: int = 0,
-        category: WorkCategory = WorkCategory.UNSET,
+        category: ari_enum.WorkCategory = ari_enum.WorkCategory.UNSET,
         experience: int = 0
     ):
         TableObject.__init__(self)
@@ -252,7 +253,7 @@ class WorkerExperience(TableObject):
         return self.experience
         
     @classmethod
-    def new(cls, worker_id: int, category: WorkCategory):
+    def new(cls, worker_id: int, category: ari_enum.WorkCategory):
         return cls(worker_id=worker_id, category=category)
     
     def get_display_string(self) -> str:
@@ -262,7 +263,8 @@ class WorkerExperience(TableObject):
         return f"- {self.category.express()} : {self.experience}"
 
 class WorkerDescription(TableObject):
-    abstract = False
+    
+    table_name = "WorkerDescription"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     worker_id = Column(int, show_front=False)
@@ -289,13 +291,11 @@ class WorkerDescription(TableObject):
         self.ps_2 = ps_2
     
     @classmethod
-    def new(cls, worker_id: int, file: Detail = None):
-        if file is None: file = Detail()
+    def new(cls, worker_id: int, file: Detail):
         desc = file.get_random_worker_descriptions(3)
         return cls(worker_id=worker_id, ps_0=desc[0], ps_1=desc[1], ps_2=desc[2])
     
-    def set_worker_labor_detail(self, d20_judge_name: str, file:Detail = None):
-        if file is None: file = Detail()
+    def set_worker_labor_detail(self, d20_judge_name: str, file:Detail):
         self.worker_labor_detail = file.get_random_detail(d20_judge_name)
         return self
     
@@ -312,31 +312,52 @@ class WorkerDescription(TableObject):
         ]
         return "\n".join(lines)
 
+class WorkerStats(TableObject):
+    
+    table_name = "WorkerStats"
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    worker_id = Column(int, show_front=False)
+    max_hp = Column(int)
+    
+    def __init__(
+        self,
+        id: int = 0,
+        worker_id: int = 0,
+        max_hp: int = 0
+    ):
+        TableObject.__init__(self)
+        self.id = id
+        self.worker_id = worker_id
+        self.max_hp = max_hp
+        
+    def get_display_string(self) -> str:
+        return super().get_display_string()
+
 class Worker(TableObject):
-    abstract = False
-    correspond_category: WorkerCategory = None
+    
+    table_name = "Worker"
+    correspond_category: ari_enum.WorkerCategory = None
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     faction_id = Column(int, show_front=False)
-    category = Column(WorkerCategory)
+    category = Column(ari_enum.WorkerCategory)
     name = Column(str)
-    sex = Column(BiologicalSex)
+    sex = Column(ari_enum.BiologicalSex)
     labor = Column(int)
-    availability = Column(Availability)
-    
-    def _check_category(self):
-        if self.__class__.correspond_category is not None and self.category != self.__class__.correspond_category:
-            raise ValueError("카테고리가 일치하지 않습니다.")
+    hp = Column(int)
+    availability = Column(ari_enum.Availability)
     
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
-        category: WorkerCategory = WorkerCategory.UNSET,
+        category: ari_enum.WorkerCategory = ari_enum.WorkerCategory.UNSET,
         name: str = "",
-        sex: BiologicalSex = BiologicalSex.UNSET,
+        sex: ari_enum.BiologicalSex = ari_enum.BiologicalSex.UNSET,
         labor: int = 0,
-        availability: Availability = Availability.UNAVAILABLE
+        hp: int = 0,
+        availability: ari_enum.Availability = ari_enum.Availability.UNAVAILABLE,
     ):
         TableObject.__init__(self)
         self.id = id
@@ -345,28 +366,59 @@ class Worker(TableObject):
         self.name = name
         self.sex = sex
         self.labor = labor
+        self.hp = hp
         self.availability = availability
         
-        # self._check_category()
-        
-    @classmethod
-    def get_table_name(cls) -> str:
-        return Worker.__name__
+        self._labor_dice = None
     
     def get_display_string(self) -> str:
         return self.name
     
-    def get_experience(self, category: WorkCategory) -> WorkerExperience:
+    def get_experience_level(self, worker_exp: WorkerExperience) -> int:
+        raise NotImplementedError()
+
+    def get_consumption_recipe(self) -> list[GeneralResource]:
+        """
+        노동력 소모에 필요한 자원을 반환함
+        """
+        raise NotImplementedError()
+
+    def set_labor(self):
+        raise NotImplementedError()
+    
+    def get_experience(self, category: ari_enum.WorkCategory) -> WorkerExperience:
         self._check_database()
         we = WorkerExperience.from_database(
             self._database, worker_id=self.id, category=category
         )
         return we
     
+    def get_labor_by_WorkCategory(self, category: ari_enum.WorkCategory) -> int:
+        return self.labor + self.get_experience_level(self.get_experience(category))
     
-
+    def set_labor_dice(self) -> D20:
+        """
+        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
+        """
+        self._labor_dice = D20()
+        return self
+    
+    def set_description(self):
+        self._check_database()
+        self.description = WorkerDescription.from_database(self._database, worker_id=self.id)
+        return self
+    
+    def set_stats(self):
+        self._check_database()
+        self.stats = WorkerStats.from_database(self._database, worker_id=self.id)
+        return self
+    
+    def is_available(self) -> bool:
+        return self.availability.is_available()
+    
 class FactionHierarchyNode(TableObject):
-    abstract = False
+    
+    table_name = "FactionHierarchyNode"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     higher = Column(int)
@@ -397,115 +449,27 @@ class FactionHierarchyNode(TableObject):
         super().push()
 
 
-
-
-class Territory(TableObject):
-    abstract = False
+class Facility(TableObject):
     
-    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
-    faction_id = Column(int, show_front=False)
-    name = Column(str)
-    space_limit = Column(int)
-    safety = Column(TerritorySafety)
-    shared = Column(bool)
-    
-    def __init__(
-        self,
-        id: int = 0,
-        faction_id: int = 0,
-        name: str = "",
-        space_limit: int = 1,
-        safety: TerritorySafety = TerritorySafety.UNKNOWN,
-        shared: bool = True
-    ):
-        super().__init__()
-        self.id = id
-        self.faction_id = faction_id
-        self.name = name
-        self.space_limit = space_limit
-        self.safety = safety
-        self.shared = shared
+    table_name = "Facility"
+    facility_category = ari_enum.FacilityCategory.UNSET
+    required_dice_cost: int = 0
 
-    def get_display_string(self) -> str:
-        return self.name
-
-    def set_safety_by_random(self):
-        """
-        안전도를 랜덤으로 설정함
-        """
-        if self.safety == TerritorySafety.UNKNOWN:
-            self.safety = TerritorySafety.get_randomly()
-    
-    @property
-    def remaining_space(self) -> int:
-        """
-        남은 공간
-        """
-        return self.space_limit - len(self._database.fetch_many("building", territory_id=self.id))
-
-
-class Deployment(TableObject):
-    abstract = False
-    
-    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
-    worker_id = Column(int)
-    territory_id = Column(int)
-    building_id = Column(int)
-    
-    def __init__(
-        self,
-        id: int = 0,
-        worker_id: int = -1,
-        territory_id: int = -1,
-        building_id: int = -1
-    ):
-        super().__init__()
-        self.id = id
-        self.worker_id = worker_id
-        self.territory_id = territory_id
-        self.building_id = building_id
-    
-    def get_display_string(self) -> str:
-        return f"배치 현황 {self.id}"
-    
-    def get_worker(self) -> Worker:
-        """
-        배치된 인원을 가져옴
-        """
-        self._check_database()
-        return Worker.from_data(self._database.fetch(Worker.get_table_name(), id=self.worker_id))
-
-    def get_building(self) -> "Building":
-        """
-        배치된 건물을 가져옴
-        """
-        self._check_database()
-        return Building.from_data(self._database.fetch(Building.get_table_name(), id=self.building_id))
-    
-    @classmethod
-    def get_unique_building_ids(cls, database: DatabaseManager) -> Generator[int, None, None]:
-        for row in database.cursor.execute(f"SELECT DISTINCT building_id FROM {cls.get_table_name()}").fetchall():
-            yield row[0]
-
-
-class Building(TableObject):
-    abstract = False
-    
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     faction_id = Column(int, show_front=False)
     territory_id = Column(int, show_front=False)
-    category = Column(BuildingCategory)
+    category = Column(ari_enum.FacilityCategory)
     name = Column(str)
     remaining_dice_cost = Column(int)
     level = Column(int)
     shared = Column(bool)
-    
+
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
         territory_id: int = 0,
-        category: BuildingCategory = BuildingCategory.UNSET,
+        category: ari_enum.FacilityCategory = ari_enum.FacilityCategory.UNSET,
         name: str = "",
         remaining_dice_cost: int = 0,
         level: int = 0,
@@ -520,100 +484,195 @@ class Building(TableObject):
         self.remaining_dice_cost = remaining_dice_cost
         self.level = level
         self.shared = shared
-    
+
     @property
     def deploy_limit(self) -> int:
         return self.level + 2
 
     def get_display_string(self) -> str:
         return f"{self.name}: {self.category.express()}"
-    
-    def is_deployable(self, deployed_worker_ids: list[int] = None) -> bool:
+
+    def is_deployable(self, deployed_worker_ids: list[int] | None = None) -> bool:
         if not self.is_built(): return True
-        
+
         if deployed_worker_ids is None:
             deployed_worker_ids = self.get_deployed_worker_ids()
-        
+
         if len(deployed_worker_ids) >= self.deploy_limit: return False
         return True
-    
+
     def deploy(self, worker: Worker):
         """
-        건물에 인원 배치
-        
-        건물 완공 여부, 건물 배치 인원 제한 여부, 이미 배치된 인원 여부를 확인함
-        
+        시설에 인원 배치
+
+        시설 완공 여부, 시설 배치 인원 제한 여부, 이미 배치된 인원 여부를 확인함
+
         이전 배치 정보가 존재하는 경우 삭제
         """
         self._check_database()
         if not self.is_deployable():
             ari_logger.warning(
-                "이 경고가 발생했다면 코드를 수정하세요 - 건물에 더 이상 인원을 배치할 수 없습니다. (최대 수용량에 다다름)"
+                "이 경고가 발생했다면 코드를 수정하세요 - 시설에 더 이상 인원을 배치할 수 없습니다. (최대 수용량에 다다름)"
             )
             return
         self._database.connection.execute(
             f"DELETE FROM Deployment WHERE worker_id = {worker.id}"
         )
-        deployment = Deployment(worker_id=worker.id, territory_id=self.territory_id, building_id=self.id)
+        deployment = Deployment(worker_id=worker.id, territory_id=self.territory_id, facility_id=self.id)
         deployment.set_database(self._database)
         deployment.push()
-        
-    def deshare(self):
-        """
-        건물의 공유 여부를 해제함
-        """
-        self.shared = False
-        
-    def enshare(self):
-        """
-        건물의 공유 여부를 설정함
-        """
-        self.shared = True
-        
+
     def apply_production(self, dice:int):
         if self.is_built():
-            raise ValueError("건물이 완공되었습니다.")
+            raise ValueError("시설이 완공되었습니다.")
         self.remaining_dice_cost = max(0, self.remaining_dice_cost - dice)
-    
+
     def is_built(self) -> bool:
         """
-        건물이 완공되었는지 확인
+        시설이 완공되었는지 확인
         """
         return self.remaining_dice_cost == 0
-    
+
     def get_deployed_worker_ids(self) -> list[int]:
         """
-        건물에 배치된 인원의 ID를 가져옴
-        
+        시설에 배치된 인원의 ID를 가져옴
+
         ! database가 필요함
         """
         self._check_database()
-        ids:list[Row] = self._database.cursor.execute("SELECT worker_id FROM deployment WHERE building_id = ?", (self.id,)).fetchall()
+        ids:list[Row] = self._database.cursor.execute("SELECT worker_id FROM deployment WHERE facility_id = ?", (self.id,)).fetchall()
         return [id[0] for id in ids]
-    
-    def get_deployed_workers(self, deployment_list: list[Deployment]) -> list[Worker]:
+
+    def get_deployed_workers(self, deployment_list: list["Deployment"]) -> list[Worker]:
         """
-        건물에 배치된 인원을 가져옴
-        
+        시설에 배치된 인원을 가져옴
+
         ! database가 필요함
         """
         self._check_database()
         return [deployment.get_worker() for deployment in deployment_list if deployment.worker_id is not None]
 
+    def get_production_recipe(self):
+        raise NotImplementedError()
+    
+    @classmethod
+    def get_matched_subclass_from_category(cls, category: ari_enum.FacilityCategory) -> type["Facility"]:
+        for subcls in cls.__class__.__subclasses__():
+            if subcls.facility_category == category:
+                return subcls
+        raise ValueError("카테고리에 해당하는 하위 시설이 없습니다! 코드를 확인해주세요.")
 
-class CommandCounter(TableObject):
-    abstract = False
+class Territory(TableObject):
+    
+    table_name = "Territory"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     faction_id = Column(int, show_front=False)
-    category = Column(CommandCountCategory)
+    name = Column(str)
+    space_limit = Column(int)
+    safety = Column(ari_enum.TerritorySafety)
+    shared = Column(bool)
+    
+    def __init__(
+        self,
+        id: int = 0,
+        faction_id: int = 0,
+        name: str = "",
+        space_limit: int = 3,
+        safety: ari_enum.TerritorySafety = ari_enum.TerritorySafety.UNKNOWN,
+        shared: bool = True
+    ):
+        super().__init__()
+        self.id = id
+        self.faction_id = faction_id
+        self.name = name
+        self.space_limit = space_limit
+        self.safety = safety
+        self.shared = shared
+        
+    @classmethod
+    def new(cls, faction_id:int, name:str):
+        new_instance = cls(faction_id=faction_id, name=name)\
+            .set_safety_by_random()
+        return new_instance
+
+    def get_display_string(self) -> str:
+        return self.name
+
+    def set_safety_by_random(self):
+        """
+        안전도를 랜덤으로 설정함
+        """
+        if self.safety == ari_enum.TerritorySafety.UNKNOWN:
+            self.safety = ari_enum.TerritorySafety.get_randomly()
+        return self
+    
+    def get_remaining_space(self) -> int:
+        """
+        남은 공간
+        """
+        return self.space_limit - len(self._database.fetch_many(Facility.table_name, territory_id=self.id))
+
+
+class Deployment(TableObject):
+    
+    table_name = "Deployment"
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    worker_id = Column(int)
+    territory_id = Column(int)
+    facility_id = Column(int)
+    
+    def __init__(
+        self,
+        id: int = 0,
+        worker_id: int = -1,
+        territory_id: int = -1,
+        facility_id: int = -1
+    ):
+        super().__init__()
+        self.id = id
+        self.worker_id = worker_id
+        self.territory_id = territory_id
+        self.facility_id = facility_id
+    
+    def get_display_string(self) -> str:
+        return f"배치 현황 {self.id}"
+    
+    def get_worker(self) -> Worker:
+        """
+        배치된 인원을 가져옴
+        """
+        self._check_database()
+        return Worker.from_data(self._database.fetch(Worker.table_name, id=self.worker_id))
+
+    def get_facility(self) -> "Facility":
+        """
+        배치된 시설을 가져옴
+        """
+        self._check_database()
+        return Facility.from_data(self._database.fetch(Facility.table_name, id=self.facility_id))
+    
+    @classmethod
+    def get_unique_facility_ids(cls, database: DatabaseManager) -> Generator[int, None, None]:
+        for row in database.cursor.execute(f"SELECT DISTINCT {cls.facility_id.name} FROM {cls.table_name}").fetchall():
+            yield row[0]
+
+
+class CommandCounter(TableObject):
+    
+    table_name = "CommandCounter"
+    
+    id = Column(int, show_front=False, primary_key=True, auto_increment=True)
+    faction_id = Column(int, show_front=False)
+    category = Column(ari_enum.CommandCategory)
     amount = Column(int)
     
     def __init__(
         self,
         id: int = 0,
         faction_id: int = 0,
-        category: CommandCountCategory = CommandCountCategory.UNSET,
+        category: ari_enum.CommandCategory = ari_enum.CommandCategory.UNSET,
         amount: int = 0
     ):
         super().__init__()
@@ -639,7 +698,8 @@ class CommandCounter(TableObject):
 
 
 class Faction(TableObject):
-    abstract = False
+    
+    table_name = "Faction"
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     user_id = Column(int, show_front=False)
@@ -689,7 +749,7 @@ class Faction(TableObject):
 
         return nodes
     
-    def get_resource(self, category:ResourceCategory) -> Resource:
+    def get_resource(self, category:ari_enum.ResourceCategory) -> Resource:
         """
         해당 세력의 자원을 가져옴
         """
@@ -706,7 +766,7 @@ class Faction(TableObject):
         if not cr: return Worker(faction_id=self.id, name=name)
         return Worker.from_data(cr)
     
-    def get_command_counter(self, category:CommandCountCategory) -> CommandCounter:
+    def get_command_counter(self, category:ari_enum.CommandCategory) -> CommandCounter:
         """
         해당 세력의 명령 카운터를 가져옴
         """

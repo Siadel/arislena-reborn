@@ -7,7 +7,7 @@ general:
   name: 이름
   discord_name: 디스코드 이름
   register_date: 등록일
-  category: 카테고리
+  category: 분류
   amount: 수량
   labor: 노동력
   labor_dice: 노동력 주사위 눈

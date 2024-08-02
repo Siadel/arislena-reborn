@@ -1,4 +1,5 @@
 import random
+from typing import Generator
 
 from py_base.abstract import YamlObject
 
@@ -38,3 +39,17 @@ class TableObjTranslator(YamlObject):
             return self.data["general"][key]
         else:
             return default
+
+class EventText(YamlObject):
+    file_name: str = "event.yaml"
+    
+    def __init__(self):
+        super().__init__()
+    
+    def get_scenario_text(self, number: int) -> Generator[str, None, None]:
+        for line in self.data[number]:
+            yield line
+    
+    def get_event_text(self, title: str) -> Generator[str, None, None]:
+        for line in self.data[title]:
+            yield line

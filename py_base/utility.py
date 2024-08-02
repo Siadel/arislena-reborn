@@ -99,3 +99,16 @@ def sql_value(value: str | Enum | None | int | float) -> str:
         return "NULL"
     else:
         return str(value)
+
+def select_from_subclasses(_class: type, **query) -> type:
+    """
+    _class의 서브클래스 중 클래스 변수로 a=b 꼴의 query식 중 하나라도 만족하는 서브클래스를 반환합니다.
+    
+    조건을 만족하는 복수의 서브클래스가 존재할 경우, _class.__subclasses__() 메소드로 불러온 리스트 중 조건을 만족하는 첫 번째 서브클래스를 반환합니다.
+    """
+    
+    for subclass in _class.__subclasses__():
+        for key, value in query.items():
+            if getattr(subclass, key) == value:
+                return subclass
+    raise ValueError(f"No subclass of {_class} matches the query {query}; {_class.__subclasses__()}")

@@ -2,11 +2,13 @@ import discord
 from discord.ui import Modal, TextInput
 
 from py_base.koreanstring import objective, instrumental
-from py_base.ari_enum import BuildingCategory, ResourceCategory
-from py_system.systemobj import Crew, Livestock
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Building, Resource
+from py_base.ari_enum import FacilityCategory, ResourceCategory
+from py_system.tableobj import Facility
+from py_system.worker import Livestock
+from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Resource
 from py_discord import func
 from py_discord.bot_base import BotBase
+from py_system.worker import Crew
 
 class ArislenaTextInput(TextInput):
     
@@ -94,8 +96,8 @@ class FactionCreateModal(ArislenaGeneralModal):
             .set_database(database)\
             .push()
             
-        # 기본 영토와 건물(담수원, 수렵지, 목초지, 채집지) 추가
-        func.add_new_territory_set(database, new_faction)
+        # 기본 영토와 시설(담수원, 수렵지, 목초지, 채집지) 추가
+        # TODO 리팩토링으로 인해 이 부분을 다시 작성해야 함
         
         database.connection.commit()
 
@@ -122,15 +124,14 @@ class NewTerritoryModal(ArislenaGeneralModal):
         # 세력 데이터베이스에 추가
         faction = Faction.from_database(database, user_id=interaction.user.id)
         # 새 영토 생성
-        t = Territory(faction_id=faction.id, name=territory_name)
-        t.set_safety_by_random()
-        t.set_database(database)
+        t = Territory.new(faction_id=faction.id, name=territory_name)\
+            .set_database(database)
         t.push()
         # 생성된 영토 데이터 가져오기
         t = Territory.from_database(database, "id = (SELECT MAX(id) FROM territory)")
-        # 기본 건물 중 하나를 생성
-        b_cat = BuildingCategory.get_ramdom_base_building_category()
-        b = Building(
+        # 기본 시설 중 하나를 생성
+        b_cat = FacilityCategory.get_ramdom_base_facility_category()
+        b = Facility(
             faction_id=faction.id,
             territory_id=t.id,
             category=b_cat,
@@ -145,12 +146,12 @@ class NewTerritoryModal(ArislenaGeneralModal):
 
         database.connection.commit()
 
-class NewBuildingModal(ArislenaGeneralModal):
+class NewFacilityModal(ArislenaGeneralModal):
     
-    building_name = ArislenaTextInput("건물 이름")
+    facility_name = ArislenaTextInput("시설 이름")
     
     def __init__(self, *, bot:BotBase = None):
-        super().__init__(title="새 건물이예요!")
+        super().__init__(title="새 시설이예요!")
         self.bot = bot
         
     async def on_submit(self, interaction: discord.Interaction) -> None:

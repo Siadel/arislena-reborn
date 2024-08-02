@@ -1,14 +1,12 @@
-import re
 
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
 from typing import Iterable, Iterator, Self, Any
 from enum import IntEnum
 
-from py_base.ari_enum import get_enum, get_intenum, ResourceCategory, BuildingCategory, Availability
-from py_base.ari_logger import ari_logger
+from py_base.ari_enum import get_intenum, ResourceCategory, FacilityCategory
+from py_base.arislena_dice import Dice
 from py_base.datatype import ExtInt
-from py_base.utility import sql_type
 from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum, DetailEnum
 from py_base.yamlobj import TableObjTranslator
@@ -138,8 +136,8 @@ class TableObject(metaclass=ABCMeta):
         `kr_dict_without_id (dict[str, str])`: A dictionary that maps the Korean names to the attribute values, excluding the 'id' attribute.
         `database (DatabaseManager)`: The main database, which is the only database that the table object and its children can access.
     """
-    
-    abstract = True # TableObject 클래스를 상속하지만 추상 클래스로 사용할 경우 True로 설정
+
+    table_name: str = ""
     
     def __init__(
         self
@@ -158,19 +156,38 @@ class TableObject(metaclass=ABCMeta):
         self._database = database
         return self
     
-    @classmethod
-    def get_table_name(cls) -> str:
+    def _check_database(self):
+        if self._database is None:
+            raise Exception("Database is not set.")
+        
+    def _check_before_import(self) -> None:
+        pass
+        
+    def _set_attributes_from_sqlite_row(self, row:Row):
         """
-        이 클래스의 테이블 이름을 반환
+        Sets the attributes of the table object from the sqlite3.Row object.
         """
-        return cls.__name__
+
+        for key in row.keys():
+            
+            _get = getattr(self.__class__, key, None)
+            if not isinstance(_get, Column): continue
+            
+            if _get.annotation.__module__ == "builtins":
+                match _get.annotation.__name__:
+                    case "str" | "int" | "float": setattr(self, key, row[key])
+                    case "bool": setattr(self, key, bool(row[key]))
+                    case "NoneType": setattr(self, key, None)
+            elif _get.annotation is ExtInt: setattr(self, key, getattr(self, key) + row[key])
+            elif issubclass(_get.annotation, IntEnum): setattr(self, key, get_intenum(_get.annotation.__name__, row[key]))
+            else: raise ValueError(f"Type {_get.annotation} is not supported in Arislena's SQL.")
     
     @classmethod
     def fetch_or_raise(cls, database:DatabaseManager, _raise: Exception, *raw_statements, **statements):
         """
         데이터베이스에서 데이터를 가져오거나, 데이터가 없을 경우 예외를 발생시킵니다.
         """
-        data = database.fetch(cls.get_table_name(), *raw_statements, **statements)
+        data = database.fetch(cls.table_name, *raw_statements, **statements)
         if data is None:
             raise _raise
         return cls.from_data(data)
@@ -210,61 +227,19 @@ class TableObject(metaclass=ABCMeta):
             return cls(**kwargs)
     
     @classmethod
-    def from_data_iter(cls, sqlite_rows:Iterable[Row], database: DatabaseManager = None) -> Iterator[Self]:
+    def from_data_iter(cls, sqlite_rows:Iterable[Row], database: DatabaseManager) -> Iterator[Self]:
         """
         Creates a list of table objects from the database, using the sqlite3.Row object.
         """
-        if database:
-            return iter(cls.from_data(row).set_database(database) for row in sqlite_rows)
-        return iter(cls.from_data(row) for row in sqlite_rows)
+        return iter(cls.from_data(row).set_database(database) for row in sqlite_rows)
         
     @classmethod
     def from_database_to_iter(cls, database:DatabaseManager, *raw_statements, **statements):
         """
         Creates a list of table objects from the database.
         """
-        rows = database.fetch_many(cls.get_table_name(), *raw_statements, **statements)
+        rows = database.fetch_many(cls.table_name, *raw_statements, **statements)
         return cls.from_data_iter(rows, database)
-    
-    @property
-    def table_name(self):
-        return self.__class__.get_table_name()
-    
-    @property
-    def database(self) -> DatabaseManager:
-        return self._database
-    
-    def _check_database(self):
-        if self._database is None:
-            raise Exception("Database is not set.")
-    
-        
-    def _set_attributes_from_sqlite_row(self, row:Row):
-        """
-        Sets the attributes of the table object from the sqlite3.Row object.
-        """
-
-        for key in row.keys():
-            
-            _get = getattr(self.__class__, key, None)
-            if not isinstance(_get, Column): continue
-            
-            if _get.annotation.__module__ == "builtins":
-                match _get.annotation.__name__:
-                    case "str" | "int" | "float": setattr(self, key, row[key])
-                    case "bool": setattr(self, key, bool(row[key]))
-                    case "NoneType": setattr(self, key, None)
-            elif _get.annotation is ExtInt: setattr(self, key, getattr(self, key) + row[key])
-            elif issubclass(_get.annotation, IntEnum): setattr(self, key, get_intenum(_get.annotation.__name__, row[key]))
-            else: raise ValueError(f"Type {_get.annotation} is not supported in Arislena's SQL.")
-    
-    def set_value(self, key:str, value:Any):
-        """
-        key가 Column 객체인 경우 해당 key의 value 설정
-        """
-        _get = getattr(self.__class__, key, None)
-        if isinstance(_get, Column) and isinstance(value, _get.annotation):
-            _get._value = value
             
     @classmethod
     def get_columns(cls) -> dict[str, Column]:
@@ -279,6 +254,31 @@ class TableObject(metaclass=ABCMeta):
         Returns the list of the attributes that are shown in the front-end.
         """
         return [k for k, v in cls.__dict__.items() if isinstance(v, Column) and v.show_front]
+    
+    @classmethod
+    def get_create_table_string(cls) -> str:
+        """
+        Returns the string for table creation in SQL.
+
+        Returns:
+            str: The SQL string for creating the table.
+        """
+        sub_queries = []
+        foreign_keys = []
+
+        for v in cls.get_columns().values():
+            sub_queries.append(v.creator)
+            if v.is_foreign_key():
+                foreign_keys.append(v.foreign_key_creator)
+        
+        if foreign_keys:
+            sub_queries.extend(foreign_keys)
+
+        return f"CREATE TABLE IF NOT EXISTS {cls.table_name} ({', '.join(sub_queries)})"
+    
+    @property
+    def database(self) -> DatabaseManager:
+        return self._database
         
     def get_dict(self) -> dict[str, Any]:
         """
@@ -320,27 +320,6 @@ class TableObject(metaclass=ABCMeta):
             return _get.sql_type
         else:
             raise ValueError(f"Column {column_name} is not found.")
-    
-    @classmethod
-    def get_create_table_string(cls) -> str:
-        """
-        Returns the string for table creation in SQL.
-
-        Returns:
-            str: The SQL string for creating the table.
-        """
-        sub_queries = []
-        foreign_keys = []
-
-        for v in cls.get_columns().values():
-            sub_queries.append(v.creator)
-            if v.is_foreign_key():
-                foreign_keys.append(v.foreign_key_creator)
-        
-        if foreign_keys:
-            sub_queries.extend(foreign_keys)
-
-        return f"CREATE TABLE IF NOT EXISTS {cls.get_table_name()} ({', '.join(sub_queries)})"
     
     def pull(self, *raw_statements, **statements):
         """
@@ -489,17 +468,6 @@ class ResourceAbst(metaclass=ABCMeta):
     def __ge__(self, other:"ResourceAbst"):
         return self.category == other.category and self.amount >= other.amount
 
-
-class BuildingAbst(metaclass=ABCMeta):
-    
-    def __init__(
-        self, 
-        category:BuildingCategory, 
-        level:int
-    ):
-        self.category = category
-        self.level = level
-
 class GeneralResource(ResourceAbst):
     
     def __init__(
@@ -509,10 +477,51 @@ class GeneralResource(ResourceAbst):
     ):
         super().__init__(category, amount)
 
+class ProductionResource(ResourceAbst):
+
+    def __init__(
+        self,
+        category: ResourceCategory,
+        amount: int = 1,
+        dice_ratio: int = 1
+    ):
+        super().__init__(category, amount)
+        self.dice_ratio = dice_ratio # 1 이상의 정수
+
+    def __str__(self) -> str:
+        return f"{self.category.name}; 주사위 값 {self.dice_ratio} 당 {self.amount}개 생산"
+
+    def _return_general_resource(self, dice: int) -> GeneralResource:
+        # dice_ratio 당 amount를 계산한다.
+        # dice_ratio가 1이면 amount가 그대로 반환된다.
+        # dice_ratio가 2이면 amount가 절반이 된다.
+
+        return GeneralResource(self.category, self.amount * (dice // self.dice_ratio))
+
+    def __mul__(self, other: int | Dice) -> GeneralResource:
+        dice: int = 0
+        if isinstance(other, int):
+            dice = other
+        elif isinstance(other, Dice):
+            if other._last_roll is None: raise ValueError("주사위를 굴려주세요")
+            dice = other._last_roll
+        else:
+            raise TypeError(f"int 또는 Dice 타입만 가능합니다. (현재 타입: {type(other)})")
+
+        return self._return_general_resource(dice)
+
+class ProductionRecipe:
+    def __init__(
+        self, *, 
+        consume: list[GeneralResource] = [], 
+        produce: list[ProductionResource] = []
+    ):
+        self.consume = consume
+        self.produce = produce
 
 # deprecated
 # @dataclass
-# class Storages(Buildings, metaclass=ABCMeta):
+# class Storages(Facilitys, metaclass=ABCMeta):
 #     """
 #     창고 클래스들의 부모 클래스
 #     """
@@ -531,11 +540,11 @@ class GeneralResource(ResourceAbst):
 #         level 당 건자재 2, 주사위 총량 10 필요
 #         return : dict
 #         return format : {
-#             "building_material" : 건자재,
+#             "facility_material" : 건자재,
 #             "dice_cost" : 주사위 총량
 #         }
 #         """
 #         return {
-#             "building_material" : 10 * self.level,
+#             "facility_material" : 10 * self.level,
 #             "dict_cost" : 10 * self.level
 #         }

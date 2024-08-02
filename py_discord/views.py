@@ -4,12 +4,14 @@ from discord import ui
 from typing import Any
 
 from py_base.koreanstring import nominative
-from py_base.ari_enum import BuildingCategory, TerritorySafety, ResourceCategory
-from py_system.tableobj import TableObject, User, Faction, Territory, Building, Resource
-from py_system.systemobj import Crew, SystemBuilding
+from py_base.ari_enum import FacilityCategory, TerritorySafety, ResourceCategory
+from py_system.tableobj import Facility
+from py_system.tableobj import TableObject, User, Faction, Territory, Resource
+from py_system.systemobj import SystemFacility
 from py_discord import warnings, modals, embeds
 from py_discord.bot_base import BotBase
 from py_discord.abstract import TableObjectButton
+from py_system.worker import Crew
 
 # /유저 설정 - 설정 정보 출력
 # 설정의 한국어명과 설정값 출력
@@ -153,17 +155,17 @@ class TerritoryLookupButton(TableObjectButton):
     async def callback(self, interaction:discord.Interaction):
         embed = self._get_basic_embed()
         field_value = ""
-        # 건물 정보 추가
+        # 시설 정보 추가
         
-        if (b_datas := self._database.fetch_many(Building.get_table_name(), territory_id = self._territory.id)):
+        if (b_datas := self._database.fetch_many(Facility.table_name, territory_id = self._territory.id)):
             for b_data in b_datas:
-                b_obj = Building.from_data(b_data)
+                b_obj = Facility.from_data(b_data)
                 field_value += f"- {b_obj.name} ({b_obj.category.emoji} {b_obj.category.local_name})\n"
         else:
-            field_value = "- 건물 없음"
+            field_value = "- 시설 없음"
         
         embed.add_field(
-            name="건물 정보",
+            name="시설 정보",
             value=field_value
         )
         
@@ -245,28 +247,28 @@ class CrewDismissButton(CrewLookupButton):
         
         self._database.connection.commit()
 
-class BuildingLookupButton(TableObjectButton):
+class FacilityLookupButton(TableObjectButton):
     
-    corr_obj_type = Building
+    corr_obj_type = Facility
     
     def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction):
         super().__init__(bot, interaction_for_this)
-        self.building: Building = None
+        self.facility: Facility = None
         
     def clone(self):
-        return BuildingLookupButton(self._bot, self._interaction_for_this)
+        return FacilityLookupButton(self._bot, self._interaction_for_this)
         
-    def _check_type(self, building: Building | Any):
-        super()._check_type(building)
+    def _check_type(self, facility: Facility | Any):
+        super()._check_type(facility)
         
-    def _set_label_complementary(self, building: Building):
-        t_name = self._database.connection.execute(f"SELECT {Territory.name.name} FROM {Territory.get_table_name()} WHERE id = {building.territory_id}").fetchone()[0]
+    def _set_label_complementary(self, facility: Facility):
+        t_name = self._database.connection.execute(f"SELECT {Territory.name.name} FROM {Territory.table_name} WHERE id = {facility.territory_id}").fetchone()[0]
         self.label_complementary = t_name
     
-    def set_table_object(self, building: Building):
-        self.building = building
-        self.building.set_database(self._database)
-        return super().set_table_object(building)
+    def set_table_object(self, facility: Facility):
+        self.facility = facility
+        self.facility.set_database(self._database)
+        return super().set_table_object(facility)
     
     async def callback(self, interaction: discord.Interaction):
         pass
@@ -302,38 +304,38 @@ class SelectCrewToDeployButton(CrewLookupButton):
         self.check_interruption(interaction)
         # deployment 가져오기
         view = TableObjectView(
-            fetch_list = [Building.from_data(data) for data in self._database.fetch_many("building", faction_id = self._faction.id)],
-            sample_button = DeployToBuildingButton(self._bot, interaction, self._crew, self._faction)
+            fetch_list = [Facility.from_data(data) for data in self._database.fetch_many("facility", faction_id = self._faction.id)],
+            sample_button = DeployToFacilityButton(self._bot, interaction, self._crew, self._faction)
         )
         view.add_item(CancelButton())
         await interaction.response.send_message(
-            f"**{self._crew.name}** 대원을 배치할 건물을 선택하세요.",
+            f"**{self._crew.name}** 대원을 배치할 시설을 선택하세요.",
             view = view
         )
     
 
-class DeployToBuildingButton(BuildingLookupButton):
+class DeployToFacilityButton(FacilityLookupButton):
     
     def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, crew:Crew, faction:Faction):
-        BuildingLookupButton.__init__(self, bot, interaction_for_this)
+        FacilityLookupButton.__init__(self, bot, interaction_for_this)
         
         self._crew = crew
         self._faction = faction
         
     def clone(self):
-        return DeployToBuildingButton(self._bot, self._interaction_for_this, self._crew, self._faction)
+        return DeployToFacilityButton(self._bot, self._interaction_for_this, self._crew, self._faction)
         
     def disable_or_not(self):
-        self.disabled = not self.building.is_deployable()
+        self.disabled = not self.facility.is_deployable()
     
     async def callback(self, interaction: discord.Interaction):
         self.check_interruption(interaction)
         
-        self.building.set_database(self._database)
-        self.building.deploy(self._crew)
+        self.facility.set_database(self._database)
+        self.facility.deploy(self._crew)
         
         await interaction.response.send_message(
-            f"**{self._crew.name}** 대원을 **{self.building.name}** ({self.building.category.express()}) 건물에 배치했습니다!"
+            f"**{self._crew.name}** 대원을 **{self.facility.name}** ({self.facility.category.express()}) 시설에 배치했습니다!"
         )
         
         self._database.connection.commit()
@@ -365,14 +367,14 @@ class PurifyButton(TerritoryLookupButton):
 
 class BuildButton(TerritoryLookupButton):
     
-    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction: Faction,  building_category:discord.app_commands.Choice[int], building_name:str):
+    def __init__(self, bot: BotBase, interaction_for_this:discord.Interaction, faction: Faction,  facility_category:discord.app_commands.Choice[int], facility_name:str):
         super().__init__(bot, interaction_for_this, faction)
-        self.building_category = building_category
-        self.building_name = building_name
+        self.facility_category = facility_category
+        self.facility_name = facility_name
         self.interaction_for_this:discord.Interaction = None
         
     def clone(self):
-        return BuildButton(self._bot, self._interaction_for_this, self._faction, self.building_category, self.building_name)
+        return BuildButton(self._bot, self._interaction_for_this, self._faction, self.facility_category, self.facility_name)
         
     async def callback(self, interaction:discord.Interaction):
         
@@ -380,23 +382,23 @@ class BuildButton(TerritoryLookupButton):
         
         self._territory.set_database(self._database)
         
-        if self._territory.remaining_space == 0: raise warnings.NoSpace()
+        if self._territory.get_remaining_space() == 0: raise warnings.NoSpace()
 
-        category = BuildingCategory(self.building_category.value)
-        sys_building_type = SystemBuilding.type_from_category(category)
+        category = FacilityCategory(self.facility_category.value)
+        sys_facility_type = Facility.get_matched_subclass_from_category(category)
         
-        building = Building(
+        facility = Facility(
             faction_id=self._faction.id,
             territory_id=self._territory.id,
             category=category,
-            name=self.building_name,
-            remaining_dice_cost=sys_building_type.required_dice_cost
+            name=self.facility_name,
+            remaining_dice_cost=sys_facility_type.required_dice_cost
         )
         
-        building.set_database(self._database)
-        building.push()
+        facility.set_database(self._database)
+        facility.push()
         
-        await interaction.response.send_message(f"**{self.building_name}** 건물의 터를 잡았습니다! **{sys_building_type.required_dice_cost}**만큼의 주사위 총량이 요구됩니다.", ephemeral=True)
+        await interaction.response.send_message(f"**{self.facility_name}** 시설의 터를 잡았습니다! **{sys_facility_type.required_dice_cost}**만큼의 주사위 총량이 요구됩니다.", ephemeral=True)
         
         self._database.connection.commit()
 

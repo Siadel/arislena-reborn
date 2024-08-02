@@ -12,8 +12,8 @@
 - Laborable의 labor 수치를 정하는 논리를 기본 Nonahedron으로 단순화하기
 - 대원의 경우 분야당 (-1 + sqrt(1 + 2/3 * int(<경험치 수치>))) // 2
 - 가축의 경우 경험치 관련 로직이 없음
-- 각 건물 혹은 활동 별로 대응되는 LaborCategory 정하기
-- 각 건물별로 Laborable을 받아서 LaborCategory와 LaborExperience에 따라 labor 수치를 계산하기
+- 각 시설 혹은 활동 별로 대응되는 LaborCategory 정하기
+- 각 시설별로 Laborable을 받아서 LaborCategory와 LaborExperience에 따라 labor 수치를 계산하기
 
 - Laborable의 labor_detail_index를 CrewDescription의 속성으로 변경
 
@@ -22,8 +22,17 @@ self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get
 
 240622 계획
 
-- `/건물 건설` 커맨드가 현재 자원으로 건설 가능한 건물 목록을 버튼 ui로 보여주게끔 변경
-! BuildingCategory가 어떤 건물이 기본 건물이고 어떤 건물이 심화 건물인지 구분하지 못하는 문제 -> ArislenaEnum의 인스턴스 선언 인자에 level을 추가해 해결
-- 턴이 끝날 때 각 건물이 조건을 계산해 건설 진행, 자원 생산 등의 행동을 수행하게끔 기능 구현
-- worker를 가져오는 내부 함수들을 다시 Crew나 Livestock을 반환하는 함수로 변경
+! FacilityCategory가 어떤 시설이 기본 시설이고 어떤 시설이 심화 시설인지 구분하지 못하는 문제 -> ArislenaEnum의 인스턴스 선언 인자에 level을 추가해 해결
 
+240709 계획
+
+- `/시설 건설` 커맨드가 현재 자원으로 건설 가능한 시설 목록을 버튼 ui로 보여주게끔 변경
+- 턴이 끝날 때 각 시설이 조건을 계산해 건설 진행, 자원 생산 등의 행동을 수행하게끔 기능 구현
+- worker를 가져오는 내부 함수들을 다시 Crew나 Livestock을 반환하는 함수로 변경
+- 정찰, 후퇴
+- 치료소 시설 추가
+- 자원 약재 추가
+- 대원 체력에 따라 노동력이 변하는 로직 추가
+- 자원 훔치기
+- 목초지에 가축 총량 제한 수치 추가
+- 새 영토 생성 시 나올 수 있는 안정도: 적색, 황색

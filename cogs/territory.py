@@ -24,7 +24,7 @@ class TerritoryCommand(GroupCog, name="영토"):
         
         faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         # 모든 영토 정보 가져오기
-        territory_data_list = database.fetch_many(Territory.get_table_name(), faction_id=faction.id)
+        territory_data_list = database.fetch_many(Territory.table_name, faction_id=faction.id)
         territory_list = [Territory.from_data(data) for data in territory_data_list]
         
         # 세력 정보 열람 버튼 ui 출력
@@ -60,7 +60,7 @@ class TerritoryCommand(GroupCog, name="영토"):
         
         faction = Faction.fetch_or_raise(database, warnings.NoFaction(), user_id=interaction.user.id)
         
-        territory_list = database.fetch_many(Territory.get_table_name(), faction_id=faction.id)
+        territory_list = database.fetch_many(Territory.table_name, faction_id=faction.id)
 
         await interaction.response.send_message(
             "정화할 영토를 선택해주세요.",

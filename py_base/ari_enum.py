@@ -65,25 +65,21 @@ class TerritorySafety(ArislenaEnum):
     # 회색, 흑색, 적색, 황색, 녹색
     # 회색 : 미확인
     # 흑, 적, 황, 녹 순으로 안전
-    UNKNOWN = "미확인", "🔘"
+    UNKNOWN = "미확인", "🔘", -1
     BLACK = "흑색", "⚫"
-    RED = "적색", "🔴"
-    YELLOW = "황색", "🟡"
-    GREEN = "녹색", "🟢"
+    RED = "적색", "🔴", 1
+    YELLOW = "황색", "🟡", 1
+    GREEN = "녹색", "🟢", 1
 
     @classmethod
     def get_max_safety(cls):
         return cls.GREEN
     
     @classmethod
-    def get_randomly(cls) -> "TerritorySafety":
-        # p = list(cls._get_ratio_map().values())
-        # a = list(range(1, len(p)+1))
-        # p = [0.2, 0.8, 0.2]
-        # a = [cls.BLACK, cls.RED, cls.YELLOW]
-        # cls.BLACK, cls.RED, cls.YELLOW를 각각 1, 4, 1개씩 넣는다.
+    def get_randomly(cls):
+        # 황 80%, 적 20%
         
-        return random.choice([cls.BLACK, cls.YELLOW, cls.RED, cls.RED, cls.RED, cls.RED])
+        return cls(npr.choice(2, 1, p=[0.8, 0.2])+2)
         
 class ResourceCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
@@ -94,27 +90,36 @@ class ResourceCategory(ArislenaEnum):
     SOIL = "흙", "🟫"
     STONE = "석재", ":rock:"
     BUILDING_MATERIAL = "건축자재", "🧱"
-    LIVESTOCK = "가축", "🐄"
+    HERB = "약재", "🌿"
     
     @classmethod
     def to_list(cls) -> list["ResourceCategory"]:
         return [component for component in cls if component.value != cls.UNSET.value]
 
-class BuildingCategory(ArislenaEnum):
+class TerritoryCategory(ArislenaEnum):
+    UNSET = "미정", "❓", -1
+    
+    
+    @classmethod
+    def get_randomly(cls):
+        return random.choice([comp for comp in cls if comp.level == 0])
+
+class FacilityCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
     FRESH_WATER_SOURCE = "담수원", "🚰"
     HUNTING_GROUND = "수렵지", "🏹"
     GATHERING_POST = "채집지", "🌾"
-    PASTURELAND = "목초지", "🐄", 1
+    PASTURELAND = "목초지", "🐄"
     FARMLAND = "농경지", "🌾⛺", 1
     WOOD_GATHERING_POST = "목재 채취장", "🌲🏭", 1
     EARTH_GATHERING_POST = "토석 채취장", "🏞️🏭", 1
     BUILDING_MATERIAL_FACTORY = "건축자재 공장", "🧱🏭", 1
     RECRUITING_CAMP = "모병소", "🛡️🏭", 1
-    AUTOMATED_GATHERING_FACILITY = "자동 채취 시설", "🏭🤖", 1
+    SUPPLY_BASE = "보급기지", "🏭🤖", 1
+    CLINIC = "진료소", "🏥", 1
     
     @classmethod
-    def get_basic_building_list(cls) -> list["BuildingCategory"]:
+    def get_basic_facility_list(cls) -> list["FacilityCategory"]:
         return [
             cls.FRESH_WATER_SOURCE,
             cls.HUNTING_GROUND,
@@ -123,11 +128,11 @@ class BuildingCategory(ArislenaEnum):
         ]
     
     @classmethod
-    def get_ramdom_base_building_category(cls) -> "BuildingCategory":
-        return random.choice(cls.get_basic_building_list())
+    def get_ramdom_base_facility_category(cls) -> "FacilityCategory":
+        return random.choice(cls.get_basic_facility_list())
     
     @classmethod
-    def get_advanced_building_list(cls) -> list["BuildingCategory"]:
+    def get_advanced_facility_list(cls) -> list["FacilityCategory"]:
         rtn = [comp for comp in cls if comp.level == 1]
         return rtn
 
@@ -140,11 +145,12 @@ class Strategy(ArislenaEnum):
     ENCIRCLEMENT = "포위", "🔗"
     RETREAT = "후퇴", "🏳️"
 
-class CommandCountCategory(ArislenaEnum):
+class CommandCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
     RECRUIT = "모병", "🛡️"
     SCOUT = "정찰", ":eye:"
     RETREAT = "후퇴", ":runner:"
+    TRAIN = "훈련", ":muscle:"
 
 class D9Judge(ArislenaEnum):
     TRAGIC = "처참함", "😭"
@@ -160,54 +166,6 @@ class D20Judge(ArislenaEnum):
     SUCCESS = "성공", "✅"
     GREAT_SUCCESS = "멋지게 성공!", "🎉"
 
-# TODO D20Judge를 활용하도록 수정 필요
-class WorkerDetail(DetailEnum):
-    UNSET = -1, ("미정",)
-    TRAGIC = D20Judge.TRAGIC, (
-        "작업 중 중상", 
-        "심한 몸살", 
-        "현재 만취", 
-        "철야", 
-        "영양실조", 
-        "파업 시위 중", 
-        "잘못된 작업 내용"
-    )
-    POOR = D20Judge.POOR, (
-
-    )
-    AVERAGE = D20Judge.AVERAGE, (
-        "작업 중 경상", 
-        "가벼운 몸살", 
-        "전날 과음함", 
-        "수면부족", 
-        "영양부족", 
-        "심한 근심걱정 중", 
-        "작업 내용 몰이해"
-    )
-    PROPER = D20Judge.PROPER, (
-
-    )
-    SUCCESS = D20Judge.SUCCESS, (
-        "무사고", 
-        "건강함", 
-        "술을 절제함", 
-        "숙면을 취함", 
-        "좋은 식사", 
-        "근심이 없음", 
-        "작업 내용 숙지"
-    )
-    GREAT_SUCCESS = D20Judge.GREAT_SUCCESS, (
-        "무사고", 
-        "특별한 보약을 먹음", 
-        "특별 휴가를 다녀옴", 
-        "최근에 소원을 이뤄서 행복함", 
-        "숙달된 분야에서 작업"
-    )
-    
-    @classmethod
-    def get_from_corresponding(cls, corresponding) -> "WorkerDetail":
-        return super().get_from_corresponding(corresponding)
-
 class WorkerCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
     CREW = "대원", "👥",
@@ -222,6 +180,7 @@ class WorkCategory(ArislenaEnum):
     FIGHTING = "전투", "⚔️"
     CONSTRUCTION = "건설", "🏗️"
     MANUFACTURING = "제조", "🏭"
+    TREAT = "치료", "🩹"
     
     @classmethod
     def to_list(cls) -> list["WorkCategory"]:
@@ -230,25 +189,16 @@ class WorkCategory(ArislenaEnum):
         """
         return [component for component in cls if component != cls.UNSET]
 
-# # 부대 상태
-# class Troop(IntEnum):
-#     IDLE = 0
-#     ALERT = 1
-#     FORTIFYING = 2
-#     MOVING = 3
-# # 블럭 상태
-# class Block(IntEnum):
-#     SAFE = 0
-#     CRISIS = 1
-#     CONQUERED = 2
-# # 건물 상태
-# class Building(IntEnum):
-#     ONGOING_CONSTRUCTION = 0
-#     COMPLETED = 1
-#     PILLAGED = 2
-# # 기술 상태
-# class Technology(IntEnum):
-#     ONGOING_RESEARCH = 0
-#     COMPLETED = 1
-#     SABOTAGED = 2
+class WorkerHPState(ArislenaEnum):
+    # 0: 건강, 1: 경상, 2: 중상, 3: 사망
+    HEALTHY = "건강", "🟢"
+    INJURED = "경상", "🟡"
+    CRITICAL = "중상", "🔴"
+    DEAD = "사망", "⚰️"
+    
+    # 최대 HP에 대한 현재 HP 비율에 따른 판정
+    # >= 90%: 건강
+    # >= 50%: 경상
+    # < 50%: 중상
+    # 0: 사망
 
