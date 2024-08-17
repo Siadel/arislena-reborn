@@ -7,7 +7,7 @@ from py_base.yamlobj import Detail
 from py_system.tableobj import Facility
 from py_system.worker import Crew
 from py_system.tableobj import WorkerDescription, Faction, Territory
-from py_discord.warnings import NameContainsSpecialCharacter
+from py_base.warnings import NameContainsSpecialCharacter
 
 
 

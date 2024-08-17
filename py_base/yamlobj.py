@@ -9,7 +9,7 @@ class Detail(YamlObject):
     def __init__(self):
         super().__init__()
     
-    def get_random_detail(self, enum_component_name) -> str:
+    def get_random_detail(self, enum_component_name: str) -> str:
         return random.choice(self.data["CrewDetail"][enum_component_name])
         
     def get_random_worker_descriptions(self, sample_count:int) -> list[str]:

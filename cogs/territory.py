@@ -4,9 +4,10 @@ from discord import app_commands
 
 from py_base.ari_enum import TerritorySafety
 from py_system.tableobj import Territory, Faction
-from py_discord import warnings, views
+from py_discord import views
 from py_discord.bot_base import BotBase
 from py_discord.modals import NewTerritoryModal
+from py_base import warnings
 
 class TerritoryCommand(GroupCog, name="영토"):
     

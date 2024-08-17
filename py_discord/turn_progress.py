@@ -4,7 +4,7 @@ from py_base import ari_enum
 from py_base.dbmanager import DatabaseManager
 from py_system.tableobj import Facility
 from py_system.tableobj import Deployment, Resource
-from py_system.systemobj import SystemFacility
+from py_system.facility import facility_to_concrete_facility
 
 
 
@@ -18,12 +18,11 @@ def facility_progress(database: DatabaseManager, facility_id: int) -> Embed:
     
     # 시설과 대원, 가축 불러오기
     facility = Facility.from_database(database, id=facility_id)
-    sys_facility = SystemFacility.from_facility(facility)\
-        .set_database(database)
-    deployed_crews = sys_facility.get_deployed_crews(deployment_list)
-    deployed_livestocks = sys_facility.get_deployed_livestocks(deployment_list)
+    facility = facility_to_concrete_facility(facility)
+    deployed_crews = facility.get_deployed_crews(deployment_list)
+    deployed_livestocks = facility.get_deployed_livestocks(deployment_list)
     
-    production_recipe = sys_facility.get_production_recipe()
+    production_recipe = facility.get_production_recipe()
     
     result_embed = Embed(
         title = f"**{facility.name}**({facility.category.express()}) 활동 보고",
@@ -31,7 +30,7 @@ def facility_progress(database: DatabaseManager, facility_id: int) -> Embed:
     )
     
     # 완성되지 않은 시설의 경우
-    if not sys_facility.is_built():
+    if not facility.is_built():
         # 시설에 배치된 대원 불러오기
         for sys_worker in deployed_crews + deployed_livestocks:
             # 대원마다 건축 주사위 굴리기
@@ -39,19 +38,19 @@ def facility_progress(database: DatabaseManager, facility_id: int) -> Embed:
             construction_exp = sys_worker.get_experience(ari_enum.WorkCategory.CONSTRUCTION)
             exp_level = sys_worker.get_experience_level(construction_exp)
             
-            sys_facility.apply_production(sys_worker.labor + exp_level)
+            facility.apply_production(sys_worker.efficiency + exp_level)
 
             result_embed.add_field(
                 name=f"건축 노동원: {sys_worker.name}",
-                value=f"진척 추가: {sys_worker.labor + exp_level}\n건축 진척: {sys_facility.construction_progress} / {sys_facility.required_dice_cost}"
+                value=f"진척 추가: {sys_worker.efficiency + exp_level}\n건축 진척: {facility.construction_progress} / {facility.required_dice_cost}"
             )
         
-        sys_facility.push()
+        facility.push()
     
     # 시설에 배치된 노동원마다 실행
     for sys_worker in deployed_crews + deployed_livestocks:
         # 자원 소모
-        embed_value_list = [f"- 배치 노동원: {sys_worker.name}", f"- 노동력: {sys_worker.labor}"]
+        embed_value_list = [f"- 배치 노동원: {sys_worker.name}", f"- 노동력: {sys_worker.efficiency}"]
         for consume_resource in production_recipe.consume:
             
             r_data = database.fetch(Resource.table_name, faction_id=facility.faction_id, category=consume_resource.category)
@@ -75,13 +74,13 @@ def facility_progress(database: DatabaseManager, facility_id: int) -> Embed:
         
     # 자원 생산
     for worker in deployed_crews + deployed_livestocks:
-        for produce_resource in sys_facility.produce_resource_by_worker(
+        for produce_resource in facility.produce_resource_by_worker(
             database,
             worker
         ):
             result_embed.add_field(
                 name=f"{produce_resource.category.express()}",
-                value=f"- 배치 노동원: {worker.name}({worker.category.express()})\n- 노동력: {worker.labor}\n- 생산량: **{produce_resource.amount}**"
+                value=f"- 배치 노동원: {worker.name}({worker.category.express()})\n- 노동력: {worker.efficiency}\n- 생산량: **{produce_resource.amount}**"
             )
             produce_resource.push()
     

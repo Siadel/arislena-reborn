@@ -1,9 +1,10 @@
 
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
-from typing import Iterable, Iterator, Self, Any
+from typing import Generator, Iterable, Iterator, Self, Any
 from enum import IntEnum
 
+from py_base import ari_enum
 from py_base.ari_enum import get_intenum, ResourceCategory, FacilityCategory
 from py_base.arislena_dice import Dice
 from py_base.datatype import ExtInt
@@ -518,6 +519,32 @@ class ProductionRecipe:
     ):
         self.consume = consume
         self.produce = produce
+
+
+class WorkerQualification(set):
+
+    def __init__(self, iterable: Iterable[ari_enum.WorkCategory] | None = None):
+        if iterable is None:
+            iterable = []
+        # validation
+        for category in iterable:
+            self.check_instance(category)
+        super().__init__(iterable)
+
+    def check_instance(self, _Any):
+        if not isinstance(_Any, ari_enum.WorkCategory):
+            raise ValueError(f"Invalid category: {_Any}; must be ari_enum.WorkCategory")
+
+    def add(self, category: ari_enum.WorkCategory):
+        self.check_instance(category)
+        super().add(category)
+
+    def __iter__(self) -> Generator[ari_enum.WorkCategory, None, None]:
+        for category in super().__iter__():
+            yield category
+
+    def __str__(self):
+        return f"WokerQualification({', '.join([category.value for category in self])})"
 
 # deprecated
 # @dataclass

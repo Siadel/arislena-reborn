@@ -6,14 +6,15 @@ from abc import ABCMeta
 from sqlite3 import Row
 from typing import Generator
 
-from py_base.utility import sql_value, DATE_EXPR
+from py_base.utility import sql_value, DATE_EXPR, get_minus4_to_4
 from py_base.ari_logger import ari_logger
 from py_base import ari_enum
 from py_base.datatype import ExtInt
 from py_base.dbmanager import DatabaseManager
 from py_base.yamlobj import Detail, TableObjTranslator
-from py_system.abstract import Column, TableObject, ResourceAbst, GeneralResource
+from py_system.abstract import Column, TableObject, ResourceAbst, GeneralResource, WorkerQualification, ProductionRecipe
 from py_base.arislena_dice import D20
+from py_base import warnings
 
 def form_database_from_tableobjects(database:DatabaseManager):
     """
@@ -226,6 +227,9 @@ class Resource(TableObject, ResourceAbst):
     
     def to_embed_value(self) -> str:
         return f"- {self.category.express()} : {self.amount}"
+    
+    def is_afford(self, amount: int) -> bool:
+        return self.amount >= amount
 
 class WorkerExperience(TableObject):
     
@@ -268,7 +272,7 @@ class WorkerDescription(TableObject):
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     worker_id = Column(int, show_front=False)
-    worker_labor_detail = Column(str)
+    worker_efficiency_detail = Column(str)
     ps_0 = Column(str)
     ps_1 = Column(str)
     ps_2 = Column(str)
@@ -277,7 +281,7 @@ class WorkerDescription(TableObject):
         self,
         id: int = 0,
         worker_id: int = 0,
-        worker_labor_detail: str = "",
+        worker_efficiency_detail: str = "",
         ps_0: str = "",
         ps_1: str = "",
         ps_2: str = ""
@@ -285,7 +289,7 @@ class WorkerDescription(TableObject):
         TableObject.__init__(self)
         self.id = id
         self.worker_id = worker_id
-        self.worker_labor_detail = worker_labor_detail
+        self.worker_efficiency_detail = worker_efficiency_detail
         self.ps_0 = ps_0
         self.ps_1 = ps_1
         self.ps_2 = ps_2
@@ -295,8 +299,8 @@ class WorkerDescription(TableObject):
         desc = file.get_random_worker_descriptions(3)
         return cls(worker_id=worker_id, ps_0=desc[0], ps_1=desc[1], ps_2=desc[2])
     
-    def set_worker_labor_detail(self, d20_judge_name: str, file:Detail):
-        self.worker_labor_detail = file.get_random_detail(d20_judge_name)
+    def set_worker_efficiency_detail(self, d20_judge_name: str, file:Detail):
+        self.worker_efficiency_detail = file.get_random_detail(d20_judge_name)
         return self
     
     def get_display_string(self) -> str:
@@ -307,7 +311,7 @@ class WorkerDescription(TableObject):
     
     def to_embed_value(self, translator: TableObjTranslator) -> str:
         lines = [
-            f"- {translator.get(self.__class__.worker_labor_detail.name, self.table_name)} : **{self.worker_labor_detail}**",
+            f"- {translator.get(self.__class__.worker_efficiency_detail.name, self.table_name)} : **{self.worker_efficiency_detail}**",
             f"- 특징: {self.get_description_line()}"
         ]
         return "\n".join(lines)
@@ -338,13 +342,14 @@ class Worker(TableObject):
     
     table_name = "Worker"
     correspond_category: ari_enum.WorkerCategory = None
+    qualification: WorkerQualification = None
     
     id = Column(int, show_front=False, primary_key=True, auto_increment=True)
     faction_id = Column(int, show_front=False)
     category = Column(ari_enum.WorkerCategory)
     name = Column(str)
-    sex = Column(ari_enum.BiologicalSex)
-    labor = Column(int)
+    bio_sex = Column(ari_enum.BiologicalSex)
+    efficiency = Column(int)
     hp = Column(int)
     availability = Column(ari_enum.Availability)
     
@@ -354,8 +359,8 @@ class Worker(TableObject):
         faction_id: int = 0,
         category: ari_enum.WorkerCategory = ari_enum.WorkerCategory.UNSET,
         name: str = "",
-        sex: ari_enum.BiologicalSex = ari_enum.BiologicalSex.UNSET,
-        labor: int = 0,
+        bio_sex: ari_enum.BiologicalSex = ari_enum.BiologicalSex.UNSET,
+        efficiency: int = 0,
         hp: int = 0,
         availability: ari_enum.Availability = ari_enum.Availability.UNAVAILABLE,
     ):
@@ -364,12 +369,36 @@ class Worker(TableObject):
         self.faction_id = faction_id
         self.category = category
         self.name = name
-        self.sex = sex
-        self.labor = labor
+        self.bio_sex = bio_sex
+        self.efficiency = efficiency
         self.hp = hp
         self.availability = availability
         
-        self._labor_dice = None
+        self._efficiency_dice = None
+        
+    def run_production(self, faction: "Faction", facility: "Facility") -> None:
+        """
+        인자로 주어지는 facility가 get_production_recipe()를 구현한 경우, 해당 메서드를 이용해 생산을 진행함.
+        구현하지 않은 경우 예상치 못한 오류가 발생할 수 있음.
+        """
+        self._check_database()
+        production_recipe = facility.get_production_recipe()
+        for consume_r in production_recipe.consume:
+            faction_r = faction.get_resource(consume_r.category)\
+                .set_database(self._database)
+            if not faction_r.is_afford(consume_r.amount):
+                raise warnings.DeficientResource()
+            faction_r.amount -= consume_r.amount
+            faction_r.push()
+        
+        for produce_r in production_recipe.produce:
+            faction_r = faction.get_resource(produce_r.category)\
+                .set_database(self._database)
+            faction_r.amount += produce_r.amount * self.get_final_efficiency()
+            faction_r.push()
+            
+    def get_final_efficiency(self) -> int:
+        raise NotImplementedError()
     
     def get_display_string(self) -> str:
         return self.name
@@ -382,9 +411,14 @@ class Worker(TableObject):
         노동력 소모에 필요한 자원을 반환함
         """
         raise NotImplementedError()
+    
+    def get_efficiency_dice(self, worker_exp: WorkerExperience) -> D20:
+        return D20(dice_mod=self.get_experience_level(worker_exp))
 
-    def set_labor(self):
-        raise NotImplementedError()
+    def set_efficiency(self):
+        # -4 ~ 4
+        self.efficiency = get_minus4_to_4()
+        return self
     
     def get_experience(self, category: ari_enum.WorkCategory) -> WorkerExperience:
         self._check_database()
@@ -392,16 +426,6 @@ class Worker(TableObject):
             self._database, worker_id=self.id, category=category
         )
         return we
-    
-    def get_labor_by_WorkCategory(self, category: ari_enum.WorkCategory) -> int:
-        return self.labor + self.get_experience_level(self.get_experience(category))
-    
-    def set_labor_dice(self) -> D20:
-        """
-        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
-        """
-        self._labor_dice = D20()
-        return self
     
     def set_description(self):
         self._check_database()
@@ -488,6 +512,25 @@ class Facility(TableObject):
     @property
     def deploy_limit(self) -> int:
         return self.level + 2
+    
+    @classmethod
+    def get_matched_subclass_from_category(cls, category: ari_enum.FacilityCategory) -> type["Facility"]:
+        for subcls in cls.__class__.__subclasses__():
+            if subcls.facility_category == category:
+                return subcls
+        raise ValueError("카테고리에 해당하는 하위 시설이 없습니다! 코드를 확인해주세요.")
+    
+    def run_production(self, faction: "Faction") -> None:
+        """
+        get_production_recipe를 이용해 생산을 진행함
+        
+        NOTE: 이 메서드는 오버라이딩하지 않았다면 get_production_recipe()가 제대로 구현되어 있는 경우에만 사용 가능.
+        따라서 get_production_recipe()를 오버라이딩하지 않은 경우, 이 메서드를 반드시 구현해야 함
+        """
+        
+    
+    def get_production_recipe(self) -> ProductionRecipe:
+        raise NotImplementedError()
 
     def get_display_string(self) -> str:
         return f"{self.name}: {self.category.express()}"
@@ -532,6 +575,24 @@ class Facility(TableObject):
         시설이 완공되었는지 확인
         """
         return self.remaining_dice_cost == 0
+    
+    def is_running(self) -> bool:
+        """
+        시설이 운영 중인지 확인
+        
+        조건:
+        1. 완공됨
+        2. 배치된 인원이 존재하며, 인원 분류의 비율 조건(crew >= livestock)이 충족됨
+        """
+        self._check_database()
+        if not self.is_built(): return False
+        deployed_worker_ids = self.get_deployed_worker_ids()
+        if not deployed_worker_ids: return False
+        deployed_workers = self.get_deployed_workers(deployed_worker_ids)
+        crews = [worker for worker in deployed_workers if worker.category == ari_enum.WorkerCategory.CREW]
+        livestocks = [worker for worker in deployed_workers if worker.category == ari_enum.WorkerCategory.LIVESTOCK]
+        return len(crews) >= len(livestocks)
+        
 
     def get_deployed_worker_ids(self) -> list[int]:
         """
@@ -551,16 +612,21 @@ class Facility(TableObject):
         """
         self._check_database()
         return [deployment.get_worker() for deployment in deployment_list if deployment.worker_id is not None]
-
-    def get_production_recipe(self):
-        raise NotImplementedError()
     
-    @classmethod
-    def get_matched_subclass_from_category(cls, category: ari_enum.FacilityCategory) -> type["Facility"]:
-        for subcls in cls.__class__.__subclasses__():
-            if subcls.facility_category == category:
-                return subcls
-        raise ValueError("카테고리에 해당하는 하위 시설이 없습니다! 코드를 확인해주세요.")
+    def get_deployed_crews(self, deployment_list: list["Deployment"]) -> list[Worker]:
+        """
+        시설에 배치된 인원 중, Crew만 가져옴
+        """
+        self._check_database()
+        return [worker for worker in self.get_deployed_workers(deployment_list) if worker.category == ari_enum.WorkerCategory.CREW]
+    
+    def get_deployed_livestocks(self, deployment_list: list["Deployment"]) -> list[Worker]:
+        """
+        시설에 배치된 인원 중, Livestock만 가져옴
+        """
+        self._check_database()
+        return [worker for worker in self.get_deployed_workers(deployment_list) if worker.category == ari_enum.WorkerCategory.LIVESTOCK]
+
 
 class Territory(TableObject):
     
@@ -761,10 +827,10 @@ class Faction(TableObject):
         """
         해당 세력의 인구를 가져옴
         """
-        cr = self._database.fetch("worker", faction_id=self.id, name=name)
+        worker = self._database.fetch("worker", faction_id=self.id, name=name)
 
-        if not cr: return Worker(faction_id=self.id, name=name)
-        return Worker.from_data(cr)
+        if not worker: return Worker(faction_id=self.id, name=name)
+        return Worker.from_data(worker)
     
     def get_command_counter(self, category:ari_enum.CommandCategory) -> CommandCounter:
         """

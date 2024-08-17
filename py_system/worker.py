@@ -1,15 +1,15 @@
 from py_base import ari_enum, name_generator
 from py_base.arislena_dice import D20
-from py_system.abstract import GeneralResource
+from py_system.abstract import GeneralResource, WorkerQualification
 from py_system.tableobj import WorkerDescription, WorkerExperience, Worker
 
 import random
 from math import sqrt
 
-
 class Crew(Worker):
 
     correspond_category = ari_enum.WorkerCategory.CREW
+    qualification = WorkerQualification(ari_enum.WorkCategory.get_everything_but_unset())
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -23,8 +23,13 @@ class Crew(Worker):
         """
         # random_number = str(random.random()).split(".")[1]
         bs = ari_enum.BiologicalSex.get_random()
-        new_crew = cls(faction_id=faction_id, name=name_generator.get_random_full_name(bs.value), category=cls.correspond_category, sex=bs)
-        new_crew.set_labor()
+        new_crew = cls(
+            faction_id=faction_id, 
+            name=name_generator.get_random_full_name(bs.value), 
+            category=cls.correspond_category, 
+            bio_sex=bs
+        )
+        new_crew.set_efficiency()
         return new_crew
 
     def get_experience_level(self, worker_exp: WorkerExperience) -> int:
@@ -43,25 +48,13 @@ class Crew(Worker):
         return desc
 
     def get_every_experience(self) -> list[WorkerExperience]:
-        return [self.get_experience(category) for category in ari_enum.WorkCategory.to_list()]
-
-    def set_labor_dice(self):
-
-        self._labor_dice = D20()
-        return self
-
-    def set_labor(self):
-        """
-        노동력 설정
-        """
-        if self._labor_dice is None: self.set_labor_dice()
-        self.labor = self._labor_dice.roll()
-        return self
+        return [self.get_experience(category) for category in ari_enum.WorkCategory.get_everything_but_unset()]
 
 
 class Livestock(Worker):
 
     correspond_category = ari_enum.WorkerCategory.LIVESTOCK
+    qualification = WorkerQualification([ari_enum.WorkCategory.AGRICULTURE])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -91,18 +84,6 @@ class Livestock(Worker):
         if self.name:
             return self.name
         return f"가축 {self.id}"
-
-    def set_labor_dice(self):
-        """
-        기본적으로 주사위 결과에 3을 더함 (최소 4)
-        """
-        self._labor_dice = D20(dice_mod=3)
-        return self
-
-    def set_labor(self):
-        if self._labor_dice is None: self.set_labor_dice()
-        self.labor = self._labor_dice.roll()
-        return self
 
 
 # class Crew(Worker):
@@ -143,9 +124,9 @@ class Livestock(Worker):
 #     def get_every_experience(self) -> list[WorkerExperience]:
 #         return [self.get_experience(category) for category in WorkCategory.to_list()]
 
-#     def set_labor_dice(self):
+#     def set_efficiency_dice(self):
 
-#         self._labor_dice = D20()
+#         self._efficiency_dice = D20()
 #         return self
 
 #     def get_labor_by_WorkCategory(self, category: WorkCategory):
@@ -155,8 +136,8 @@ class Livestock(Worker):
 #         """
 #         노동력 설정
 #         """
-#         if self._labor_dice is None: self.set_labor_dice()
-#         self.labor = self._labor_dice.roll()
+#         if self._efficiency_dice is None: self.set_efficiency_dice()
+#         self.labor = self._efficiency_dice.roll()
 #         return self
 
 #     def get_display_string(self) -> str:
@@ -199,14 +180,14 @@ class Livestock(Worker):
 #             return self.name
 #         return f"가축 {self.id}"
 
-#     def set_labor_dice(self):
+#     def set_efficiency_dice(self):
 #         """
 #         기본적으로 주사위 결과에 3을 더함 (최소 4)
 #         """
-#         self._labor_dice = D20(dice_mod=3)
+#         self._efficiency_dice = D20(dice_mod=3)
 #         return self
 
 #     def set_labor(self):
-#         if self._labor_dice is None: self.set_labor_dice()
-#         self.labor = self._labor_dice.roll()
+#         if self._efficiency_dice is None: self.set_efficiency_dice()
+#         self.labor = self._efficiency_dice.roll()
 #         return self

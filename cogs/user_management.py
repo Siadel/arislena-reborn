@@ -5,8 +5,9 @@ from datetime import datetime
 
 from py_base import utility
 from py_system.tableobj import User
-from py_discord import embeds, views, warnings
+from py_discord import embeds, views
 from py_discord.bot_base import BotBase
+from py_base import warnings
 
 class UserManagement(GroupCog, name="유저"):
     def __init__(self, bot: BotBase):

@@ -15,10 +15,10 @@
 - 각 시설 혹은 활동 별로 대응되는 LaborCategory 정하기
 - 각 시설별로 Laborable을 받아서 LaborCategory와 LaborExperience에 따라 labor 수치를 계산하기
 
-- Laborable의 labor_detail_index를 CrewDescription의 속성으로 변경
+- Laborable의 efficiency_detail_index를 CrewDescription의 속성으로 변경
 
-- 대원의 labor_detail_index는 노동력을 새로 정할 때 유저에게 보이는 메세지로서만 사용
-self.labor_detail_index = CrewLaborDetail(self._labor_dice.last_judge.value).get_random_detail_index()
+- 대원의 efficiency_detail_index는 노동력을 새로 정할 때 유저에게 보이는 메세지로서만 사용
+self.efficiency_detail_index = CrewLaborDetail(self._efficiency_dice.last_judge.value).get_random_detail_index()
 
 240622 계획
 

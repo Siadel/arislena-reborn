@@ -120,13 +120,13 @@ class CrewLookupEmbed(ArislenaEmbed):
             )
         return self
     
-    # def add_labor_detail_field(self):
+    # def add_efficiency_detail_field(self):
     #     self.add_field(
     #         name="컨디션",
     #         value=WorkerDetail.get_from_corresponding(
     #             Nonahedron().set_last_roll(self.crew.labor).last_judge
     #         ).get_detail(
-    #             self.crew.labor_detail_index
+    #             self.crew.efficiency_detail_index
     #         )
     #     )
     #     return self
@@ -141,7 +141,7 @@ class CrewLookupEmbed(ArislenaEmbed):
     
     def add_experience_field(self):
         value_text_list = []
-        for category in WorkCategory.to_list():
+        for category in WorkCategory.get_everything_but_unset():
             exp = self.crew.get_experience(category)
             value_text_list.append(
                 exp.to_embed_value()

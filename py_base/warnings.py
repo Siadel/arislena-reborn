@@ -4,7 +4,7 @@
 from py_base import utility, koreanstring
 
 class Default(Exception):
-    def __init__(self, message: str):
+    def __init__(self, message: str = "오류가 발생했습니다."):
         """
         Default은 AriBot에서 발생하는 모든 경고를 상속받는 클래스입니다.
         """
@@ -233,6 +233,9 @@ class Deficient(Default):
     def __init__(self, subject:str, limit:int, predict:int):
         super().__init__(f"{koreanstring.nominative(subject)} 부족해요! 예상치: {predict}/{limit}")
 
+class DeficientResource(Default):
+    pass
+
 class NameTooLong(Default):
     def __init__(self, subject:str, limit:int):
         super().__init__(f"{koreanstring.nominative(subject)} 이름이 너무 깁니다! 최대 길이: {limit}")
@@ -256,3 +259,4 @@ class ImpossibleToInterrupt(Default):
 class NoSpace(Default):
     def __init__(self):
         super().__init__("영토에 남은 공간이 없어요!")
+        

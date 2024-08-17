@@ -10,7 +10,8 @@ general:
   category: 분류
   amount: 수량
   labor: 노동력
-  labor_dice: 노동력 주사위 눈
+  efficiency: 능률
+  efficiency_dice: 노동력 주사위 눈
   higher: 상위 세력
   lower: 하위 세력
   food_consumption: 식량 소비
@@ -25,7 +26,7 @@ general:
   level: 레벨
   experience: 경험치
   sex: 성별
-  worker_labor_detail: 오늘의 상태
+  worker_efficiency_detail: 오늘의 상태
   ps_0: 특징 1
   ps_1: 특징 2
   ps_2: 특징 3

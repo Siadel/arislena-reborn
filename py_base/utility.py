@@ -4,6 +4,7 @@
 import datetime, re
 from pathlib import Path
 from enum import Enum
+from numpy import random as np_random
 
 UTF8 = "utf-8"
 
@@ -112,3 +113,9 @@ def select_from_subclasses(_class: type, **query) -> type:
             if getattr(subclass, key) == value:
                 return subclass
     raise ValueError(f"No subclass of {_class} matches the query {query}; {_class.__subclasses__()}")
+
+def get_minus4_to_4() -> int:
+    """
+    -4 ~ 4 사이의 정수를 대한민국 수능 9등급식 정규분포 근사 논리로 반환합니다.
+    """
+    return np_random.choice([-4, -3, -2, -1, 0, 1, 2, 3, 4], p=[0.04, 0.07, 0.12, 0.17, 0.20, 0.17, 0.12, 0.07, 0.04])

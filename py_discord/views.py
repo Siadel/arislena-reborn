@@ -8,9 +8,10 @@ from py_base.ari_enum import FacilityCategory, TerritorySafety, ResourceCategory
 from py_system.tableobj import Facility
 from py_system.tableobj import TableObject, User, Faction, Territory, Resource
 from py_system.systemobj import SystemFacility
-from py_discord import warnings, modals, embeds
+from py_discord import modals, embeds
 from py_discord.bot_base import BotBase
 from py_discord.abstract import TableObjectButton
+from py_base import warnings
 from py_system.worker import Crew
 
 # /유저 설정 - 설정 정보 출력

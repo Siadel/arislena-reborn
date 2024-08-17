@@ -3,8 +3,9 @@ from discord.ext.commands import GroupCog
 from discord import app_commands
 
 from py_discord.bot_base import BotBase
-from py_discord import views, warnings, modals
+from py_discord import views, modals
 from py_system.tableobj import Faction
+from py_base import warnings
 
 class FactionCommand(GroupCog, name="세력"):
 

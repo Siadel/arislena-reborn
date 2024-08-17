@@ -14,83 +14,6 @@ from py_system.worker import Crew, Livestock
 
 
 
-class SystemWorker(Worker, metaclass=ABCMeta):
-    """
-    노동력을 가지는 객체
-    """
-    correspond_category: WorkerCategory = WorkerCategory.UNSET
-    
-    def __init__(self, **kwargs):
-        Worker.__init__(self, **kwargs)
-        self._check_category()
-        self._labor_dice: D20 = None
-        
-        self.description: WorkerDescription = None
-        self.stats: WorkerStats = None
-    
-    def _check_category(self):
-        if self.__class__.correspond_category is not None and self.__class__.category != WorkCategory.UNSET and self.category != self.__class__.correspond_category:
-            raise ValueError("카테고리가 일치하지 않습니다.")
-    
-    @classmethod
-    def get_showables(cls) -> list[str]:
-        return Worker.get_showables()
-    
-    @classmethod
-    def get_columns(cls) -> dict[str, Column]:
-        return Worker.get_columns()
-
-    @classmethod
-    def from_worker(cls, worker: Worker):
-        if cls is SystemWorker:
-            raise ValueError("SystemWorker 클래스에서 from_worker 함수를 실행할 수 없습니다.")
-        if cls.correspond_category != worker.category:
-            raise ValueError(f"해당 카테고리({worker.category})의 노동 개체는 {cls.correspond_category}로 변환할 수 없습니다.")
-        return cls(**worker.get_dict())
-    
-    @property
-    def labor_dice(self):
-        return self._labor_dice
-
-    @abstractmethod
-    def get_experience_level(self, worker_exp: WorkerExperience) -> int:
-        return 0
-
-    @abstractmethod
-    def get_consumption_recipe(self) -> list[GeneralResource]:
-        """
-        노동력 소모에 필요한 자원을 반환함
-        """
-        pass
-
-    @abstractmethod
-    def set_labor_dice(self) -> D20:
-        """
-        experience 수치에 따라 주사위의 modifier가 다르게 설정됨
-        """
-        self._labor_dice = D20()
-        return self
-
-    @abstractmethod
-    def set_labor(self):
-        return self
-    
-    def set_description(self):
-        self._check_database()
-        self.description = WorkerDescription.from_database(self._database, worker_id=self.id)
-        return self
-    
-    def set_stats(self):
-        self._check_database()
-        self.stats = WorkerStats.from_database(self._database, worker_id=self.id)
-        return self
-
-# TableObject 상속 클래스
-
-
-
-
-
     
     
 # TODO schedule_manager의 facility_produce 함수 기능을 여기로 끌어올 수 있을 텐데
@@ -183,7 +106,7 @@ class SystemFacility(Facility, metaclass=ABCMeta):
         
     #     for crew in deployed_crews:
     #         construction_exp = crew.get_experience(LaborCategory.CONSTRUCTION)
-    #         construction_dice = construction_exp.get_labor_dice()
+    #         construction_dice = construction_exp.get_efficiency_dice()
     #         construction_dice.roll()
             
     #         self.apply_production(construction_dice.last_roll)

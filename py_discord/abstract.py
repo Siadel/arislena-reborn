@@ -8,8 +8,9 @@ from copy import deepcopy
 from py_base.dbmanager import DatabaseManager
 from py_base.yamlobj import TableObjTranslator
 from py_system.tableobj import TableObject
-from py_discord import warnings, embeds
+from py_discord import embeds
 from py_discord.bot_base import BotBase
+from py_base import warnings
 
 
 # view 전용 추상 클래스

@@ -7,7 +7,7 @@ from py_base.dbmanager import DatabaseManager
 from py_base.utility import JSON_DIR
 from py_base.jsonobj import BotSetting
 from py_system.tableobj import form_database_from_tableobjects
-from py_discord import warnings
+from py_base import warnings
 from py_discord.server_manager import ServerManager
 
 # 봇 권한 설정

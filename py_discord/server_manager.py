@@ -215,14 +215,13 @@ class ServerManager:
             for row in self.database.fetch_many(laborable_table.table_name, availability=ari_enum.Availability.STANDBY.value):
                 obj = laborable_table.from_data(row)
                 obj.set_database(self.database)\
-                    .set_labor_dice()\
-                    .set_labor()
+                    .set_efficiency()
                 
-                # Crew의 경우 기본 노동력에 따른 labor_detail을 설정
+                # Crew의 경우 기본 노동력에 따른 efficiency_detail을 설정
                 if isinstance(obj, Crew):
                     desc = obj.get_description()\
                         .set_database(self.database)\
-                        .set_worker_labor_detail(obj.labor_dice.last_judge.name, self.detail)
+                        .set_worker_efficiency_detail(obj.efficiency_dice.last_judge.name, self.detail)
                     desc.push()
 
                 obj.push()

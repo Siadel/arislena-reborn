@@ -5,9 +5,10 @@ from discord import app_commands
 from py_base.koreanstring import objective
 from py_system.tableobj import Facility
 from py_system.tableobj import Faction, Territory
-from py_discord import warnings, views
+from py_discord import views
 from py_discord.bot_base import BotBase
 from py_discord.func import get_facility_category_choices
+from py_base import warnings
 
 class FacilityCommand(GroupCog, name="시설"):
     

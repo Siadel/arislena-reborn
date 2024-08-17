@@ -183,7 +183,7 @@ class WorkCategory(ArislenaEnum):
     TREAT = "치료", "🩹"
     
     @classmethod
-    def to_list(cls) -> list["WorkCategory"]:
+    def get_everything_but_unset(cls) -> list["WorkCategory"]:
         """
         UNSET을 제외한 모든 ExperienceCategory를 반환함
         """

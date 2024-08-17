@@ -4,7 +4,7 @@ from py_base import ari_enum, utility
 from py_system.abstract import ProductionResource, ProductionRecipe, GeneralResource
 from py_system.tableobj import Facility
 
-def category_to_facility(category: ari_enum.FacilityCategory) -> Facility:
+def category_to_facility(category: ari_enum.FacilityCategory) -> type[Facility]:
     """
     시설 카테고리를 입력받아 해당하는 시설 객체를 반환합니다.
     """
@@ -12,6 +12,12 @@ def category_to_facility(category: ari_enum.FacilityCategory) -> Facility:
         Facility,
         facility_category=category
     )
+
+def facility_to_concrete_facility(facility: Facility) -> Facility:
+    """
+    Facility 객체를 FacilityBase 하위 객체로 변환합니다.
+    """
+    return category_to_facility(facility.category)(**facility.get_dict())
 
 class NatureFacility(metaclass=ABCMeta):
     pass
