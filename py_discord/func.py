@@ -29,7 +29,7 @@ def get_facility_category_choices() -> list[Choice[int]]:
         Choice(
             name=category.local_name,
             value=category.value
-        ) for category in FacilityCategory.get_advanced_facility_list()
+        ) for category in FacilityCategory.get_list_by_tier(1)
     ]
 
 def make_and_push_new_crew_package(database: DatabaseManager, new_crew: Crew, detail:Detail) -> None:

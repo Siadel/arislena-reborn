@@ -1,6 +1,6 @@
 from discord import Embed, Colour
 
-from py_base.ari_enum import ResourceCategory, WorkCategory
+from py_base.ari_enum import ResourceCategory, ExperienceCategory
 from py_base.dbmanager import DatabaseManager
 from py_base.yamlobj import TableObjTranslator
 from py_system.abstract import TableObject
@@ -141,7 +141,7 @@ class CrewLookupEmbed(ArislenaEmbed):
     
     def add_experience_field(self):
         value_text_list = []
-        for category in WorkCategory.get_everything_but_unset():
+        for category in ExperienceCategory.to_list():
             exp = self.crew.get_experience(category)
             value_text_list.append(
                 exp.to_embed_value()

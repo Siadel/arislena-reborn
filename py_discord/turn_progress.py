@@ -35,14 +35,14 @@ def facility_progress(database: DatabaseManager, facility_id: int) -> Embed:
         for sys_worker in deployed_crews + deployed_livestocks:
             # 대원마다 건축 주사위 굴리기
             # TODO
-            construction_exp = sys_worker.get_experience(ari_enum.WorkCategory.CONSTRUCTION)
+            construction_exp = sys_worker.get_experience(ari_enum.ExperienceCategory.CONSTRUCTION)
             exp_level = sys_worker.get_experience_level(construction_exp)
             
             facility.apply_production(sys_worker.efficiency + exp_level)
 
             result_embed.add_field(
                 name=f"건축 노동원: {sys_worker.name}",
-                value=f"진척 추가: {sys_worker.efficiency + exp_level}\n건축 진척: {facility.construction_progress} / {facility.required_dice_cost}"
+                value=f"진척 추가: {sys_worker.efficiency + exp_level}\n건축 진척: {facility.construction_progress} / {facility.production_requirement}"
             )
         
         facility.push()

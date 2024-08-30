@@ -5,7 +5,7 @@ from py_base.koreanstring import objective, instrumental
 from py_base.ari_enum import FacilityCategory, ResourceCategory
 from py_system.tableobj import Facility
 from py_system.worker import Livestock
-from py_system.tableobj import Faction, FactionHierarchyNode, Territory, Resource
+from py_system.tableobj import Faction, Territory, Resource
 from py_discord import func
 from py_discord.bot_base import BotBase
 from py_system.worker import Crew
@@ -73,12 +73,6 @@ class FactionCreateModal(ArislenaGeneralModal):
 
         # 세력 데이터베이스에 추가
         new_faction = func.make_and_push_new_faction(database, Faction(user_id=interaction.user.id, name=faction_name))
-
-        # id가 가장 낮은 세력의 하위 세력으로 설정
-        optimal_faction = Faction.from_database(database, "id = (SELECT MIN(id) FROM faction)")
-        new_fhn = FactionHierarchyNode()
-        new_fhn.set_database(database)
-        new_fhn.push(new_faction, optimal_faction)
         
         # 경험치가 12인 대원 2명 추가
         # TODO 리팩토링으로 인해 이 부분을 다시 작성해야 함

@@ -36,3 +36,28 @@ self.efficiency_detail_index = CrewLaborDetail(self._efficiency_dice.last_judge.
 - 자원 훔치기
 - 목초지에 가축 총량 제한 수치 추가
 - 새 영토 생성 시 나올 수 있는 안정도: 적색, 황색
+
+ConcreteFacility abstractmethod들
+
+corresponding_category
+deploy_as_worker_limit_config
+deploy_as_visitor_limit_config
+require_headquarter_level
+construction_cost
+levep_up_cost
+
+get_production_by_itself
+get_production_by_worker
+get_consumption_by_itself
+get_consumption_by_worker
+get_worker_requirements
+get_worker_experience_gain
+
+on_turn_end
+
+
+- 일단 0티어 건물만 구현하고, 1티어 건물은 나중에 구현하기
+- 건물 클래스에 on_turn_end 메소드 제대로 구현하기
+    - 건설 진행
+    - 자원 생산
+    - 자원 소모

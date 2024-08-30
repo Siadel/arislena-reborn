@@ -8,7 +8,7 @@ from py_base import ari_enum, yamlobj
 from py_base.ari_logger import ari_logger
 from py_base.dbmanager import DatabaseManager
 from py_base.ari_enum import ScheduleState
-from py_base.utility import get_date, DATE_EXPR, BACKUP_DIR, FULL_DATE_EXPR_2
+from py_base.utility import get_date, DATE_FORMAT, BACKUP_DIR, FULL_DATE_FORMAT_NO_SPACE
 from py_base.jsonobj import BotSetting
 from py_system.tableobj import Chalkboard, Deployment, CommandCounter, JobSetting, GuildSetting
 from py_system.worker import Livestock
@@ -35,7 +35,7 @@ class ServerManager:
         self.job_setting = JobSetting.from_database(self.database)
         self.guild_setting = GuildSetting.from_database(self.database)
         self.chalkboard = Chalkboard.from_database(self.database)
-        self.chalkboard.state = ScheduleState.ONGOING
+        self.chalkboard.schedule_state = ScheduleState.ONGOING
         
         self.announce_channel = self.bot.get_channel(self.guild_setting.announce_channel_id)
 
@@ -79,7 +79,7 @@ class ServerManager:
         - 게임 중 아니면 schedule.json 생성
         '''
         
-        match self.chalkboard.state:
+        match self.chalkboard.schedule_state:
             
             case ScheduleState.ONGOING:
                 ari_logger.info(f"길드 {self.guild_id}의 게임 시작 요청(이미 게임 시작됨)")
@@ -90,14 +90,14 @@ class ServerManager:
                 self.scheduler_add_job()
                 self.chalkboard.push()
                 
-                ari_logger.info(f"길드 {self.guild_id}의 게임 시작 요청({(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPR)} 게임 시작 예정)")
-                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_EXPR)} 시작 예정'
+                ari_logger.info(f"길드 {self.guild_id}의 게임 시작 요청({(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_FORMAT)} 게임 시작 예정)")
+                return f'게임 시작 대기 중 | {(datetime.date.today() + datetime.timedelta(days=1)).strftime(DATE_FORMAT)} 시작 예정'
             
             case ScheduleState.PAUSED:
                 # 중단 중일 때 (2)
                 self.scheduler.resume_job(self.form_schedule_id())
                 
-                self.chalkboard.state = ScheduleState.ONGOING
+                self.chalkboard.schedule_state = ScheduleState.ONGOING
                 self.chalkboard.push()
 
                 ari_logger.info(f"길드 {self.guild_id}의 게임 재개 요청")
@@ -118,10 +118,10 @@ class ServerManager:
         )
 
         # 진행 상황 백업
-        shutil.copy(self.database.file_path, BACKUP_DIR / Path(f"{get_date(FULL_DATE_EXPR_2)}_" + str(self.database.file_path.name)))
+        shutil.copy(self.database.file_path, BACKUP_DIR / Path(f"{get_date(FULL_DATE_FORMAT_NO_SPACE)}_" + str(self.database.file_path.name)))
 
-        if self.chalkboard.state == ScheduleState.WAITING:
-            self.chalkboard.state = ScheduleState.ONGOING
+        if self.chalkboard.schedule_state == ScheduleState.WAITING:
+            self.chalkboard.schedule_state = ScheduleState.ONGOING
 
         if self.chalkboard.now_turn >= self.chalkboard.turn_limit:
             self.end_game()
@@ -146,10 +146,10 @@ class ServerManager:
         게임 중단 함수
         '''
 
-        if self.chalkboard.state != ScheduleState.WAITING and self.chalkboard.state != ScheduleState.ONGOING:
+        if self.chalkboard.schedule_state != ScheduleState.WAITING and self.chalkboard.schedule_state != ScheduleState.ONGOING:
             return "게임이 진행 중이 아닙니다."
         
-        self.chalkboard.state = ScheduleState.PAUSED
+        self.chalkboard.schedule_state = ScheduleState.PAUSED
         self.chalkboard.push()
 
         self.scheduler.pause_job(self.form_schedule_id())
@@ -164,7 +164,7 @@ class ServerManager:
         게임 종료 함수
         '''
         
-        self.chalkboard.state = ScheduleState.ENDED
+        self.chalkboard.schedule_state = ScheduleState.ENDED
         self.chalkboard.end_date = get_date()
 
         self.scheduler.remove_job(self.form_schedule_id())

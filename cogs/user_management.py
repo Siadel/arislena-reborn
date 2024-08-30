@@ -28,7 +28,7 @@ class UserManagement(GroupCog, name="유저"):
         user = User(
             discord_id=interaction.user.id, 
             discord_name=interaction.user.name, 
-            register_date=datetime.now().strftime(utility.DATE_EXPR))
+            register_date=datetime.now().strftime(utility.DATE_FORMAT))
         user.set_database(database)
         user.push()
 

@@ -8,8 +8,7 @@ from py_base.ari_enum import FacilityCategory, CommandCategory
 from py_discord.bot_base import BotBase
 from py_discord import views, func
 from py_base import warnings
-from py_system.worker import Crew
-from py_system.tableobj import Faction, CommandCounter, Worker
+from py_system.tableobj import Faction, CommandCounter, Crew
 
 class CrewCommand(GroupCog, name="대원"):
     

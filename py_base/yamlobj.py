@@ -53,3 +53,12 @@ class EventText(YamlObject):
     def get_event_text(self, title: str) -> Generator[str, None, None]:
         for line in self.data[title]:
             yield line
+            
+class ConcreteObjectDescription(YamlObject):
+    file_name: str = "ConcreteObjectDescription.yaml"
+    
+    def __init__(self):
+        super().__init__()
+    
+    def get(self, object_name: str, category_name: str) -> str:
+        return self.data[object_name][category_name]

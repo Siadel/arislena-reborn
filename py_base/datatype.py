@@ -114,3 +114,7 @@ if __name__ == "__main__":
     c = a - b
     print(a - b, c)
     print(isinstance(a, int), isinstance(b, int), isinstance(c, int))
+
+
+class AbsentValue:
+    pass

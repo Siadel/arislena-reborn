@@ -393,13 +393,13 @@ class BuildButton(TerritoryLookupButton):
             territory_id=self._territory.id,
             category=category,
             name=self.facility_name,
-            remaining_dice_cost=sys_facility_type.required_dice_cost
+            remaining_cost=sys_facility_type.production_requirement
         )
         
         facility.set_database(self._database)
         facility.push()
         
-        await interaction.response.send_message(f"**{self.facility_name}** 시설의 터를 잡았습니다! **{sys_facility_type.required_dice_cost}**만큼의 주사위 총량이 요구됩니다.", ephemeral=True)
+        await interaction.response.send_message(f"**{self.facility_name}** 시설의 터를 잡았습니다! **{sys_facility_type.production_requirement}**만큼의 주사위 총량이 요구됩니다.", ephemeral=True)
         
         self._database.connection.commit()
 

@@ -13,9 +13,9 @@ DOUBLE_QUOTE = '"'
 ENTER = "\n"
 DOUBLE_ASTERISK = "**"
 
-DATE_EXPR = "%Y-%m-%d"
-FULL_DATE_EXPR = "%Y-%m-%d %H:%M:%S"
-FULL_DATE_EXPR_2 = "%Y-%m-%d_%H-%M-%S"
+DATE_FORMAT = "%Y-%m-%d"
+FULL_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+FULL_DATE_FORMAT_NO_SPACE = "%Y-%m-%d_%H-%M-%S"
 
 CWD = Path.cwd()
 
@@ -65,7 +65,7 @@ def sql_type(dtype: type) -> str:
         case _: Exception(f"Type {type(dtype)} is not supported in Arislena's SQL.")
     
 
-def sql_value(value: str | Enum | None | int | float) -> str:
+def sql_value(value: str | Enum | None | int | float | bool) -> str:
     """
     Convert a Python value to its SQL representation.
 
@@ -96,6 +96,8 @@ def sql_value(value: str | Enum | None | int | float) -> str:
         return f"'{value}'"
     if isinstance(value, Enum):
         return str(value.value)
+    elif isinstance(value, bool):
+        return str(int(value))
     elif value is None:
         return "NULL"
     else:

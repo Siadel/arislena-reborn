@@ -1,16 +1,17 @@
 
 from abc import ABCMeta, abstractmethod
 from sqlite3 import Row
-from typing import Generator, Iterable, Iterator, Self, Any
+from typing import Iterable, Iterator, Self, Any
 from enum import IntEnum
+from math import sqrt
 
-from py_base import ari_enum
-from py_base.ari_enum import get_intenum, ResourceCategory, FacilityCategory
-from py_base.arislena_dice import Dice
-from py_base.datatype import ExtInt
+from py_base.ari_enum import get_intenum, ResourceCategory, ExperienceCategory
+from py_base.datatype import ExtInt, AbsentValue
 from py_base.dbmanager import DatabaseManager
 from py_base.abstract import ArislenaEnum, DetailEnum
-from py_base.yamlobj import TableObjTranslator
+from py_base.yamlobj import TableObjTranslator, ConcreteObjectDescription
+from py_base.utility import sql_value
+from py_base.arislena_dice import D20
 
 class Column:
     
@@ -21,40 +22,65 @@ class Column:
         show_front: bool = True,
         primary_key: bool = False,
         auto_increment: bool = False,
-        not_null: bool = True,
-        unique: bool = False
+        not_null: bool = False,
+        unique: bool = False,
+        default: Any = None,
+        referenced_table: str = "",
+        referenced_column: str = "",
+        foreign_key_options: list[str] = []
     ):
         """
         name : name of the column
         annotation : type of the column
-        value : value of the column
+        
+        default : default value of the column (must be the same type as the annotation)
         show_front : whether to display the column in the front(discord)
         primary_key : whether the column is a primary key
         auto_increment : whether the column is auto increment
         not_null : whether the column is not null
         unique : whether the column is unique
+        referenced_table : the table that the column references (foreign key)
+        referenced_column : the column that the column references (foreign key)
+        foreign_key_options : options for the foreign key
+        
+        ex) foregn_key_options = ["ON DELETE CASCADE", "ON UPDATE CASCADE"]
         """
-        self._name: str = None
-        self._value: annotation = None
+        self._name: str = ""
+        self._value: annotation | AbsentValue | None = None
+        # _value를 Column 외부에서 활용하면 예상치 못한 결과(보통 알 수 없는 에러)를 초래할 수 있음
         self.annotation = annotation
+        
         self.show_front = show_front
         self.primary_key = primary_key
         self.auto_increment = auto_increment
         self.not_null = not_null
         self.unique = unique
+        self.default = default
+        self.referenced_table = referenced_table
+        self.referenced_column = referenced_column
+        self.foreign_key_options = foreign_key_options
+        
+        self.whitelist = self._get_whitelist()
+        if default is not None and not isinstance(default, self.annotation):
+            raise TypeError(f"Column {self._name} is not {self.annotation} type. The default value is '{default}' ({type(default)}).")
+        
+    def _get_whitelist(self) -> tuple[type]:
+        whitelist = [self.annotation, AbsentValue]
+        if not self.not_null: whitelist.append(type(None))
+        return tuple(whitelist)
         
     def __str__(self):
         return str(self._value)
     
-    def __get__(self, instance, owner):
+    def __get__(self, instance: object, owner):
         if instance is None: return self
         # print(f"Column {self._name} is accessed; {instance} {owner}")
         return instance.__dict__[self._name]
     
     def __set__(self, instance: object, value):
         # print(f"Column {self._name} will set; {instance} with value {value}, which type is {type(value)}")
-        if not isinstance(value, self.annotation):
-            raise TypeError(f"(function skipped) Column {self._name} is not {self.annotation} type. The value is '{value}' ({type(value)}).")
+        if not isinstance(value, self.whitelist):
+            raise TypeError(f"Column {self._name} is not {self.annotation} type. The value is '{value}' ({type(value)}).")
             
         instance.__dict__[self._name] = value
         
@@ -69,7 +95,7 @@ class Column:
         return self._name
     
     @property
-    def sql_type(self) -> str:
+    def sql_type(self) -> str | None:
         """
         Returns the data type of the column used in SQL.
         """
@@ -84,7 +110,7 @@ class Column:
         elif issubclass(self.annotation, IntEnum): return "INTEGER"
         
         else: raise ValueError(f"Type {self.annotation} is not supported in Arislena's SQL.")
-        
+
     @property
     def creator(self) -> str:
         """
@@ -99,23 +125,28 @@ class Column:
         if self.auto_increment: sub_queries.append("AUTOINCREMENT")
         if self.not_null: sub_queries.append("NOT NULL")
         if self.unique: sub_queries.append("UNIQUE")
+        if self.default is not None: sub_queries.append(f"DEFAULT {sql_value(self.default)}")
+        
         return " ".join(sub_queries)
-
+    
     @property
-    def foreign_key_creator(self):
+    def foreign_key_creator(self) -> str:
         """
         Returns the string for foreign key creation in SQL.
 
         Returns:
             str: The SQL string for creating the foreign key.
         """
-        if self.is_foreign_key():
-            return f"FOREIGN KEY ({self._name}) REFERENCES {self._name.split('_')[0]}(id)"
-        else:
-            return ""
+        if not (self.referenced_table and self.referenced_column and self.foreign_key_options): return ""
+        creator = f"FOREIGN KEY ({self._name}) REFERENCES {self.referenced_table} ({self.referenced_column})"
+        if self.foreign_key_options: creator += " " + " ".join(self.foreign_key_options)
+        return creator
     
-    def is_foreign_key(self) -> bool:
-        return self._name.endswith("_id")
+    def from_sqlite_row(self, row:Row):
+        """
+        Sets the value of the column from the sqlite3.Row object.
+        """
+        self._value = row[self._name]
 
 class TableObject(metaclass=ABCMeta):
     """
@@ -137,14 +168,19 @@ class TableObject(metaclass=ABCMeta):
         `kr_dict_without_id (dict[str, str])`: A dictionary that maps the Korean names to the attribute values, excluding the 'id' attribute.
         `database (DatabaseManager)`: The main database, which is the only database that the table object and its children can access.
     """
-
+    
     table_name: str = ""
+    id = Column(int, primary_key=True, auto_increment=True)
     
     def __init__(
         self
     ):  
-        self.id: int
-        self._database: DatabaseManager = None
+        self.id = 0
+        self._database: DatabaseManager | None = None
+        
+    @property
+    def database(self) -> DatabaseManager:
+        return self._database
     
     @abstractmethod
     def get_display_string(self) -> str:
@@ -160,9 +196,6 @@ class TableObject(metaclass=ABCMeta):
     def _check_database(self):
         if self._database is None:
             raise Exception("Database is not set.")
-        
-    def _check_before_import(self) -> None:
-        pass
         
     def _set_attributes_from_sqlite_row(self, row:Row):
         """
@@ -257,30 +290,83 @@ class TableObject(metaclass=ABCMeta):
         return [k for k, v in cls.__dict__.items() if isinstance(v, Column) and v.show_front]
     
     @classmethod
-    def get_create_table_string(cls) -> str:
+    def get_create_table_query(cls) -> str:
         """
         Returns the string for table creation in SQL.
 
         Returns:
             str: The SQL string for creating the table.
         """
-        sub_queries = []
-        foreign_keys = []
+        sub_queries: list[str] = []
+        foreign_keys: list[Column] = []
 
         for v in cls.get_columns().values():
             sub_queries.append(v.creator)
-            if v.is_foreign_key():
-                foreign_keys.append(v.foreign_key_creator)
+            if v.referenced_table: foreign_keys.append(v)
         
         if foreign_keys:
-            sub_queries.extend(foreign_keys)
+            for foreign_key in foreign_keys:
+                sub_queries.append(foreign_key.foreign_key_creator)
 
         return f"CREATE TABLE IF NOT EXISTS {cls.table_name} ({', '.join(sub_queries)})"
     
-    @property
-    def database(self) -> DatabaseManager:
-        return self._database
-        
+    def get_insert_information(self) -> dict[str, str]:
+        """
+        Returns the string for inserting the table in SQL.
+
+        Returns:
+            str: The SQL string for inserting the table.
+        """
+        target_columns = []
+        values = []
+        for key, column in self.get_columns().items():
+            if column.auto_increment: continue
+            if column.primary_key: continue
+            if isinstance(getattr(self, column.name), AbsentValue): continue
+            target_columns.append(key)
+            values.append(sql_value(getattr(self, column.name)))
+        if not target_columns: return f"INSERT INTO {self.table_name} DEFAULT VALUES"
+        return {
+            "keys_iter": ", ".join(target_columns),
+            "values_iter": ", ".join(values)
+        }
+    
+    def get_update_query(self) -> str:
+        """
+        Returns the string for updating the table in SQL.
+
+        Returns:
+            str: The SQL string for updating the table.
+        """
+        sub_queries = []
+        for key, column in self.get_columns().items():
+            if column.primary_key: continue
+            if isinstance(getattr(self, column.name), AbsentValue): continue
+            sub_queries.append(f"{key} = {sql_value(getattr(self, column.name))}")
+        return f"UPDATE {self.table_name} SET {', '.join(sub_queries)} WHERE id = {self.id}"
+
+    @classmethod
+    def get_column_type(cls, column_name: str) -> str:
+        """
+        Returns the data type of the column used in SQL.
+
+        Args:
+            column_name (str): The name of the column.
+
+        Returns:
+            str: The data type of the column in SQL.
+
+        Raises:
+            Exception: If the data type is not supported in SQL.
+
+        """
+
+        _get = getattr(cls, column_name, None)
+        if isinstance(_get, Column):
+            return _get.sql_type
+        else:
+            raise ValueError(f"Column {column_name} is not found.")
+
     def get_dict(self) -> dict[str, Any]:
         """
         self.__dict__를 호출하나 _로 시작하는 attribute는 제외
@@ -301,26 +387,11 @@ class TableObject(metaclass=ABCMeta):
         """
         return ", ".join(["?" for _ in range(len(self.get_dict_without_id()))])
     
-    def get_column_type(self, column_name: str) -> str:
+    def is_abstract(self) -> bool:
         """
-        Returns the data type of the column used in SQL.
-
-        Args:
-            column_name (str): The name of the column.
-
-        Returns:
-            str: The data type of the column in SQL.
-
-        Raises:
-            Exception: If the data type is not supported in SQL.
-
+        Returns whether the object is abstract or not.
         """
-
-        _get = getattr(self.__class__, column_name, None)
-        if isinstance(_get, Column):
-            return _get.sql_type
-        else:
-            raise ValueError(f"Column {column_name} is not found.")
+        return bool(self.table_name)
     
     def pull(self, *raw_statements, **statements):
         """
@@ -364,7 +435,7 @@ class TableObject(metaclass=ABCMeta):
             self._database.update_with_id(self.table_name, self.id, **self.get_dict_without_id())
         else:
             data = self.get_dict_without_id()
-            self._database.insert(self.table_name, data.keys(), data.values())
+            self._database.insert(self.table_name, **self.get_insert_information())
             
     def update(self, **kwargs):
         """
@@ -378,7 +449,7 @@ class TableObject(metaclass=ABCMeta):
         """
         self._check_database()
         self.__setattr__(**kwargs)
-        self._database.update_with_id(self.table_name, self.id, **kwargs)
+        self._database.cursor.execute(self.get_update_query())
     
     def delete(self):
         """
@@ -412,26 +483,41 @@ class TableObject(metaclass=ABCMeta):
             texts.append(f"- {show_key} : {discord_text}")
         return "\n".join(texts)
 
-class ResourceAbst(metaclass=ABCMeta):
+class ConcreteObject(metaclass=ABCMeta):
+    
+    corresponding_category: Any
+    
+    @classmethod
+    @abstractmethod
+    def create_from(self, table_object: TableObject):
+        return self
+    
+    def get_description(self) -> str:
+        file = ConcreteObjectDescription()
+        return file.get(self.__class__.__name__, str(self.corresponding_category))
+
+
+
+class HasCategoryAndAmount(metaclass=ABCMeta):
     
     def __init__(self, category:ResourceCategory, amount:int):
         self.category = category
         self.amount = amount
 
     def __str__(self):
-        return self.category.name
+        return f"{self.category.name}({self.amount})"
     
     def __int__(self):
         return int(self.amount)
     
-    def _check_category(self, other:"ResourceAbst"):
+    def _check_category(self, other:"HasCategoryAndAmount"):
         """
         같은 카테고리인지 확인
         """
-        if not isinstance(other, ResourceAbst): raise TypeError(f"{ResourceAbst.__name__} 객체가 아닙니다.")
-        if self.category != other.category: raise ValueError("카테고리가 다릅니다.")
+        if not isinstance(other, (HasCategoryAndAmount, int)): raise TypeError(f"HasCategoryAndAmount 객체를 상속한 객체 혹은 int 객체가 아닙니다.")
+        if isinstance(other, HasCategoryAndAmount) and self.category != other.category: raise ValueError("카테고리가 다릅니다.")
 
-    def move(self, other:"ResourceAbst", *, amount:int = None):
+    def move(self, other:"HasCategoryAndAmount", *, amount:int = None):
         """
         다른 자원 객체로 자원을 이동
         """
@@ -439,113 +525,60 @@ class ResourceAbst(metaclass=ABCMeta):
         if amount is None or amount > self.amount: amount = self.amount
         
         other.amount += amount
-        self.amount -= amount    
+        self.amount -= amount
     
-    def __add__(self, other:"ResourceAbst"):
+    def __add__(self, other:"HasCategoryAndAmount | int"):
         self._check_category(other)
-        return ResourceAbst(self.category, self.amount + other.amount)
+        if isinstance(other, int):
+            self.amount += other
+        else:
+            self.amount += other.amount
+        return self
     
-    def __sub__(self, other:"ResourceAbst"):
+    def __sub__(self, other:"HasCategoryAndAmount | int"):
         self._check_category(other)
-        return ResourceAbst(self.category, self.amount - other.amount)
+        if isinstance(other, int):
+            self.amount -= other
+        else:
+            self.amount -= other.amount
+        return self
     
-    # 카테고리가 다른 경우 amount 값과 상관 없이 False 반환
-    
-    def __lt__(self, other:"ResourceAbst"):
+    def __lt__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount < other
         return self.category == other.category and self.amount < other.amount
     
-    def __le__(self, other:"ResourceAbst"):
+    def __le__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount <= other
         return self.category == other.category and self.amount <= other.amount
     
-    def __eq__(self, other:"ResourceAbst"):
+    def __eq__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount == other
         return self.category == other.category and self.amount == other.amount
     
-    def __ne__(self, other:"ResourceAbst"):
+    def __ne__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount != other
         return self.category == other.category and self.amount != other.amount
     
-    def __gt__(self, other:"ResourceAbst"):
+    def __gt__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount > other
         return self.category == other.category and self.amount > other.amount
     
-    def __ge__(self, other:"ResourceAbst"):
+    def __ge__(self, other:"HasCategoryAndAmount | int"):
+        if isinstance(other, int): return self.amount >= other
         return self.category == other.category and self.amount >= other.amount
 
-class GeneralResource(ResourceAbst):
+class ExperienceAbst(HasCategoryAndAmount, metaclass=ABCMeta):
     
-    def __init__(
-        self, 
-        category: ResourceCategory, 
-        amount: int = 1
-    ):
+    def __init__(self, category:ExperienceCategory, amount:int):
         super().__init__(category, amount)
 
-class ProductionResource(ResourceAbst):
-
-    def __init__(
-        self,
-        category: ResourceCategory,
-        amount: int = 1,
-        dice_ratio: int = 1
-    ):
-        super().__init__(category, amount)
-        self.dice_ratio = dice_ratio # 1 이상의 정수
-
-    def __str__(self) -> str:
-        return f"{self.category.name}; 주사위 값 {self.dice_ratio} 당 {self.amount}개 생산"
-
-    def _return_general_resource(self, dice: int) -> GeneralResource:
-        # dice_ratio 당 amount를 계산한다.
-        # dice_ratio가 1이면 amount가 그대로 반환된다.
-        # dice_ratio가 2이면 amount가 절반이 된다.
-
-        return GeneralResource(self.category, self.amount * (dice // self.dice_ratio))
-
-    def __mul__(self, other: int | Dice) -> GeneralResource:
-        dice: int = 0
-        if isinstance(other, int):
-            dice = other
-        elif isinstance(other, Dice):
-            if other._last_roll is None: raise ValueError("주사위를 굴려주세요")
-            dice = other._last_roll
-        else:
-            raise TypeError(f"int 또는 Dice 타입만 가능합니다. (현재 타입: {type(other)})")
-
-        return self._return_general_resource(dice)
-
-class ProductionRecipe:
-    def __init__(
-        self, *, 
-        consume: list[GeneralResource] = [], 
-        produce: list[ProductionResource] = []
-    ):
-        self.consume = consume
-        self.produce = produce
-
-
-class WorkerQualification(set):
-
-    def __init__(self, iterable: Iterable[ari_enum.WorkCategory] | None = None):
-        if iterable is None:
-            iterable = []
-        # validation
-        for category in iterable:
-            self.check_instance(category)
-        super().__init__(iterable)
-
-    def check_instance(self, _Any):
-        if not isinstance(_Any, ari_enum.WorkCategory):
-            raise ValueError(f"Invalid category: {_Any}; must be ari_enum.WorkCategory")
-
-    def add(self, category: ari_enum.WorkCategory):
-        self.check_instance(category)
-        super().add(category)
-
-    def __iter__(self) -> Generator[ari_enum.WorkCategory, None, None]:
-        for category in super().__iter__():
-            yield category
-
-    def __str__(self):
-        return f"WokerQualification({', '.join([category.value for category in self])})"
-
+    @property
+    def level(self):
+        return int((-1 + sqrt(1 + 2/3 * self.amount)) // 2)
+    
+    def get_dice(self) -> D20:
+        return D20(self.level)
+        
 # deprecated
 # @dataclass
 # class Storages(Facilitys, metaclass=ABCMeta):

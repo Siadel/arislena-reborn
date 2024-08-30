@@ -43,23 +43,8 @@ class BotBase(commands.Bot):
         
         self._guild_server_manager: dict[str, ServerManager] = {}
     
-    def get_database(self, guild_id: int | str) -> DatabaseManager:
-        """
-        usage example:
-        ```
-        bot.get_database(interaction.guild_id)
-        ```
-        """
-        return self._guild_server_manager[str(guild_id)].database
-    
-    def get_server_manager(self, guild_id: int | str) -> ServerManager:
-        """
-        usage example:
-        ```
-        bot.get_server_manager(interaction.guild_id)
-        ```
-        """
-        return self._guild_server_manager[str(guild_id)]
+    def run(self):
+        super().run(self._token, log_handler=self._log_handler, log_level=logging.INFO)
         
     def _add_server_manager(self, guild_id: int | str):
         """
@@ -94,6 +79,24 @@ class BotBase(commands.Bot):
             return token_return
         
         else: return environ_get_result
+        
+    def get_database(self, guild_id: int | str) -> DatabaseManager:
+        """
+        usage example:
+        ```
+        bot.get_database(interaction.guild_id)
+        ```
+        """
+        return self._guild_server_manager[str(guild_id)].database
+    
+    def get_server_manager(self, guild_id: int | str) -> ServerManager:
+        """
+        usage example:
+        ```
+        bot.get_server_manager(interaction.guild_id)
+        ```
+        """
+        return self._guild_server_manager[str(guild_id)]
     
     async def announce_channel(self, message:str, guild_id:int):
         """
@@ -109,9 +112,6 @@ class BotBase(commands.Bot):
         if (channel := self.get_channel(guild_id)) is None: ari_logger.error(f"길드 id {guild_id}의 채널을 찾을 수 없습니다.")
         await channel.send(embed=embed)
 
-    def run(self):
-        super().run(self._token, log_handler=self._log_handler, log_level=logging.INFO)
-    
     def check_user_or_raise(self, interaction: discord.Interaction):
         """
         서버에서 봇에게 정한 유저 역할을 가지고 있는지 확인하는 함수
@@ -168,4 +168,3 @@ class BotBase(commands.Bot):
         if not self.get_database(interaction.guild_id).is_exist("user", discord_id=interaction.user.id):
             return False
         return True
-

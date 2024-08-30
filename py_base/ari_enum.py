@@ -32,6 +32,20 @@ class ScheduleState(IntEnum):
 # TODO : 이 밑으로는 모두 바뀐 ArislenaEnum에 맞게 수정 필요
 # local_name, emoji 추가
 
+class D9Judge(ArislenaEnum):
+    TRAGIC = "처참함", "😭"
+    AVERAGE = "무난함", "😐"
+    SUCCESS = "성공", "✅"
+    GREAT_SUCCESS = "멋지게 성공!", "🎉"
+
+class D20Judge(ArislenaEnum):
+    TRAGIC = "처참함", "😭"
+    POOR = "아쉬움", "😔"
+    AVERAGE = "무난함", "😐"
+    PROPER = "적절함", "😊"
+    SUCCESS = "성공", "✅"
+    GREAT_SUCCESS = "멋지게 성공!", "🎉"
+    
 class Language(ArislenaEnum):
     # 0: 한국어, 1: 영어
     KOREAN = "한국어", "🇰🇷"
@@ -51,7 +65,8 @@ class BiologicalSex(ArislenaEnum):
 class Availability(ArislenaEnum):
     UNAVAILABLE = "배치 불가", "❌"
     HEALING = "치료 중", "🩹"
-    LABORING = "노동 중 (배치됨)", "🛠️", 1
+    TRAINING = "훈련 중", "🏋️"
+    LABORING = "일하는 중", "🛠️", 1
     STANDBY = "대기 중", "✅", 1
     
     @classmethod
@@ -83,58 +98,57 @@ class TerritorySafety(ArislenaEnum):
         
 class ResourceCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
-    WATER = "물", "💧"
-    FOOD = "식량", "🍞"
-    FEED = "사료", "🌾"
-    WOOD = "목재", ":wood:"
-    SOIL = "흙", "🟫"
-    STONE = "석재", ":rock:"
-    BUILDING_MATERIAL = "건축자재", "🧱"
-    HERB = "약재", "🌿"
+    SPADES = "지휘력", ":spades_ari:"
+    DIAMONDS = "생산력", ":diamonds:"
+    HEARTS = "필수자원", ":hearts:"
+    CLUBS = "고급자원", ":four_leaf_clover:"
+    GOLD = "금", ":coin:"
     
     @classmethod
     def to_list(cls) -> list["ResourceCategory"]:
         return [component for component in cls if component.value != cls.UNSET.value]
 
-class TerritoryCategory(ArislenaEnum):
-    UNSET = "미정", "❓", -1
-    
-    
-    @classmethod
-    def get_randomly(cls):
-        return random.choice([comp for comp in cls if comp.level == 0])
-
 class FacilityCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
-    FRESH_WATER_SOURCE = "담수원", "🚰"
+    HEADQUARTER = "회관", "🏰"
+    HABITATION = "거주지", "🏠"
+    GATHERING_SITE = "채집지", "👐"
     HUNTING_GROUND = "수렵지", "🏹"
-    GATHERING_POST = "채집지", "🌾"
-    PASTURELAND = "목초지", "🐄"
-    FARMLAND = "농경지", "🌾⛺", 1
-    WOOD_GATHERING_POST = "목재 채취장", "🌲🏭", 1
-    EARTH_GATHERING_POST = "토석 채취장", "🏞️🏭", 1
-    BUILDING_MATERIAL_FACTORY = "건축자재 공장", "🧱🏭", 1
-    RECRUITING_CAMP = "모병소", "🛡️🏭", 1
-    SUPPLY_BASE = "보급기지", "🏭🤖", 1
-    CLINIC = "진료소", "🏥", 1
+    TRAINING_CAMP = "훈련소", "🎯"
+    BARRACK = "병영", ":muscle:", 1
+    FARMLAND = "농경지", "🌾", 1
+    WALL = "방벽", "🧱", 1
+    LIVESTOCK_FARM = "축사", "🐄🏠", 1
+    INFIRMARY = "치료소", "🏥", 1
+    GOLD_MINE = "금광", "💰⚒️", 1
+    LAB = "연구소", "🔬", 2
+    MARKET = "시장", "🏪", 2
+    FORGE = "대장간", "🔨", 2
+    RECON_POST = "정찰기지", "🔭", 2
     
     @classmethod
-    def get_basic_facility_list(cls) -> list["FacilityCategory"]:
-        return [
-            cls.FRESH_WATER_SOURCE,
-            cls.HUNTING_GROUND,
-            cls.PASTURELAND,
-            cls.GATHERING_POST
-        ]
+    def get_list_by_tier(cls, tier: int) -> list["FacilityCategory"]:
+        return [comp for comp in cls if comp.level == tier]
+
+class ExperienceCategory(ArislenaEnum):
+    UNSET = "미정", "❓", -1
+    HUNTING = "사냥", "🏹"
+    GATHERING = "채집", "👐"
+    AGRICULTURE = "농경", "🌾"
+    PASTURING = "목축", "🐄"
+    COMBAT = "전투", "⚔️"
+    STRATEGY = "전략", "🧠"
+    ADMINISTRATION = "행정", "📜"
+    CONSTRUCTION = "건설", "🏗️"
+    MANUFACTURING = "제조", "🏭"
+    PHARMACY = "약학", "💊"
     
     @classmethod
-    def get_ramdom_base_facility_category(cls) -> "FacilityCategory":
-        return random.choice(cls.get_basic_facility_list())
-    
-    @classmethod
-    def get_advanced_facility_list(cls) -> list["FacilityCategory"]:
-        rtn = [comp for comp in cls if comp.level == 1]
-        return rtn
+    def to_list(cls) -> list["ExperienceCategory"]:
+        """
+        UNSET을 제외한 모든 ExperienceCategory를 반환함
+        """
+        return [component for component in cls if component != cls.UNSET]
 
 class Strategy(ArislenaEnum):
     PASS = "속행", "⏩"
@@ -147,47 +161,13 @@ class Strategy(ArislenaEnum):
 
 class CommandCategory(ArislenaEnum):
     UNSET = "미정", "❓", -1
+    DEPLOY = "배치", "👇"
     RECRUIT = "모병", "🛡️"
     SCOUT = "정찰", ":eye:"
     RETREAT = "후퇴", ":runner:"
     TRAIN = "훈련", ":muscle:"
 
-class D9Judge(ArislenaEnum):
-    TRAGIC = "처참함", "😭"
-    AVERAGE = "무난함", "😐"
-    SUCCESS = "성공", "✅"
-    GREAT_SUCCESS = "멋지게 성공!", "🎉"
 
-class D20Judge(ArislenaEnum):
-    TRAGIC = "처참함", "😭"
-    POOR = "아쉬움", "😔"
-    AVERAGE = "무난함", "😐"
-    PROPER = "적절함", "😊"
-    SUCCESS = "성공", "✅"
-    GREAT_SUCCESS = "멋지게 성공!", "🎉"
-
-class WorkerCategory(ArislenaEnum):
-    UNSET = "미정", "❓", -1
-    CREW = "대원", "👥",
-    LIVESTOCK = "가축", "🐄"
-
-class WorkCategory(ArislenaEnum):
-    UNSET = "미정", "❓", -1
-    IRRIGATION = "관개", "🚰"
-    HUNTING = "사냥", "🏹"
-    GATHERING = "채집", "👐"
-    AGRICULTURE = "농경", "🌾"
-    FIGHTING = "전투", "⚔️"
-    CONSTRUCTION = "건설", "🏗️"
-    MANUFACTURING = "제조", "🏭"
-    TREAT = "치료", "🩹"
-    
-    @classmethod
-    def get_everything_but_unset(cls) -> list["WorkCategory"]:
-        """
-        UNSET을 제외한 모든 ExperienceCategory를 반환함
-        """
-        return [component for component in cls if component != cls.UNSET]
 
 class WorkerHPState(ArislenaEnum):
     # 0: 건강, 1: 경상, 2: 중상, 3: 사망
@@ -202,3 +182,6 @@ class WorkerHPState(ArislenaEnum):
     # < 50%: 중상
     # 0: 사망
 
+class DeployAs(ArislenaEnum):
+    WORKER = "종사자", "👷"
+    VISITOR = "방문자", "👤"

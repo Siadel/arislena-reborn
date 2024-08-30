@@ -22,7 +22,7 @@ general:
   safety: 안정도
   discriminator: 구분자
   availability: 상태
-  remaining_dice_cost: 남은 주사위 총량
+  remaining_cost: 남은 주사위 총량
   level: 레벨
   experience: 경험치
   sex: 성별
